@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { parse } from "jsonc-parser";
-export function inspect(config, environment, release) {
+export function inspect(config, environment, release, policies) {
   const failures = [];
   if (!["staging", "production"].includes(environment))
     return [
@@ -25,9 +25,43 @@ export function inspect(config, environment, release) {
     failures.push("Disable development login and use the correct environment.");
   if (!["disabled", "live"].includes(vars.PROVIDER_MODE))
     failures.push("Fixture mode is forbidden outside local development.");
-  if (vars.PAYMENTS_ENABLED !== "false")
+  if (vars.PAYMENTS_ENABLED !== "false") {
+    if (vars.PAYMENTS_ENABLED !== "true")
+      failures.push("Set an explicit payments switch.");
+    if (environment === "staging" && vars.PADDLE_ENVIRONMENT !== "sandbox")
+      failures.push("Staging checkout must use the Paddle sandbox.");
+    if (vars.REFERENCE_GENERATION_ENABLED !== "true")
+      failures.push(
+        "Do not sell points before reference-guided fulfillment is available.",
+      );
+    if (environment === "production") {
+      if (
+        vars.PADDLE_ENVIRONMENT !== "production" ||
+        vars.PADDLE_LIVE_APPROVED !== "true"
+      )
+        failures.push(
+          "Real payments require explicit merchant activation and owner approval.",
+        );
+      for (const key of [
+        "paddleSandboxCheckout",
+        "paddleRefund",
+        "paddleDuplicateEvents",
+        "paddleOrderRecovery",
+        "paddleCatalogVerified",
+        "paidReferenceFulfillment",
+        "purchaseTerms",
+      ])
+        if (!release?.checks?.[key])
+          failures.push(`Payment release evidence is missing: ${key}.`);
+    }
+  }
+  if (
+    vars.REFERENCE_GENERATION_ENABLED === "true" &&
+    environment === "production" &&
+    !release?.checks?.providerCostCeiling
+  )
     failures.push(
-      "Checkout has not been released; payments must remain disabled.",
+      "Reference generation requires verified input pricing and a provider cost ceiling.",
     );
   const id = target.d1_databases?.find((b) => b.binding === "DB")?.database_id;
   if (
@@ -46,9 +80,12 @@ export function inspect(config, environment, release) {
     failures.push("Configure a separate media bucket.");
   if (
     !target.workflows?.some((w) => w.binding === "GENERATION") ||
+    !target.workflows?.some((w) => w.binding === "ARCHIVES") ||
     !target.durable_objects?.bindings?.some((b) => b.name === "STORY_ROOMS")
   )
-    failures.push("Configure the story coordinator and generation Workflow.");
+    failures.push(
+      "Configure the story coordinator, generation and archive Workflows.",
+    );
   if (
     vars.PROVIDER_MODE === "live" &&
     (!release?.approvedBudgetCents || !release?.testApprovedAt)
@@ -57,6 +94,16 @@ export function inspect(config, environment, release) {
       "Live staging tests need a dated, explicit spending authorization.",
     );
   if (environment === "production") {
+    if (
+      policies?.status !== "final" ||
+      !policies?.operatorName ||
+      !policies?.effectiveAt ||
+      !policies?.contactEmail ||
+      policies.contactEmail !== vars.SUPPORT_EMAIL
+    )
+      failures.push(
+        "Finalize versioned policies, operator identity, effective date and a matching public support contact.",
+      );
     if (!vars.SUPPORT_EMAIL || !vars.SUPPORT_EMAIL.includes("@"))
       failures.push("Configure a working support contact.");
     const checks = [
@@ -68,6 +115,7 @@ export function inspect(config, environment, release) {
       "mediaRecovery",
       "budgetCutoff",
       "providerCostCeiling",
+      "legalPolicies",
       "mobilePlayback",
       "accountRequests",
       "abuseProtection",
@@ -96,7 +144,8 @@ if (process.argv[1]?.endsWith("preflight.mjs")) {
   const release = existsSync("release.acceptance.json")
     ? JSON.parse(readFileSync("release.acceptance.json", "utf8"))
     : null;
-  const failures = inspect(config, process.argv[2], release);
+  const policies = JSON.parse(readFileSync("shared/policies.json", "utf8"));
+  const failures = inspect(config, process.argv[2], release, policies);
   if (failures.length) {
     console.error(
       "Deployment is not ready:\n" + failures.map((x) => `- ${x}`).join("\n"),

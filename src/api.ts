@@ -20,9 +20,16 @@ export async function api<T>(
     body: data === undefined ? undefined : JSON.stringify(data),
     signal,
   });
-  const body = (await response.json()) as T & {
-    error?: { message?: string; code?: string };
-  };
+  const body = (await response.json().catch(() => null)) as
+    | (T & {
+        error?: { message?: string; code?: string };
+      })
+    | null;
+  if (!body)
+    throw new ApiError(
+      "The server is temporarily unavailable. Please try again.",
+      "server_unavailable",
+    );
   if (!response.ok)
     throw new ApiError(
       body.error?.message ?? "The request could not be completed.",

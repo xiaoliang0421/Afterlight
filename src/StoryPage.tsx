@@ -18,8 +18,11 @@ import {
 } from "lucide-react";
 import {
   activeStates,
+  sceneAt,
+  type Scene,
   type StoryDetail,
   type Task,
+  type Character,
   formatTime,
 } from "../shared/domain";
 import { api, navigate, useLocation, useResource } from "./api";
@@ -36,6 +39,11 @@ import {
   Status,
 } from "./components";
 import { Player } from "./Player";
+import { StoryArchive } from "./StoryArchive";
+import { ShareModal } from "./ShareModal";
+import { CastPicker } from "./CastPicker";
+import { GenerationChoice } from "./GenerationChoice";
+import type { GenerationMode } from "../shared/billing";
 
 export function StoryPage({ slug }: { slug: string }) {
   const { boot, refresh, toast, requireLogin } = useApp(),
@@ -52,6 +60,7 @@ export function StoryPage({ slug }: { slug: string }) {
     [report, setReport] = useState(false),
     [connected, setConnected] = useState(true);
   const [progressLoaded, setProgressLoaded] = useState(false);
+  const [sharing, setSharing] = useState<{ scene?: Scene } | null>(null);
   const currentTime = useRef(0),
     progressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
       undefined,
@@ -109,11 +118,18 @@ export function StoryPage({ slug }: { slug: string }) {
     setProgressLoaded(true);
   }, [data]);
   useEffect(() => {
-    if (params.has("episode")) {
+    const sharedScene = data?.scenes.find(
+      (scene) => scene.id === params.get("scene"),
+    );
+    if (sharedScene) {
+      setEpisodeId(sharedScene.episodeId);
+      setJumpTime(sharedScene.startMs);
+      setEnded(false);
+    } else if (params.has("episode")) {
       setEpisodeId(params.get("episode")!);
       setJumpTime(Number(params.get("t") ?? 0) * 1000);
     }
-  }, [path]);
+  }, [path, data?.story.id]);
   useEffect(() => {
     if (!data?.story.id) return;
     const storyId = data.story.id;
@@ -205,19 +221,10 @@ export function StoryPage({ slug }: { slug: string }) {
         <Button onClick={() => void detail.reload()}>Try again</Button>
       </div>
     );
-  const { story, scenes, queue, characters } = data,
+  const { story, scenes, queue } = data,
     saved = boot.favorites.includes(story.id),
     owner = story.ownerId === boot.user?.id || boot.user?.role === "admin";
   const episodeScenes = scenes.filter((s) => s.episodeId === episode?.id);
-  const share = async () => {
-    const url = `${location.origin}/story/${story.slug}?episode=${encodeURIComponent(episode?.id ?? "")}&t=${Math.floor(currentTime.current / 1000)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast("Link copied. It opens at this moment, with the author’s credit.");
-    } catch {
-      toast("Copy the current story URL from your browser to share it.");
-    }
-  };
   const openEpisode = (id: string, time = 0) => {
     clearTimeout(progressTimer.current);
     progressTimer.current = undefined;
@@ -260,7 +267,16 @@ export function StoryPage({ slug }: { slug: string }) {
           >
             <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
           </button>
-          <Button kind="secondary" onClick={() => void share()}>
+          <Button
+            kind="secondary"
+            disabled={
+              story.status === "draft" || !scenes.some((s) => !s.hidden)
+            }
+            onClick={() => {
+              const scene = sceneAt(episodeScenes, currentTime.current);
+              setSharing({ scene: scene?.hidden ? undefined : scene });
+            }}
+          >
             <Share2 size={15} />
             Share story
           </Button>
@@ -436,34 +452,26 @@ export function StoryPage({ slug }: { slug: string }) {
                     </p>
                     <Author id={s.authorId} name={s.author} compact />
                   </div>
-                  <span>{formatTime(s.durationMs)}</span>
+                  <button
+                    className="icon-button"
+                    disabled={s.hidden}
+                    aria-label={`Share ${s.title}`}
+                    onClick={() => setSharing({ scene: s })}
+                  >
+                    <Share2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>
           )}
           {tab === "world" && (
-            <div className="world-details">
-              <p className="eyebrow">THE WORLD’S COMPASS</p>
-              <p>{story.worldRules}</p>
-              <div className="character-grid">
-                {characters
-                  .filter((ch) => ch.introducedVersion <= currentVersion)
-                  .map((ch) => (
-                    <article className="character-card" key={ch.id}>
-                      <Avatar name={ch.name} size={42} />
-                      <h3>{ch.name}</h3>
-                      <p>{ch.description}</p>
-                      {currentVersion >= story.version && (
-                        <small>{ch.state}</small>
-                      )}
-                    </article>
-                  ))}
-              </div>
-              <p className="fine-print">
-                New characters are revealed as you watch. Every character
-                belongs to this world alone.
-              </p>
-            </div>
+            <StoryArchive
+              key={`${story.updatedAt}:${currentVersion}`}
+              story={story}
+              scenes={scenes}
+              version={currentVersion}
+              jump={(s) => openEpisode(s.episodeId, s.startMs)}
+            />
           )}
           {tab === "queue" && (
             <div className="queue-list">
@@ -529,6 +537,7 @@ export function StoryPage({ slug }: { slug: string }) {
         </section>
         <aside className="creation-column">
           <Composer
+            characters={data.characters}
             storyId={story.id}
             title={story.title}
             status={story.status}
@@ -557,17 +566,26 @@ export function StoryPage({ slug }: { slug: string }) {
       {report && (
         <ReportModal storyId={story.id} close={() => setReport(false)} />
       )}
+      {sharing && (
+        <ShareModal
+          story={story}
+          scene={sharing.scene}
+          close={() => setSharing(null)}
+        />
+      )}
     </div>
   );
 }
 
 export function Composer({
+  characters,
   storyId,
   title,
   status,
   queue,
   onChanged,
 }: {
+  characters: Character[];
   storyId: string;
   title: string;
   status: string;
@@ -576,6 +594,8 @@ export function Composer({
 }) {
   const { boot, requireLogin, toast } = useApp();
   const [prompt, setPrompt] = useState(""),
+    [generationMode, setGenerationMode] = useState<GenerationMode>("text"),
+    [selectedCast, setSelectedCast] = useState<string[]>([]),
     [task, setTask] = useState<Task | null>(null),
     [busy, setBusy] = useState(""),
     [error, setError] = useState(""),
@@ -585,10 +605,31 @@ export function Composer({
   useEffect(() => {
     try {
       setPrompt(localStorage.getItem(savedKey) ?? "");
+      const savedCast: unknown = JSON.parse(
+        localStorage.getItem(`${savedKey}:cast`) ?? "[]",
+      );
+      setSelectedCast(
+        Array.isArray(savedCast)
+          ? [
+              ...new Set(
+                savedCast.filter(
+                  (id): id is string =>
+                    typeof id === "string" &&
+                    characters.some((ch) => ch.id === id),
+                ),
+              ),
+            ].slice(0, 3)
+          : [],
+      );
     } catch {
-      /* Optional storage. */
+      setPrompt("");
+      setSelectedCast([]);
     }
     setTask(null);
+    setGenerationMode("text");
+    setConsent(false);
+    setError("");
+    idempotency.current = crypto.randomUUID();
   }, [savedKey]);
   const trackedId =
     task && activeStates.includes(task.status) ? task.id : undefined;
@@ -619,10 +660,23 @@ export function Composer({
   const change = (text: string) => {
     setPrompt(text);
     setTask(null);
+    setConsent(false);
     setError("");
     idempotency.current = crypto.randomUUID();
     try {
       localStorage.setItem(savedKey, text);
+    } catch {
+      /* Optional storage. */
+    }
+  };
+  const changeCast = (ids: string[]) => {
+    setSelectedCast(ids);
+    setTask(null);
+    setConsent(false);
+    setError("");
+    idempotency.current = crypto.randomUUID();
+    try {
+      localStorage.setItem(`${savedKey}:cast`, JSON.stringify(ids));
     } catch {
       /* Optional storage. */
     }
@@ -641,6 +695,8 @@ export function Composer({
           ? { task }
           : await api<{ task: Task }>(`/stories/${storyId}/tasks`, "POST", {
               prompt,
+              characterIds: selectedCast,
+              generationMode,
               idempotencyKey: idempotency.current,
             });
       setTask(r.task);
@@ -668,7 +724,12 @@ export function Composer({
         publicAttributionAccepted: consent,
       });
       setTask(r.task);
-      localStorage.removeItem(savedKey);
+      try {
+        localStorage.removeItem(savedKey);
+        localStorage.removeItem(`${savedKey}:cast`);
+      } catch {
+        /* The server has already accepted the contribution. */
+      }
       await onChanged();
     } catch (e) {
       setError((e as Error).message);
@@ -684,7 +745,11 @@ export function Composer({
           <Sparkles size={13} />
           THE NEXT SCENE
         </span>
-        <span className="free-tag">FREE TO CREATE</span>
+        <span className="free-tag">
+          {(task?.generationMode ?? generationMode) === "text"
+            ? "FREE ALLOWANCE"
+            : "CREATION POINTS"}
+        </span>
       </div>
       <h2>
         {task?.status === "Published"
@@ -739,6 +804,7 @@ export function Composer({
             onClick={() => {
               setTask(null);
               setPrompt("");
+              changeCast([]);
               idempotency.current = crypto.randomUUID();
             }}
           >
@@ -750,6 +816,26 @@ export function Composer({
           <span className="eyebrow">YOUR SCENE, ADAPTED TO FIT</span>
           <h3>{task.plan.title}</h3>
           <p>{task.plan.summary}</p>
+          <div className="plan-cast">
+            <span>Appearing in your scene</span>
+            {task.plan.characterIds.length ? (
+              task.plan.characterIds.map((id) => {
+                const character =
+                  characters.find((ch) => ch.id === id) ??
+                  task.plan!.newCharacters.find((ch) => ch.id === id);
+                return (
+                  <strong key={id}>
+                    {character?.name ?? "Character"}
+                    {task.plan!.newCharacters.some((ch) => ch.id === id)
+                      ? " · new"
+                      : ""}
+                  </strong>
+                );
+              })
+            ) : (
+              <strong>No principal characters</strong>
+            )}
+          </div>
           <div className="bridge">
             <span>How it connects</span>
             {task.plan.bridge}
@@ -762,9 +848,18 @@ export function Composer({
               <Clock3 size={13} />
               About 10 seconds
             </span>
-            <span>1 free credit</span>
+            <span>
+              {task.generationMode === "reference"
+                ? `${task.quotedPoints} purchased points`
+                : "1 free credit"}
+            </span>
             <span>English</span>
           </div>
+          <p className="fine-print">
+            {task.generationMode === "reference"
+              ? "Uses approved visual references. Points are reserved now and used on publication. Failed or rejected scenes return the reservation. Consistency is not guaranteed."
+              : "Text-to-video uses character descriptions; appearances may vary. No payment required."}
+          </p>
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -772,8 +867,16 @@ export function Composer({
               onChange={(e) => setConsent(e.target.checked)}
             />
             <span>
-              Publish my original idea and nickname with the finished scene.
-              Small continuity edits are okay.
+              Publish my original idea and nickname with the finished scene, as
+              described in the{" "}
+              <a href="/terms#rights" target="_blank" rel="noopener">
+                contribution terms
+              </a>{" "}
+              and{" "}
+              <a href="/privacy#public" target="_blank" rel="noopener">
+                public information notice
+              </a>
+              . Small continuity edits are okay.
             </span>
           </label>
           <Button
@@ -793,6 +896,25 @@ export function Composer({
         </div>
       ) : (
         <>
+          <GenerationChoice
+            value={generationMode}
+            referenceEnabled={boot.config.referenceEnabled}
+            points={boot.config.referencePoints}
+            disabled={!!busy}
+            onChange={(mode) => {
+              setGenerationMode(mode);
+              setTask(null);
+              setConsent(false);
+              setError("");
+              idempotency.current = crypto.randomUUID();
+            }}
+          />
+          <CastPicker
+            characters={characters}
+            selected={selectedCast}
+            onChange={changeCast}
+            disabled={!!busy}
+          />
           <label className="sr-only" htmlFor={`idea-${storyId}`}>
             Your idea for {title}
           </label>
@@ -874,7 +996,8 @@ export function Composer({
       </div>
       <p className="fine-print">
         Ideas take turns. We check every scene against the latest story before
-        it’s made. No card required.
+        it’s made. Free text-to-video needs no card.{" "}
+        <Link to="/account#creation-points">About creation points</Link>
       </p>
     </div>
   );

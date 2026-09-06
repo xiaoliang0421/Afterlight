@@ -1,0 +1,162 @@
+{
+  "version": "2026-09-06-draft3",
+  "status": "draft",
+  "updatedAt": "2026-09-06",
+  "effectiveAt": null,
+  "operatorName": "",
+  "contactEmail": "",
+  "privacy": [
+    {
+      "id": "overview",
+      "title": "Who we are and what this notice covers",
+      "paragraphs": [
+        "Afterlight is a shared storytelling service. This notice explains the information used when you watch stories, sign in, submit creative ideas, generate scenes, or contact the studio. It applies to Afterlight; services you visit through an external link have their own policies.",
+        "This is a development draft. The operator’s legal identity, public contact address, final retention schedule and regional arrangements must be completed before public launch. Local preview acknowledgments are test records, not acceptance of a finalized public service policy."
+      ]
+    },
+    {
+      "id": "information",
+      "title": "Information we use",
+      "paragraphs": [
+        "Account information: the account identifier and email supplied through Google sign-in, your chosen public nickname, session information, and records of the terms version you accepted. The authentication service may also receive the name and profile image permitted by Google; these are not automatically used as your public storyteller identity.",
+        "Creative information: world and character details, saved prompts, English adaptations, approved scene plans, generated media, captions, contribution credits, reference materials and moderation decisions. A private draft is not public, but requesting an AI preview or generation sends relevant creative information to the configured model provider.",
+        "Activity and support information: saved stories, viewing progress, credit reservations and usage, task status, reports, account requests and administrative audit records. Hosting and security providers also process technical request information such as IP address, browser and error information when delivering and protecting the service.",
+        "Purchase information, when enabled: point package, order and Paddle transaction identifiers, amount, currency, tax totals, payment status, purchase-term acceptance, point grants and adjustments. Full card details are handled by Paddle and are not stored in Afterlight."
+      ]
+    },
+    {
+      "id": "public",
+      "title": "What other people can see",
+      "paragraphs": [
+        "Your public nickname, contributor identifier, published original prompt, English adaptation and scene credit are visible with a published contribution, including its timeline and share page. Public story descriptions, character information and videos are also visible. A queued contribution may show your nickname and task stage before publication.",
+        "Your account email, unpublished private prompts, account requests and credit records are not exposed through public contributor pages. Authorized studio staff can access information needed to operate the service and handle requests. Do not include contact details, credentials or sensitive personal information in a creative submission.",
+        "Public material may be viewed, linked, indexed or copied by others. Removing a page from Afterlight cannot guarantee removal of independent copies, but this does not limit applicable privacy or removal rights."
+      ]
+    },
+    {
+      "id": "purpose",
+      "title": "Why we process information",
+      "paragraphs": [
+        "We use account, creative and task information to provide the features you request, coordinate each story, preserve authorship and deliver video. We use security, quota and moderation records to protect the service, prevent abuse and investigate problems. We use support records to respond to you and meet applicable obligations.",
+        "Where data-protection law requires a legal basis, the relevant basis depends on the activity: providing the requested service, proportionate legitimate interests in security and operation, legal obligations, or consent where required. Acknowledging this notice does not turn every processing activity into consent. The final regional notice and any required transfer arrangements must be verified before launch."
+      ]
+    },
+    {
+      "id": "providers",
+      "title": "Service providers and international processing",
+      "paragraphs": [
+        "The planned hosted service uses Cloudflare for website delivery, application processing, database, media storage and security, and Google for sign-in. The configured AI workflow uses fal for video generation and a separate story-editor provider, currently configured for DeepSeek, for English adaptation and continuity checks. Local fixture mode does not call these AI providers.",
+        "The story editor receives the prompt and relevant story/character context. Text-to-video receives the adapted prompt and character descriptions without image, voice or video references. Reference-guided generation also receives approved images, available voice references and eligible preceding footage. Account email is not intentionally included in model requests. Providers may retain requests or outputs under their applicable terms; Afterlight does not promise zero retention or exclusion from training without verifying the selected account terms.",
+        "Processing may occur in countries different from yours. The operator must confirm provider terms, processing agreements, locations and any required transfer safeguards before public launch. We may also disclose information where legally required or necessary to address an appropriately assessed security or rights concern.",
+        "When you choose to purchase points, Paddle provides checkout and payment processing as merchant of record. Checkout may receive your email, billing details, order information and technical information needed for payment, tax and fraud prevention. Afterlight receives payment status and limited order totals. Paddle checkout code is loaded when you choose to open checkout. Paddle has its own privacy notice and checkout terms; payment processing is not provided by Cloudflare."
+      ]
+    },
+    {
+      "id": "storage",
+      "title": "Cookies and browser storage",
+      "paragraphs": [
+        "Sign-in uses session cookies. Browser storage remembers draft ideas and viewing progress; signed-in progress is also stored with your account. Clearing browser storage removes local drafts and local progress, but does not delete already submitted server records.",
+        "The current application does not include advertising trackers, marketing pixels or non-essential analytics cookies. If optional tracking is introduced, the notice and any required choices must be updated before it is enabled. Google and other external sites control the storage used on their own services."
+      ]
+    },
+    {
+      "id": "retention",
+      "title": "Retention and deletion",
+      "paragraphs": [
+        "Account and unpublished creative records support active use of the service. Published scenes are kept for serialized playback and attribution. Task, quota, security and request records support delivery, dispute handling and investigation. The public launch requires an approved retention schedule with implemented deletion or anonymization; the current development preview does not claim automatic timed deletion.",
+        "You can submit and withdraw an account-deletion request from Account. A request is not an immediate deletion. The studio must verify the requester, resolve unfinished tasks and assess which personal data should be removed, anonymized or retained under applicable law. A shared story is not a blanket reason to keep identifying information indefinitely. The complete deletion workflow and backup/provider propagation still require launch verification.",
+        "Order, purchase acceptance and point ledger records may need to be retained for tax, accounting, fraud and dispute obligations. The applicable retention periods and deletion handling must be finalized before real-money checkout opens."
+      ]
+    },
+    {
+      "id": "rights",
+      "title": "Your choices and requests",
+      "paragraphs": [
+        "You can change your public nickname, manage saved stories, withdraw an eligible queued idea and submit an account request. Depending on your location and the applicable conditions, you may also request access, correction, deletion or portability, object to or restrict processing, withdraw a consent-based choice, appeal a decision, or complain to a supervisory authority.",
+        "Use Account for a deletion request and the published contact address for other privacy requests, including when you cannot sign in. We may need proportionate verification before releasing private information. The public contact channel and response process must be operational before launch."
+      ]
+    },
+    {
+      "id": "children",
+      "title": "Age eligibility and changes",
+      "paragraphs": [
+        "The development preview is not open public registration for children. Public age eligibility and the corresponding safeguards are still being finalized; the preview does not implement parental-consent handling. If information about a child is submitted, contact the operator so it can be assessed and handled appropriately.",
+        "A revised notice will show its version and effective date. Material changes will be brought to users’ attention. Where a separate consent is legally required, it must be requested rather than inferred from continued browsing."
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "id": "service",
+      "title": "The shared story service",
+      "paragraphs": [
+        "Afterlight lets people watch and contribute to AI-assisted serialized stories. Each story has its own world, characters and creation queue. Watching does not require buying credits. Creation is subject to account eligibility, available capacity, content review and the terms in effect when you submit.",
+        "This is a development draft for review. The operator’s identity, contact channel, effective date, age eligibility and regional contract provisions must be finalized before public launch. Local demonstration footage and test accounts do not represent real creator activity or validated model quality."
+      ]
+    },
+    {
+      "id": "account",
+      "title": "Accounts and public identity",
+      "paragraphs": [
+        "Use an account you are authorized to access, keep its sign-in secure and choose a nickname that does not impersonate another person or the studio. Your email is not your public byline. Your contributor ID links your published scenes even if your nickname changes.",
+        "You can decline the terms and continue browsing the publicly available preview. Submitting a world or creative task requires affirmative acceptance of the current terms and acknowledgment of the privacy notice. The final public age policy must be confirmed before registration is opened."
+      ]
+    },
+    {
+      "id": "process",
+      "title": "How contributions work",
+      "paragraphs": [
+        "You may submit an idea in any supported input language. The service adapts it into an English scene plan. Review the adaptation and the public-attribution notice before joining the queue. Within a story, accepted ideas wait their turn; when an idea is ready to run, the service checks it against the latest published scene.",
+        "Small continuity edits may be needed to preserve the approved intent. Material changes return for review. An unfinished or rejected video does not become story canon. Submission does not guarantee publication, exact creative output, character similarity or a completion time. The interface distinguishes queued work, generation, review and failure.",
+        "An eligible queued task may be withdrawn. Once a paid provider request has started, cancellation may no longer prevent its processing. The application explains the available action and the treatment of reserved credits; it does not claim an uncertain upstream request was safely cancelled."
+      ]
+    },
+    {
+      "id": "rights",
+      "title": "Your content, permission and attribution",
+      "paragraphs": [
+        "You retain any rights you hold in your original submission. Submit only material you have the right to use and authorize for this purpose, including any recognizable person’s image or voice. Do not provide confidential information or reference material without permission.",
+        "When you request adaptation or generation, you grant Afterlight a non-exclusive permission to process and adapt the necessary submission through its service providers for that task. When you approve publication, this permission includes hosting, reproducing, displaying, streaming, captioning, adapting and archiving the contribution as part of the shared story, and allowing later scenes to continue from it. It is limited to operating and presenting the service and its story/share pages; this draft does not grant unrelated advertising or model-training rights.",
+        "Published contributions carry your chosen nickname and original-prompt attribution. Other participants can continue the shared story through the platform; they do not automatically acquire ownership of your original submission. Attribution is not a guarantee that an AI output has copyright protection, is exclusive, or belongs wholly to a single contributor.",
+        "You can request content removal or a change to identifying attribution. Publication in a shared story can require reviewing dependent scenes, but does not override applicable privacy, intellectual-property or other mandatory rights. The final retention and withdrawal process must be operational before launch."
+      ]
+    },
+    {
+      "id": "conduct",
+      "title": "Content and acceptable use",
+      "paragraphs": [
+        "Do not submit material that unlawfully infringes rights, exposes private information, impersonates people deceptively, harasses or exploits others, promotes violent hatred, depicts sexual exploitation of minors, or contains non-consensual intimate material. The studio may also reject graphic violence or content outside the story’s published rules.",
+        "Do not evade access controls, create accounts to circumvent quotas, automate abusive submissions, interfere with other stories, or attempt to instruct an AI to change billing, identity or administrative permissions. Creative prompts do not authorize platform actions.",
+        "The studio can review, reject, restrict or remove content and pause creation where appropriate. Use the story report action or the operator contact channel to explain a concern or contest a decision. Include a scene link and relevant details, without posting another person’s sensitive information publicly."
+      ]
+    },
+    {
+      "id": "credits",
+      "title": "Free allowances, purchased points and refunds",
+      "paragraphs": [
+        "Text-to-video uses a limited daily free allowance, subject to platform capacity. Reference-guided creation, when available, uses separately purchased creation points. Both join the same story queue. Purchased points do not give queue priority. The mode and point quote are shown before admission and are not silently changed when settings change.",
+        "The current development preview has no live checkout. When purchases are enabled, you choose a one-time point package and review the price, currency, applicable tax and purchase terms in checkout. There is no subscription or automatic top-up. Only a server-verified completed payment grants points; a browser success message is not proof of an available balance. Sandbox orders are tests and do not represent real purchases.",
+        "A scene reserves the displayed allowance or points on joining the queue and consumes them on approved publication. An eligible withdrawal, failed generation or rejected output returns the reservation. An uncertain provider request may retain the reservation until reconciled. Returning generation points does not itself refund a payment. Visual references can improve continuity but do not guarantee an identical face, style or seamless transition.",
+        "Free allowances reset daily. Purchased points do not reset daily and are not transferable, redeemable for cash or an investment. Point packages, any expiry conditions and fulfillment terms must be approved and displayed before live sales begin. An existing free task never becomes a payable task merely because capacity runs out.",
+        "For a purchase refund or a problem with delivered output, use Payment help beside the relevant order in Account, and include the scene identifier where applicable. Money refunds are handled through Paddle and may require review. Approved full or partial payment refunds remove the corresponding purchased points; a refund of already-used points may restrict further paid creation while the balance is reviewed. No further charge is made automatically. Applicable mandatory consumer and refund rights are not waived by these draft terms."
+      ]
+    },
+    {
+      "id": "availability",
+      "title": "AI limitations, availability and your rights",
+      "paragraphs": [
+        "AI scenes may contain inconsistencies, unexpected speech or text, and factual inaccuracies. They are creative entertainment. Check a result before relying on it or using it outside the story. Report content that does not match the approved plan or applicable rules.",
+        "The service may be interrupted or creation paused for maintenance, provider failure, review or capacity limits. Existing media is intended to remain available for replay, subject to lawful removal and service operation. We do not promise uninterrupted access or permanent availability regardless of circumstances.",
+        "Nothing in these terms removes rights or remedies that cannot lawfully be excluded. Any jurisdiction-specific contract, liability or dispute provisions require review once the operator and launch markets are confirmed; this draft does not impose mandatory arbitration, a chosen court or a waiver of statutory consumer rights."
+      ]
+    },
+    {
+      "id": "ending",
+      "title": "Leaving, changes and contact",
+      "paragraphs": [
+        "You can stop using Afterlight and request deletion from your Account page. Unfinished tasks, published contributions and legally necessary records are handled under the privacy notice and applicable rights. Suspending an account does not silently erase financial or moderation audit records.",
+        "Terms updates show a new version and effective date. Material changes require an appropriate notice and, where needed, renewed acceptance. Previously submitted free tasks are not retroactively charged. Contact the operator through the published support channel for account, rights or service concerns."
+      ]
+    }
+  ]
+}

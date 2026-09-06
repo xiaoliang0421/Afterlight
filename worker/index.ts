@@ -39,12 +39,34 @@ import {
 import { preparePlan } from "./director";
 import { serveR2 } from "./media";
 import { selectedMaterials } from "./materials";
+import { videoMode } from "./video-policy";
+import { generationModels } from "../shared/billing";
+import {
+  billing,
+  generationOffer,
+  checkoutConfigured,
+  receivePaddleWebhook,
+  reconcilePayments,
+} from "./billing";
 import { sharePage } from "./share";
 import { admin, refreshBalance } from "./admin";
+import policies from "../shared/policies.json";
+import { publicArchive, dispatchArchives } from "./archives";
+export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
 
 const app = new Hono<AppEnv>();
+// Paddle has its own raw-body signature authentication. Do not apply browser Origin/session checks to this exact route.
+app.post("/api/billing/webhook", bodyLimit({ maxSize: 262144 }), async (c) => {
+  await receivePaddleWebhook(c.env, c.req.raw);
+  c.executionCtx.waitUntil(
+    reconcilePayments(c.env).catch(() => {
+      console.error(JSON.stringify({ event: "payment.background-deferred" }));
+    }),
+  );
+  return c.json({ received: true });
+});
 app.use(
   "/api/*",
   bodyLimit({
@@ -123,22 +145,25 @@ app.on(["GET", "POST"], "/api/auth/*", (c) =>
 app.get("/api/bootstrap", async (c) => {
   const user = c.get("user"),
     settings = await getSettings(c.env);
-  const [stories, credits, favorites, notifications] = await Promise.all([
-    listStories(c.env, user?.id),
-    user ? getCredits(c.env, user.id) : null,
-    user
-      ? c.env.DB.prepare("SELECT story_id FROM favorites WHERE user_id=?")
-          .bind(user.id)
-          .all<{ story_id: string }>()
-      : null,
-    user
-      ? c.env.DB.prepare(
-          "SELECT id,message,story_id AS storyId,task_id AS taskId,created_at AS createdAt,read_at AS readAt FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 30",
-        )
-          .bind(user.id)
-          .all()
-      : null,
-  ]);
+  const [stories, credits, favorites, notifications, offer] = await Promise.all(
+    [
+      listStories(c.env, user?.id),
+      user ? getCredits(c.env, user.id) : null,
+      user
+        ? c.env.DB.prepare("SELECT story_id FROM favorites WHERE user_id=?")
+            .bind(user.id)
+            .all<{ story_id: string }>()
+        : null,
+      user
+        ? c.env.DB.prepare(
+            "SELECT id,message,story_id AS storyId,task_id AS taskId,created_at AS createdAt,read_at AS readAt FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 30",
+          )
+            .bind(user.id)
+            .all()
+        : null,
+      generationOffer(c.env),
+    ],
+  );
   return c.json({
     config: {
       environment: c.env.ENVIRONMENT,
@@ -148,7 +173,9 @@ app.get("/api/bootstrap", async (c) => {
       turnstileSiteKey: c.env.TURNSTILE_SITE_KEY ?? "",
       generationEnabled:
         settings.generationEnabled && c.env.PROVIDER_MODE !== "disabled",
-      paymentsEnabled: false,
+      paymentsEnabled: checkoutConfigured(c.env) && offer.referenceEnabled,
+      referenceEnabled: offer.referenceEnabled,
+      referencePoints: offer.referencePoints,
       supportEmail: c.env.SUPPORT_EMAIL,
     },
     user,
@@ -263,6 +290,90 @@ app.put("/api/account/profile", async (c) => {
   await audit(c.env, user.id, "profile.updated", user.id);
   return c.json({ ok: true });
 });
+app.post("/api/account/policies", async (c) => {
+  const user = requireUser(c);
+  const input = z
+    .object({
+      version: z.literal(policies.version),
+      termsAccepted: z.literal(true),
+      privacyAcknowledged: z.literal(true),
+    })
+    .parse(await c.req.json());
+  if (String(c.env.ENVIRONMENT) === "production" && policies.status !== "final")
+    throw new AppError(
+      "policies_not_ready",
+      "Account creation is not open yet.",
+      503,
+    );
+  const snapshot = JSON.stringify(policies);
+  await c.env.DB.prepare("INSERT OR IGNORE INTO policy_documents VALUES(?,?,?)")
+    .bind(policies.version, snapshot, Date.now())
+    .run();
+  const archived = await c.env.DB.prepare(
+    "SELECT document_json FROM policy_documents WHERE version=?",
+  )
+    .bind(policies.version)
+    .first<{ document_json: string }>();
+  if (archived?.document_json !== snapshot)
+    throw new AppError(
+      "policy_version_conflict",
+      "The updated policies need a new version before acceptance can be recorded.",
+      409,
+    );
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO policy_acceptances(user_id,version,accepted_at,terms_accepted,privacy_acknowledged) VALUES(?,?,?,1,1)",
+  )
+    .bind(user.id, input.version, Date.now())
+    .run();
+  return c.json({ ok: true, version: input.version });
+});
+app.get("/api/account/policies", async (c) => {
+  const user = requireUser(c);
+  const records = await c.env.DB.prepare(
+    "SELECT version,accepted_at AS acceptedAt FROM policy_acceptances WHERE user_id=? ORDER BY accepted_at DESC",
+  )
+    .bind(user.id)
+    .all();
+  return c.json({ currentVersion: policies.version, records: records.results });
+});
+app.get("/api/account/policies/:version", async (c) => {
+  const user = requireUser(c);
+  const row = await c.env.DB.prepare(
+    "SELECT d.document_json FROM policy_documents d JOIN policy_acceptances p ON p.version=d.version WHERE p.user_id=? AND d.version=?",
+  )
+    .bind(user.id, c.req.param("version"))
+    .first<{ document_json: string }>();
+  if (!row)
+    throw new AppError(
+      "not_found",
+      "No accepted policy record was found.",
+      404,
+    );
+  const document = JSON.parse(row.document_json) as typeof policies;
+  if (c.req.query("download") === "1") {
+    const text = [
+      `Afterlight policies — ${document.version}`,
+      `Operator: ${document.operatorName || "Pending"}`,
+      `Contact: ${document.contactEmail || "Pending"}`,
+      ...(["privacy", "terms"] as const).flatMap((kind) => [
+        kind === "privacy" ? "PRIVACY POLICY" : "TERMS OF SERVICE",
+        ...document[kind].flatMap((section) => [
+          section.title,
+          ...section.paragraphs,
+        ]),
+      ]),
+    ].join("\n\n");
+    return new Response(text, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition":
+          "attachment; filename=afterlight-accepted-policies.txt",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+  return c.json(document);
+});
 app.get("/api/account/requests", async (c) => {
   const user = requireUser(c);
   return c.json({
@@ -345,6 +456,23 @@ app.get("/api/stories/:id", async (c) => {
       : null,
   ]);
   return c.json({ story, characters, episodes, scenes, queue, progress });
+});
+app.get("/api/stories/:id/archive", async (c) => {
+  const story = await getStory(c.env, c.req.param("id")),
+    user = c.get("user");
+  if (
+    story.status === "draft" &&
+    story.ownerId !== user?.id &&
+    user?.role !== "admin"
+  )
+    throw new AppError("not_found", "This story is not open yet.", 404);
+  const version = z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(story.version)
+    .parse(c.req.query("through") ?? story.version);
+  return c.json(await publicArchive(c.env, story.id, version));
 });
 app.post("/api/stories", async (c) => {
   const user = requireUser(c, true);
@@ -492,13 +620,25 @@ app.post("/api/stories/:id/tasks", async (c) => {
     throw new AppError("not_found", "This story is not open yet.", 404);
   await rateLimit(c.env, `draft:${user.id}`, 10);
   const input = promptInputSchema.parse(await c.req.json());
+  const requestedCast = JSON.stringify([...input.characterIds].sort());
   const prior = await c.env.DB.prepare(
-    "SELECT id,story_id,prompt_original FROM tasks WHERE user_id=? AND idempotency_key=?",
+    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode FROM tasks WHERE user_id=? AND idempotency_key=?",
   )
     .bind(user.id, input.idempotencyKey)
-    .first<{ id: string; story_id: string; prompt_original: string }>();
+    .first<{
+      id: string;
+      story_id: string;
+      prompt_original: string;
+      requested_character_ids_json: string;
+      generation_mode: string;
+    }>();
   if (prior) {
-    if (prior.story_id !== story.id || prior.prompt_original !== input.prompt)
+    if (
+      prior.story_id !== story.id ||
+      prior.prompt_original !== input.prompt ||
+      prior.requested_character_ids_json !== requestedCast ||
+      prior.generation_mode !== input.generationMode
+    )
       throw new AppError(
         "idempotency_conflict",
         "This submission key has already been used for another idea.",
@@ -506,10 +646,32 @@ app.post("/api/stories/:id/tasks", async (c) => {
       );
     return c.json({ task: taskDto(await getTask(c.env, prior.id)) });
   }
+  const offer = await generationOffer(c.env);
+  if (input.generationMode === "reference" && !offer.referenceEnabled)
+    throw new AppError(
+      "reference_unavailable",
+      "Reference-guided creation is being prepared. You can use free text-to-video today.",
+      409,
+    );
+  const availableCharacters = await getCharacters(
+    c.env,
+    story.id,
+    story.version,
+  );
+  if (
+    input.characterIds.some(
+      (id) => !availableCharacters.some((ch) => ch.id === id),
+    )
+  )
+    throw new AppError(
+      "invalid_requested_cast",
+      "Choose characters already introduced in this story.",
+      400,
+    );
   const id = crypto.randomUUID(),
     now = Date.now();
   await c.env.DB.prepare(
-    "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(user_id,idempotency_key) DO NOTHING",
+    "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at,requested_character_ids_json,generation_mode,provider_model,quoted_points,quoted_reserve_cents) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,idempotency_key) DO NOTHING",
   )
     .bind(
       id,
@@ -520,17 +682,30 @@ app.post("/api/stories/:id/tasks", async (c) => {
       input.idempotencyKey,
       now,
       now,
+      requestedCast,
+      input.generationMode,
+      generationModels[input.generationMode],
+      input.generationMode === "reference" ? offer.referencePoints : 0,
+      input.generationMode === "reference" ? offer.referenceReserveCents : 0,
     )
     .run();
   const saved = await c.env.DB.prepare(
-    "SELECT id,story_id,prompt_original FROM tasks WHERE user_id=? AND idempotency_key=?",
+    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode FROM tasks WHERE user_id=? AND idempotency_key=?",
   )
     .bind(user.id, input.idempotencyKey)
-    .first<{ id: string; story_id: string; prompt_original: string }>();
+    .first<{
+      id: string;
+      story_id: string;
+      prompt_original: string;
+      requested_character_ids_json: string;
+      generation_mode: string;
+    }>();
   if (
     !saved ||
     saved.story_id !== story.id ||
-    saved.prompt_original !== input.prompt
+    saved.prompt_original !== input.prompt ||
+    saved.requested_character_ids_json !== requestedCast ||
+    saved.generation_mode !== input.generationMode
   )
     throw new AppError(
       "idempotency_conflict",
@@ -542,8 +717,8 @@ app.post("/api/stories/:id/tasks", async (c) => {
     saved.id === id ? 201 : 200,
   );
 });
-async function ownTask(c: Parameters<typeof requireUser>[0]) {
-  const user = requireUser(c, true),
+async function ownTask(c: Parameters<typeof requireUser>[0], creating = true) {
+  const user = requireUser(c, creating),
     t = await getTask(c.env, c.req.param("id")!);
   if (t.user_id !== user.id)
     throw new AppError(
@@ -626,8 +801,21 @@ app.post("/api/tasks/:id/accept", async (c) => {
       "Creation is not available yet. Your idea is saved.",
       503,
     );
-  if (String(c.env.PROVIDER_MODE) === "live" && t.plan_json)
+  if (
+    String(c.env.PROVIDER_MODE) === "live" &&
+    videoMode(t.provider_model) === "reference" &&
+    t.plan_json
+  )
     await selectedMaterials(c.env, t.id, t.story_id, JSON.parse(t.plan_json));
+  if (
+    t.generation_mode === "reference" &&
+    !(await generationOffer(c.env)).referenceEnabled
+  )
+    throw new AppError(
+      "reference_unavailable",
+      "Reference-guided creation is paused. Your points have not been reserved.",
+      409,
+    );
   await acceptTask(c.env, t);
   // Queued work is durable before scheduling; a transient wake-up failure is recoverable by cron.
   try {
@@ -638,7 +826,7 @@ app.post("/api/tasks/:id/accept", async (c) => {
   return c.json({ task: taskDto(await getTask(c.env, t.id)) });
 });
 app.post("/api/tasks/:id/cancel", async (c) => {
-  const t = await ownTask(c);
+  const t = await ownTask(c, false);
   if (
     !(await transition(
       c.env,
@@ -671,7 +859,7 @@ app.get("/api/tasks", async (c) => {
   return c.json({ tasks: rows.map((t) => taskDto(t)) });
 });
 app.get("/api/tasks/:id", async (c) => {
-  const t = await ownTask(c);
+  const t = await ownTask(c, false);
   return c.json({ task: taskDto(t) });
 });
 app.on(["GET", "HEAD"], "/api/scenes/:id/video", async (c) => {
@@ -776,18 +964,7 @@ app.post("/api/notifications/read", async (c) => {
     .run();
   return c.json({ ok: true });
 });
-app.post("/api/billing/checkout", (c) =>
-  c.json(
-    {
-      error: {
-        code: "payment_disabled",
-        message:
-          "Purchases are not available. There is no charge to your account.",
-      },
-    },
-    403,
-  ),
-);
+app.route("/api/billing", billing);
 app.route("/api/admin", admin);
 app.notFound((c) =>
   c.json(
@@ -797,6 +974,7 @@ app.notFound((c) =>
 );
 
 async function reconcile(env: Cloudflare.Env) {
+  await reconcilePayments(env);
   if (String(env.PROVIDER_MODE) === "live") {
     try {
       await refreshBalance(env);
@@ -818,6 +996,7 @@ async function reconcile(env: Cloudflare.Env) {
       );
     }
   }
+  await dispatchArchives(env);
   const outbox = (
     await env.DB.prepare(
       "SELECT id,story_id FROM outbox WHERE sent_at IS NULL ORDER BY created_at LIMIT 100",

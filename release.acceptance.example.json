@@ -12,9 +12,17 @@
     "mediaRecovery": false,
     "budgetCutoff": false,
     "providerCostCeiling": false,
+    "legalPolicies": false,
     "mobilePlayback": false,
     "accountRequests": false,
     "abuseProtection": false,
-    "cloudResourceSmokeTest": false
+    "cloudResourceSmokeTest": false,
+    "paddleSandboxCheckout": false,
+    "paddleRefund": false,
+    "paddleDuplicateEvents": false,
+    "paddleOrderRecovery": false,
+    "paddleCatalogVerified": false,
+    "paidReferenceFulfillment": false,
+    "purchaseTerms": false
   }
 }

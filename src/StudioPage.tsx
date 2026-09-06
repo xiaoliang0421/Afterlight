@@ -13,6 +13,8 @@ import { api, useResource } from "./api";
 import { useApp } from "./context";
 import { MaterialsPanel } from "./MaterialsPanel";
 import { StudioRequests } from "./StudioRequests";
+import { ArchiveReview } from "./ArchiveReview";
+import { StudioBilling } from "./StudioBilling";
 import {
   Author,
   Button,
@@ -133,7 +135,9 @@ export function StudioPage() {
         {[
           "Review queue",
           "Character materials",
+          "Story guides",
           "Account requests",
+          "Payments",
           "Capacity & settings",
           "Reports",
           "Activity log",
@@ -150,7 +154,9 @@ export function StudioPage() {
         ))}
       </div>
       {tab === "Character materials" && <MaterialsPanel />}
+      {tab === "Story guides" && <ArchiveReview />}
       {tab === "Account requests" && <StudioRequests />}
+      {tab === "Payments" && <StudioBilling />}
       {tab === "Review queue" && (
         <div className="studio-tasks">
           {d.tasks.length ? (

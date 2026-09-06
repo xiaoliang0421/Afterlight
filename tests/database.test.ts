@@ -19,6 +19,45 @@ function database() {
   return db;
 }
 const now = 1788669000000;
+test("a requested cast is immutable, unique and restricted to introduced characters in its story", () => {
+  const db = database();
+  const insert = db.prepare(
+    "INSERT INTO tasks(id,story_id,user_id,prompt_original,idempotency_key,base_version,created_at,updated_at,requested_character_ids_json) VALUES(?,'last-light','dev-creator','Mara examines the brass key.',?,3,1,1,?)",
+  );
+  for (const [id, cast] of [
+    ["foreign", ["inez-sol"]],
+    ["duplicate", ["mara-vale", "mara-vale"]],
+    ["missing", ["someone-new"]],
+  ] as const)
+    assert.throws(
+      () => insert.run(id, id, JSON.stringify(cast)),
+      /invalid_requested_cast/,
+    );
+  db.exec(
+    "INSERT INTO characters(id,story_id,name,description,state,introduced_version) VALUES('future','last-light','Future arrival','A person not yet introduced.','Outside the story.',99)",
+  );
+  assert.throws(
+    () => insert.run("future", "future", '["future"]'),
+    /invalid_requested_cast/,
+  );
+  insert.run("valid", "valid", '["mara-vale"]');
+  assert.throws(
+    () =>
+      db.exec(
+        "UPDATE tasks SET requested_character_ids_json='[]' WHERE id='valid'",
+      ),
+    /requested_cast_is_immutable/,
+  );
+  assert.equal(
+    db
+      .prepare(
+        "SELECT requested_character_ids_json AS cast FROM tasks WHERE id='valid'",
+      )
+      .get()?.cast,
+    '["mara-vale"]',
+  );
+  db.close();
+});
 function draft(
   db: DatabaseSync,
   id: string,
@@ -49,12 +88,12 @@ function draft(
     now,
   );
 }
-function accept(db: DatabaseSync, id: string) {
+function accept(db: DatabaseSync, id: string, timestamp = now + 1) {
   return db
     .prepare(
       `UPDATE tasks SET status='Queued',quota_period='2026-09-06',budget_day='2026-09-06',budget_month='2026-09',reserved_cents=150,updated_at=? WHERE id=? AND status IN ('Draft','NeedsReview')`,
     )
-    .run(now + 1, id);
+    .run(timestamp, id);
 }
 function ready(db: DatabaseSync, id: string) {
   db.prepare(
@@ -87,6 +126,46 @@ function numbers(db: DatabaseSync) {
       .get(),
   };
 }
+test("admission records the approved plan and policy atomically with its actual queue sequence", () => {
+  const db = database();
+  draft(db, "consented");
+  db.prepare(
+    "UPDATE tasks SET terms_version='2026-09-06-draft',attribution_accepted_at=?,attribution_plan_version=? WHERE id='consented'",
+  ).run(now, now);
+  accept(db, "consented");
+  const first = db
+    .prepare("SELECT * FROM contribution_acceptances WHERE task_id='consented'")
+    .get()!;
+  const task = db.prepare("SELECT * FROM tasks WHERE id='consented'").get()!;
+  assert.equal(first.queue_sequence, task.queue_sequence);
+  assert.equal(first.user_id, "dev-creator");
+  assert.equal(first.plan_version, now);
+  assert.equal(first.approved_plan_json, task.approved_plan_json);
+  accept(db, "consented");
+  assert.equal(
+    db.prepare("SELECT COUNT(*) AS n FROM contribution_acceptances").get()!.n,
+    1,
+  );
+  db.prepare(
+    "UPDATE tasks SET status='NeedsReview',updated_at=? WHERE id='consented'",
+  ).run(now + 2);
+  db.prepare(
+    "UPDATE tasks SET approved_plan_json='{}',attribution_plan_version=? WHERE id='consented'",
+  ).run(now + 2);
+  accept(db, "consented", now + 3);
+  assert.equal(
+    db.prepare("SELECT COUNT(*) AS n FROM contribution_acceptances").get()!.n,
+    2,
+  );
+  assert.equal(
+    db
+      .prepare(
+        "SELECT approved_plan_json FROM contribution_acceptances ORDER BY queue_sequence LIMIT 1",
+      )
+      .get()!.approved_plan_json,
+    first.approved_plan_json,
+  );
+});
 test("new characters require matching approved material and inherit the version actually used", async () => {
   const db = database();
   draft(db, "candidate");
@@ -158,6 +237,12 @@ test("new characters require matching approved material and inherit the version 
   db.exec(
     "UPDATE candidate_materials SET reference_image='https://assets.example.com/v2.png'",
   );
+  assert.equal(
+    db.prepare("SELECT COUNT(*) n FROM characters WHERE id='new-person'").get()!
+      .n,
+    0,
+  );
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM story_archives").get()!.n, 0);
   publish(db, "candidate");
   const character = db
     .prepare(
@@ -166,6 +251,33 @@ test("new characters require matching approved material and inherit the version 
     .get()!;
   assert.equal(character.reference_image, "https://assets.example.com/v1.png");
   assert.equal(character.introduced_version, 4);
+  const history = db
+    .prepare(
+      "SELECT * FROM character_history WHERE story_id='last-light' AND character_id='new-person'",
+    )
+    .all();
+  assert.equal(history.length, 1);
+  assert.equal(history[0].version, 4);
+  assert.equal(history[0].source_scene_id, "candidate");
+  assert.equal(history[0].state, "At the door.");
+  assert.equal(
+    db
+      .prepare(
+        "SELECT COUNT(*) n FROM character_history WHERE character_id='new-person' AND version<4",
+      )
+      .get()!.n,
+    0,
+  );
+  publish(db, "candidate");
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM story_archives").get()!.n, 1);
+  assert.equal(
+    db
+      .prepare(
+        "SELECT COUNT(*) n FROM story_archives WHERE story_id='quiet-orbit'",
+      )
+      .get()!.n,
+    0,
+  );
   db.close();
 });
 
@@ -365,7 +477,7 @@ test("platform ceiling includes director costs and in-flight scenes across stori
   assert.throws(
     () =>
       db.exec(
-        `INSERT INTO model_calls VALUES('call','a','2026-09-06','2026-09',25,'preview','submitted',1)`,
+        `INSERT INTO model_calls(id,task_id,day,month,cost_ceiling_cents,kind,status,created_at) VALUES('call','a','2026-09-06','2026-09',25,'preview','submitted',1)`,
       ),
     /capacity_full/,
   );

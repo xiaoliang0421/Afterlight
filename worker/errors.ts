@@ -8,6 +8,9 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
+  reference_unavailable: "Reference-guided creation is not open yet. Free text-to-video remains available.",
+  paid_credits_unavailable: "There are not enough available purchased points, or your payment needs review.",
+  "payment_orders.user_id": "You already have an unfinished checkout. Check its status in your account before starting another.",
   generation_paused:
     "New creations are paused. Your idea is saved, and you can keep watching.",
   story_paused: "This story is not accepting new scenes right now.",

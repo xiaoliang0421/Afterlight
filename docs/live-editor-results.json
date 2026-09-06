@@ -1,0 +1,212 @@
+{
+  "testedAt": "2026-09-06T07:58:03.618Z",
+  "scope": "Four real text calls against a local fixture story; no video generation, publication or production deployment.",
+  "results": [
+    {
+      "case": "smoke-english",
+      "latencyMs": 2429,
+      "checks": {
+        "english": true,
+        "validExistingIds": true,
+        "candidateIdentity": true
+      },
+      "plan": {
+        "englishPrompt": "Mara examines the brass key's engravings, then looks at the lock, keeping suspense without opening the door.",
+        "title": "The Engraved Key",
+        "summary": "Mara inspects the brass key under the storm light, noticing faint engravings, then looks at the lock with growing unease.",
+        "bridge": "From the previous scene where Mara discovered the brass door, she now raises the key to examine it closely.",
+        "videoPrompt": "Close-up of Mara's hand holding the brass key, turning it to reveal faint engravings. Her eyes trace the marks, then she looks up at the lock. Lightning flashes outside, illuminating her face. She does not insert the key.",
+        "language": "en",
+        "durationSeconds": 10,
+        "characterIds": [
+          "mara-vale"
+        ],
+        "newCharacters": [],
+        "proposedEvents": [
+          "Mara examines the brass key and notices engravings.",
+          "She looks at the lock but does not open the door."
+        ],
+        "characterUpdates": [
+          {
+            "id": "mara-vale",
+            "state": "At the lighthouse entrance, examining the brass key's engravings, still holding it, door remains locked."
+          }
+        ],
+        "requiresReview": false,
+        "reason": "",
+        "rejected": false
+      }
+    },
+    {
+      "case": "smoke-return",
+      "latencyMs": 3007,
+      "checks": {
+        "english": true,
+        "validExistingIds": true,
+        "candidateIdentity": true
+      },
+      "plan": {
+        "englishPrompt": "Elias, in his radio workshop, picks up a handheld two-way radio and calls Mara, telling her to check the number engraved on the brass key.",
+        "title": "The Number on the Key",
+        "summary": "Elias contacts Mara over the two-way radio, advising her to inspect the number on the brass key.",
+        "bridge": "From the previous scene where Mara discovered the brass door, we cut to Elias in his workshop, motivated by his knowledge of the transmitter and the key.",
+        "videoPrompt": "Interior of a cluttered radio workshop at night. Elias Reed, wearing silver-rimmed glasses and a charcoal wool coat, sits at a bench cluttered with radios and tools. He picks up a handheld two-way radio, presses the talk button, and speaks with a calm, urgent tone. The camera slowly pushes in on his face as he says, 'Mara, check the number on the key.' The radio crackles softly. His hand rests on the bench, revealing a small notebook with a sketch of a key.",
+        "language": "en",
+        "durationSeconds": 10,
+        "characterIds": [
+          "elias-reed"
+        ],
+        "newCharacters": [],
+        "proposedEvents": [
+          "Elias uses a two-way radio to contact Mara.",
+          "Elias advises Mara to check the number engraved on the brass key."
+        ],
+        "characterUpdates": [
+          {
+            "id": "elias-reed",
+            "state": "In the radio workshop, having just contacted Mara over the two-way radio, advising her to check the number on the key."
+          }
+        ],
+        "requiresReview": false,
+        "reason": "",
+        "rejected": false
+      }
+    },
+    {
+      "case": "smoke-new",
+      "latencyMs": 3213,
+      "checks": {
+        "english": true,
+        "validExistingIds": true,
+        "candidateIdentity": true
+      },
+      "plan": {
+        "englishPrompt": "A previously unseen mail carrier named June arrives at the lighthouse entrance and hands Mara a letter addressed to her. June is a new character, introduced reasonably, without changing the identities of Mara and Elias.",
+        "title": "The Letter",
+        "summary": "A mail carrier named June arrives at the lighthouse entrance and delivers a letter addressed to Mara.",
+        "bridge": "Mara stands at the lighthouse entrance holding the brass key, having just discovered the locked brass door. The sound of footsteps on gravel approaches from behind.",
+        "videoPrompt": "Mara stands at the lighthouse entrance, holding a brass key, looking at a narrow brass door. She hears footsteps on gravel behind her. She turns. A woman in her twenties, wearing a yellow raincoat and carrying a leather mailbag, approaches. The woman stops a few feet away, pulls a letter from her bag, and holds it out. The envelope is addressed to 'Mara Vale' in neat handwriting. Mara hesitates, then takes the letter. The woman smiles briefly, nods, and turns to leave. Rain begins to fall. Mara looks down at the envelope, then back at the door.",
+        "language": "en",
+        "durationSeconds": 10,
+        "characterIds": [
+          "mara-vale",
+          "smoke-new:character:1"
+        ],
+        "newCharacters": [
+          {
+            "id": "smoke-new:character:1",
+            "name": "June",
+            "description": "A mail carrier in her twenties with a yellow raincoat and a leather mailbag.",
+            "state": "Delivered a letter to Mara at the lighthouse entrance."
+          }
+        ],
+        "proposedEvents": [
+          "June arrives at the lighthouse entrance.",
+          "June hands Mara a letter addressed to her.",
+          "Mara accepts the letter."
+        ],
+        "characterUpdates": [
+          {
+            "id": "mara-vale",
+            "state": "At the lighthouse entrance, holding a brass key and a letter addressed to her."
+          }
+        ],
+        "requiresReview": false,
+        "reason": "",
+        "rejected": false
+      }
+    },
+    {
+      "case": "smoke-archive",
+      "latencyMs": 2089,
+      "archive": {
+        "language": "en",
+        "recap": {
+          "text": "Mara arrives at the headland and sees a warm beacon in the abandoned lighthouse. She hears her name over a radio. Elias discovers the transmitter is still disconnected. At the lighthouse entrance, Mara finds a narrow brass door and still holds the key she brought.",
+          "sceneIds": [
+            "sample-light-1",
+            "sample-light-2",
+            "sample-light-3"
+          ]
+        },
+        "characters": [
+          {
+            "id": "mara-vale",
+            "introduction": "A meticulous lighthouse keeper in her thirties, with dark cropped hair and a rust-orange raincoat.",
+            "development": "She arrives at the lighthouse, hears her name over the radio, and discovers a brass door while holding a key.",
+            "sceneIds": [
+              "sample-light-1",
+              "sample-light-2",
+              "sample-light-3"
+            ],
+            "relationships": []
+          },
+          {
+            "id": "elias-reed",
+            "introduction": "A patient radio repairer in his forties, with silver-rimmed glasses and a charcoal wool coat.",
+            "development": "He discovers that the old transmitter is still disconnected.",
+            "sceneIds": [
+              "sample-light-2"
+            ],
+            "relationships": []
+          }
+        ],
+        "openThreads": [
+          {
+            "text": "Why is the lighthouse beacon lit when it should be abandoned?",
+            "sceneIds": [
+              "sample-light-1"
+            ]
+          },
+          {
+            "text": "Who or what spoke Mara's name over the radio?",
+            "sceneIds": [
+              "sample-light-2"
+            ]
+          },
+          {
+            "text": "What is behind the narrow brass door?",
+            "sceneIds": [
+              "sample-light-3"
+            ]
+          }
+        ],
+        "concerns": []
+      }
+    }
+  ],
+  "usage": [
+    {
+      "kind": "preview",
+      "provider_model": "deepseek-v4-flash",
+      "input_tokens": 807,
+      "output_tokens": 289,
+      "status": "completed",
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "preview",
+      "provider_model": "deepseek-v4-flash",
+      "input_tokens": 808,
+      "output_tokens": 365,
+      "status": "completed",
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "preview",
+      "provider_model": "deepseek-v4-flash",
+      "input_tokens": 826,
+      "output_tokens": 437,
+      "status": "completed",
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "story-archive",
+      "provider_model": "deepseek-v4-flash",
+      "input_tokens": 657,
+      "output_tokens": 385,
+      "status": "completed",
+      "cost_ceiling_cents": 25
+    }
+  ]
+}

@@ -1,10 +1,44 @@
 import { z } from "zod";
-import type { ScenePlan } from "../shared/domain";
+import { validatePlan, type ScenePlan } from "../shared/domain";
 import { AppError } from "./errors";
-import { getSettings, type TaskRow } from "./store";
+import { getSettings, getCharacters, type TaskRow } from "./store";
 import { selectedMaterials } from "./materials";
 import { trustedFalUrl } from "./media";
 import { assertVideoReservation } from "./pricing";
+import { videoMode, assertTextVideoReservation } from "./video-policy";
+import { generationOffer, paidWallet } from "./billing";
+
+export function textVideoInput(
+  plan: ScenePlan,
+  cast: { id: string; name: string; description: string; state: string }[],
+) {
+  const selected = plan.characterIds.map((id) => {
+    const ch = cast.find((c) => c.id === id);
+    if (!ch)
+      throw new AppError(
+        "invalid_cast",
+        "This scene’s characters need another continuity review.",
+        409,
+      );
+    return {
+      id: ch.id,
+      name: ch.name,
+      description: ch.description,
+      state: ch.state,
+    };
+  });
+  return {
+    input: {
+      prompt: `${plan.videoPrompt}\nCHARACTER DESCRIPTIONS — retain these recognizable traits throughout the scene:\n${selected.map((ch) => `${ch.name}: ${ch.description}\nCurrent story state: ${ch.state}`).join("\n")}\nStory connection: ${plan.bridge}\nAll dialogue, narration, lyrics and readable text must be English. No unrelated text overlays. Preserve the stated clothes, hair, props and scene conditions.`,
+      duration: 10,
+      resolution: "768P",
+      aspect_ratio: "16:9",
+      prompt_expansion_mode: "balanced",
+      enable_safety_checker: true,
+    },
+    characters: selected,
+  };
+}
 
 const queueResponse = z.object({
   request_id: z.string().min(1),
@@ -35,6 +69,42 @@ export async function prepareVideoRequest(
       "Creation capacity needs to be checked before this scene starts.",
       503,
     );
+  const model = task.provider_model;
+  if (task.generation_mode === "reference") {
+    const wallet = await paidWallet(env, task.user_id);
+    if (
+      !(await generationOffer(env)).referenceEnabled ||
+      wallet.held ||
+      !wallet.covered ||
+      wallet.reserved < task.quoted_points
+    )
+      throw new AppError(
+        "paid_credits_unavailable",
+        "Paid creation is paused while the reserved points are checked.",
+        409,
+      );
+  }
+  if (videoMode(model) === "text") {
+    const canonical = await getCharacters(env, task.story_id);
+    validatePlan(plan, canonical);
+    assertTextVideoReservation(task.reserved_cents, 10);
+    const prepared = textVideoInput(plan, [
+      ...canonical,
+      ...plan.newCharacters,
+    ]);
+    await env.DB.prepare("UPDATE tasks SET material_snapshot_json=? WHERE id=?")
+      .bind(
+        JSON.stringify({
+          mode: "text",
+          model,
+          characters: prepared.characters,
+          previousSceneId: null,
+        }),
+        task.id,
+      )
+      .run();
+    return prepared.input;
+  }
   const selected = await selectedMaterials(env, task.id, task.story_id, plan);
   // Only curated references stored by an owner/admin are used; model-supplied URLs are never fetched.
   const images = selected.map((c) => c!.referenceImage!);
@@ -57,12 +127,6 @@ export async function prepareVideoRequest(
     lastScene.duration_ms <= 15000
       ? [new URL(`/api/scenes/${lastScene.id}/video`, env.PUBLIC_ORIGIN).href]
       : [];
-  if (env.FAL_MODEL !== "minimax/h3-max/reference-to-video")
-    throw new AppError(
-      "model_cost_review_required",
-      "The selected video model needs a reviewed cost and input adapter.",
-      503,
-    );
   assertVideoReservation(task.reserved_cents, {
     outputSeconds: 10,
     previousVideoMs: videoRefs.length ? lastScene!.duration_ms : 0,
@@ -75,6 +139,8 @@ export async function prepareVideoRequest(
   await env.DB.prepare("UPDATE tasks SET material_snapshot_json=? WHERE id=?")
     .bind(
       JSON.stringify({
+        mode: "reference",
+        model,
         characters: selected,
         previousSceneId: videoRefs.length ? lastScene!.id : null,
       }),
@@ -96,9 +162,12 @@ export async function prepareVideoRequest(
 export async function submitVideo(
   env: Cloudflare.Env,
   request: Awaited<ReturnType<typeof prepareVideoRequest>>,
+  model: string,
 ) {
-  const response = await fetch(`https://queue.fal.run/${env.FAL_MODEL}`, {
+  videoMode(model);
+  const response = await fetch(`https://queue.fal.run/${model}`, {
     method: "POST",
+    redirect: "error",
     headers: {
       Authorization: `Key ${env.FAL_KEY}`,
       "Content-Type": "application/json",

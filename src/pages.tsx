@@ -20,6 +20,7 @@ import {
 } from "../shared/domain";
 import { api, navigate, useResource } from "./api";
 import { useApp } from "./context";
+import { BillingPanel } from "./BillingPanel";
 import {
   Author,
   Avatar,
@@ -712,6 +713,13 @@ function ReviewModal({
         </div>
       )}
       {task.reason && <Notice>{task.reason}</Notice>}
+      {task.generationMode === "reference" && (
+        <Notice>
+          {task.quotedPoints} purchased points will be reserved and used on
+          publication. Failed or rejected scenes return the reservation.
+          References improve continuity but do not guarantee an exact match.
+        </Notice>
+      )}
       {task.plan && (
         <label className="checkbox-label">
           <input
@@ -756,7 +764,9 @@ function ReviewModal({
           }
         }}
       >
-        {task.plan ? "Join the queue · 1 free credit" : "Prepare my scene plan"}
+        {task.plan
+          ? `Join the queue · ${task.generationMode === "reference" ? `${task.quotedPoints} points` : "1 free credit"}`
+          : "Prepare my scene plan"}
         <ArrowRight size={16} />
       </Button>
     </Modal>
@@ -876,11 +886,12 @@ export function AccountPage() {
             .
           </p>
           <Notice>
-            No purchases or subscriptions are active. We’ll ask before offering
-            anything paid.
+            Daily free credits are for text-to-video. They are separate from
+            purchased creation points and are never charged automatically.
           </Notice>
         </section>
       </div>
+      <BillingPanel />
       <AccountRequests />
       <div className="account-bottom">
         <Button
@@ -898,9 +909,10 @@ export function AccountPage() {
           <LogOut size={16} />
           Sign out
         </Button>
-        <Link to="/about?section=privacy" className="text-button">
+        <Link to="/privacy" className="text-button">
           Privacy & account deletion
         </Link>
+        <PolicyRecords />
       </div>
     </div>
   );
@@ -1027,6 +1039,9 @@ export function AboutPage() {
           include passwords, contact details or other private information in a
           creative prompt.
         </p>
+        <Link to="/privacy" className="text-button">
+          Read the full Privacy policy <ArrowRight size={15} />
+        </Link>
         <p>
           Request account deletion from your Account page. To request correction
           or prompt removal, use “Report a concern” on a story. The studio can
@@ -1036,6 +1051,9 @@ export function AboutPage() {
       </section>
       <section id="terms">
         <h2>A few shared agreements</h2>
+        <Link to="/terms" className="text-button">
+          Read the full Terms of service <ArrowRight size={15} />
+        </Link>
         <p>
           Submit original ideas and reference material you have permission to
           use. By approving a scene, you allow the platform to adapt your idea,
@@ -1074,3 +1092,4 @@ export function AboutPage() {
 }
 import { useState } from "react";
 import { AccountRequests } from "./AccountRequests";
+import { PolicyRecords } from "./PolicyRecords";

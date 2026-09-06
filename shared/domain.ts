@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GenerationMode } from "./billing";
 
 export const taskStates = [
   "Draft",
@@ -76,14 +77,24 @@ export const storyInputSchema = z.object({
     .max(3),
 });
 export const promptInputSchema = z.object({
+  generationMode: z.enum(["text", "reference"]).default("text"),
   prompt: z.string().trim().min(10).max(2000),
   idempotencyKey: z.string().uuid(),
+  characterIds: z
+    .array(z.string().min(1).max(80))
+    .max(3)
+    .default([])
+    .refine(
+      (ids) => new Set(ids).size === ids.length,
+      "Choose each character once.",
+    ),
 });
 export interface User {
   id: string;
   displayName: string;
   role: "user" | "admin";
   email?: string;
+  policyAccepted: boolean;
 }
 export interface Character {
   id: string;
@@ -144,11 +155,14 @@ export interface Scene {
   hidden: boolean;
 }
 export interface Task {
+  generationMode: GenerationMode;
+  quotedPoints: number;
   id: string;
   storyId: string;
   userId: string;
   author: string;
   prompt: string;
+  requestedCharacterIds: string[];
   status: TaskState;
   plan: ScenePlan | null;
   baseVersion: number;
@@ -180,7 +194,9 @@ export interface AppConfig {
   canSignIn: boolean;
   turnstileSiteKey: string;
   generationEnabled: boolean;
-  paymentsEnabled: false;
+  paymentsEnabled: boolean;
+  referenceEnabled: boolean;
+  referencePoints: number;
   supportEmail: string;
 }
 export interface StoryDetail {
@@ -219,17 +235,26 @@ export function sceneAt(scenes: Scene[], timeMs: number): Scene | undefined {
   );
 }
 export function validatePlan(plan: ScenePlan, characters: Character[]) {
-  const ids = new Set(characters.map((c) => c.id));
-  for (const c of plan.newCharacters) {
-    if (ids.has(c.id))
-      throw new Error("A new character cannot reuse an existing ID.");
-    ids.add(c.id);
-  }
   if (
     new Set(plan.newCharacters.map((c) => c.id)).size !==
     plan.newCharacters.length
   )
     throw new Error("Duplicate character IDs.");
+  const ids = new Set(characters.map((c) => c.id));
+  const normalizeName = (name: string) =>
+    name.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+  const names = new Set(characters.map((c) => normalizeName(c.name)));
+  for (const c of plan.newCharacters) {
+    if (ids.has(c.id))
+      throw new Error("A new character cannot reuse an existing ID.");
+    ids.add(c.id);
+    const name = normalizeName(c.name);
+    if (names.has(name))
+      throw new Error(
+        "A character with this name already exists. Review their identity before adding a new character.",
+      );
+    names.add(name);
+  }
   if (
     [...plan.characterIds, ...plan.characterUpdates.map((c) => c.id)].some(
       (id) => !ids.has(id),

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import policies from "../../shared/policies.json";
 
 const base = process.env.AFTERLIGHT_TEST_ORIGIN;
 if (!base || new URL(base).hostname !== "127.0.0.1")
@@ -132,17 +133,101 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
   );
   let a: any, b: any, c: any;
   await t.test(
+    "creation requires explicit current policy acceptance and keeps an immutable private record",
+    async () => {
+      const draft = {
+        prompt: "Mara pauses beside the lantern and listens.",
+        idempotencyKey: randomUUID(),
+      };
+      assert.equal(
+        (await creator("/api/stories/last-light/tasks", "POST", draft)).data
+          .error.code,
+        "policy_acceptance_required",
+      );
+      const acceptance = {
+        version: policies.version,
+        termsAccepted: true,
+        privacyAcknowledged: true,
+      };
+      assert.equal(
+        (await guest("/api/account/policies", "POST", acceptance)).status,
+        401,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/policies", "POST", {
+            ...acceptance,
+            termsAccepted: false,
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/policies", "POST", {
+            ...acceptance,
+            version: "old-version",
+          })
+        ).status,
+        400,
+      );
+      await ok(creator("/api/account/policies", "POST", acceptance));
+      const first = await ok(creator("/api/account/policies"));
+      await ok(creator("/api/account/policies", "POST", acceptance));
+      assert.deepEqual(
+        (await ok(creator("/api/account/policies"))).records,
+        first.records,
+      );
+      assert.equal(first.records.length, 1);
+      assert.deepEqual(
+        await ok(creator(`/api/account/policies/${policies.version}`)),
+        policies,
+      );
+      assert.equal(
+        (await newcomer(`/api/account/policies/${policies.version}`)).status,
+        404,
+      );
+      assert.equal(
+        (await ok(creator("/api/bootstrap"))).user.policyAccepted,
+        true,
+      );
+      for (const account of [studio, newcomer])
+        await ok(account("/api/account/policies", "POST", acceptance));
+    },
+  );
+  await t.test(
     "duplicate concurrent drafts preserve one permanent contribution ID",
     async () => {
       const body = {
         prompt: "Mara raises her lantern beside the locked brass door.",
         idempotencyKey: randomUUID(),
+        characterIds: ["mara-vale"],
       };
       const [first, duplicate] = await Promise.all([
         ok(creator("/api/stories/last-light/tasks", "POST", body)),
         ok(creator("/api/stories/last-light/tasks", "POST", body)),
       ]);
       assert.equal(first.task.id, duplicate.task.id);
+      assert.deepEqual(first.task.requestedCharacterIds, ["mara-vale"]);
+      assert.equal(
+        (
+          await creator("/api/stories/last-light/tasks", "POST", {
+            ...body,
+            characterIds: [],
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await creator("/api/stories/last-light/tasks", "POST", {
+            ...body,
+            idempotencyKey: randomUUID(),
+            characterIds: ["inez-sol"],
+          })
+        ).status,
+        400,
+      );
       a = first.task;
       assert.equal(
         (await creator("/api/stories/quiet-orbit/tasks", "POST", body)).status,
@@ -155,6 +240,7 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
     "FIFO admission is story-scoped; moderation in one story does not block another",
     async () => {
       a = (await ok(creator(`/api/tasks/${a.id}/preview`, "POST", {}))).task;
+      assert.deepEqual(a.plan.characterIds, ["mara-vale"]);
       await ok(
         creator(`/api/tasks/${a.id}/accept`, "POST", {
           planUpdatedAt: a.updatedAt,
@@ -293,6 +379,86 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
     },
   );
   await t.test(
+    "publication prepares one private archive; review preserves versions, identities and source boundaries",
+    async () => {
+      assert.equal((await guest("/api/admin/archives")).status, 401);
+      let item: any;
+      const deadline = Date.now() + 20000;
+      do {
+        const all = (await ok(studio("/api/admin/archives"))).archives;
+        item = all.find((x: any) => x.storyId === "last-light");
+        if (item?.status === "review") break;
+        await new Promise((r) => setTimeout(r, 250));
+      } while (Date.now() < deadline);
+      assert.equal(item?.status, "review");
+      assert.equal(item.model, "fixture:reviewed-summary");
+      assert.equal(
+        (await ok(studio("/api/admin/archives"))).archives.length,
+        1,
+      );
+      assert.equal(
+        (await ok(guest("/api/stories/last-light/archive?through=4"))).archive,
+        null,
+      );
+      assert.equal(
+        (await guest("/api/stories/last-light/archive?through=5")).status,
+        400,
+      );
+      const url = `/api/admin/archives/${encodeURIComponent(item.id)}/review`;
+      assert.equal(
+        (await creator(url, "POST", { action: "approve" })).status,
+        403,
+      );
+      assert.equal(
+        (await studio(url, "POST", { action: "approve", content: item.draft }))
+          .status,
+        400,
+      );
+      const approval = {
+        action: "approve",
+        content: item.draft,
+        english: true,
+        sourcesChecked: true,
+      };
+      const foreign = structuredClone(approval);
+      foreign.content.recap.sceneIds = ["sample-orbit-1"];
+      assert.equal((await studio(url, "POST", foreign)).status, 400);
+      const disputed = structuredClone(approval);
+      disputed.content.concerns = [
+        { text: "The character's identity is unclear.", sceneIds: [a.id] },
+      ];
+      assert.equal((await studio(url, "POST", disputed)).status, 409);
+      await ok(studio(url, "POST", approval));
+      assert.equal((await studio(url, "POST", approval)).status, 409);
+      const latest = await ok(
+        guest("/api/stories/last-light/archive?through=4"),
+      );
+      assert.equal(latest.archive.version, 4);
+      assert.equal(latest.archive.content.recap.text, item.draft.recap.text);
+      assert.ok(
+        latest.characters.every(
+          (ch: any) => !["inez-sol", "theo-ward"].includes(ch.id),
+        ),
+      );
+      assert.ok(
+        latest.history.some((h: any) => h.version === 4 && h.sceneId === a.id),
+      );
+      assert.equal(
+        (await ok(guest("/api/stories/last-light/archive?through=3"))).archive,
+        null,
+      );
+      assert.equal(
+        (await ok(guest("/api/stories/quiet-orbit/archive?through=1"))).archive,
+        null,
+      );
+      const early = await ok(
+        guest("/api/stories/last-light/archive?through=1"),
+      );
+      assert.ok(!early.characters.some((ch: any) => ch.id === "elias-reed"));
+      assert.ok(early.characters.every((ch: any) => ch.state === ""));
+    },
+  );
+  await t.test(
     "author can withdraw a revised idea; rejected footage returns credit",
     async () => {
       await ok(studio(`/api/tasks/${c.id}/cancel`, "POST", {}));
@@ -328,6 +494,10 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       };
       const story = (await ok(newcomer("/api/stories", "POST", input))).story;
       assert.equal((await guest(`/api/stories/${story.id}`)).status, 404);
+      assert.equal(
+        (await guest(`/api/stories/${story.id}/archive?through=0`)).status,
+        404,
+      );
       assert.equal(
         (await creator(`/api/stories/${story.id}`, "PATCH", { status: "open" }))
           .status,
@@ -427,6 +597,48 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
         ).status,
         404,
       );
+    },
+  );
+  await t.test(
+    "payments stay closed, the private wallet is separate, and paid-mode bypasses fail",
+    async () => {
+      assert.equal((await guest("/api/billing")).status, 401);
+      const overview = await ok(creator("/api/billing"));
+      assert.equal(overview.enabled, false);
+      assert.equal(overview.referenceEnabled, false);
+      assert.equal(overview.wallet.available, 0);
+      assert.deepEqual(overview.orders, []);
+      assert.deepEqual(overview.requests, []);
+      assert.equal(
+        (await creator("/api/billing/checkout", "POST", {})).status,
+        403,
+      );
+      assert.equal((await creator("/api/billing/admin")).status, 403);
+      assert.equal(
+        (await creator("/api/billing/orders/not-mine/checkout", "POST", {}))
+          .status,
+        403,
+      );
+      assert.equal(
+        (
+          await creator("/api/billing/orders/not-mine/help", "POST", {
+            reason: "Check someone else's order.",
+          })
+        ).status,
+        404,
+      );
+      const bypass = await creator("/api/stories/last-light/tasks", "POST", {
+        prompt: "Mara examines the letter on the desk.",
+        generationMode: "reference",
+        idempotencyKey: randomUUID(),
+      });
+      assert.equal(bypass.status, 409);
+      assert.equal(bypass.data.error.code, "reference_unavailable");
+      const webhook = await fetch(`${base}/api/billing/webhook`, {
+        method: "POST",
+        body: "{}",
+      });
+      assert.equal(webhook.status, 503); // Exact webhook path bypasses browser Origin, but requires configured signature verification.
     },
   );
 });

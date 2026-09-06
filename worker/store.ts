@@ -12,13 +12,19 @@ import {
   type TaskState,
 } from "../shared/domain";
 import { AppError } from "./errors";
+import policies from "../shared/policies.json";
 
 export interface TaskRow {
+  generation_mode: "text" | "reference";
+  provider_model: string;
+  quoted_points: number;
+  quoted_reserve_cents: number;
   id: string;
   story_id: string;
   user_id: string;
   author: string;
   prompt_original: string;
+  requested_character_ids_json: string;
   plan_json: string | null;
   approved_plan_json: string | null;
   base_version: number;
@@ -150,11 +156,16 @@ export function taskDto(
   privateView = true,
 ): Task {
   return {
+    generationMode: t.generation_mode ?? "text",
+    quotedPoints: t.quoted_points ?? 0,
     id: t.id,
     storyId: t.story_id,
     userId: t.user_id,
     author: t.author || "Storyteller",
     prompt: privateView ? t.prompt_original : "",
+    requestedCharacterIds: privateView
+      ? JSON.parse(t.requested_character_ids_json ?? "[]")
+      : [],
     plan:
       privateView && t.plan_json
         ? (JSON.parse(t.plan_json) as ScenePlan)
@@ -248,14 +259,19 @@ export async function acceptTask(env: Cloudflare.Env, t: TaskRow) {
     );
   const { day, month, settings } = await ensureBudgetRows(env, t.user_id);
   const r = await env.DB.prepare(
-    "UPDATE tasks SET status='Queued',approved_plan_json=plan_json,quota_period=?,budget_day=?,budget_month=?,reserved_cents=?,policy_version=?,workflow_id=NULL,reason='',updated_at=? WHERE id=? AND updated_at=? AND preview_lock IS NULL AND status IN ('Draft','NeedsReview') AND provider_request_id IS NULL AND provider_attempt_id IS NULL RETURNING id",
+    "UPDATE tasks SET status='Queued',approved_plan_json=plan_json,quota_period=?,budget_day=?,budget_month=?,reserved_cents=?,policy_version=?,terms_version=?,attribution_accepted_at=?,attribution_plan_version=?,workflow_id=NULL,reason='',updated_at=? WHERE id=? AND updated_at=? AND preview_lock IS NULL AND status IN ('Draft','NeedsReview') AND provider_request_id IS NULL AND provider_attempt_id IS NULL RETURNING id",
   )
     .bind(
       day,
       day,
       month,
-      settings.taskReserveCents,
-      settings.policyVersion,
+      t.quoted_reserve_cents || settings.taskReserveCents,
+      t.generation_mode === "reference"
+        ? "paid-reference-v1"
+        : settings.policyVersion,
+      policies.version,
+      Date.now(),
+      t.updated_at,
       Date.now(),
       t.id,
       t.updated_at,

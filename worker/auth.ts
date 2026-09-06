@@ -3,6 +3,7 @@ import { getCookie } from "hono/cookie";
 import type { Context } from "hono";
 import type { User } from "../shared/domain";
 import { AppError } from "./errors";
+import policies from "../shared/policies.json";
 
 export type AppEnv = {
   Bindings: Cloudflare.Env;
@@ -91,14 +92,15 @@ export async function currentUser(c: Context<AppEnv>): Promise<User | null> {
   }
   if (!id) return null;
   const row = await c.env.DB.prepare(
-    "SELECT id,email,display_name,role FROM users WHERE id=? AND deleted_at IS NULL",
+    "SELECT id,email,display_name,role,EXISTS(SELECT 1 FROM policy_acceptances p JOIN policy_documents d ON d.version=p.version WHERE p.user_id=users.id AND p.version=? AND d.document_json=?) AS policy_accepted FROM users WHERE id=? AND deleted_at IS NULL",
   )
-    .bind(id)
+    .bind(policies.version, JSON.stringify(policies), id)
     .first<{
       id: string;
       email: string;
       display_name: string;
       role: User["role"];
+      policy_accepted: number;
     }>();
   return row
     ? {
@@ -106,6 +108,7 @@ export async function currentUser(c: Context<AppEnv>): Promise<User | null> {
         email: row.email,
         displayName: row.display_name,
         role: row.role,
+        policyAccepted: !!row.policy_accepted,
       }
     : null;
 }
@@ -117,6 +120,12 @@ export function requireUser(c: Context<AppEnv>, nickname = false): User {
     throw new AppError(
       "nickname_required",
       "Choose your public storyteller name first.",
+      409,
+    );
+  if (nickname && !user.policyAccepted)
+    throw new AppError(
+      "policy_acceptance_required",
+      "Review the current terms and privacy notice before creating.",
       409,
     );
   return user;

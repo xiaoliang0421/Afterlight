@@ -27,6 +27,8 @@ import {
   AboutPage,
 } from "./pages";
 import { StudioPage } from "./StudioPage";
+import { LegalPage } from "./LegalPage";
+import policies from "../shared/policies.json";
 
 export function App() {
   const path = useLocation(),
@@ -36,6 +38,7 @@ export function App() {
     [switcher, setSwitcher] = useState(false),
     [notifications, setNotifications] = useState(false),
     [message, setMessage] = useState("");
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [mobile, setMobile] = useState(
     () => window.matchMedia("(max-width:760px)").matches,
   );
@@ -64,6 +67,13 @@ export function App() {
     const id = setTimeout(() => setMessage(""), 4500);
     return () => clearTimeout(id);
   }, [message]);
+  const legalKind =
+    path.split(/[?#]/)[0] === "/privacy"
+      ? "privacy"
+      : path.split(/[?#]/)[0] === "/terms"
+        ? "terms"
+        : null;
+  if (!resource.data && legalKind) return <LegalPage kind={legalKind} />;
   if (!resource.data)
     return (
       <div className="boot-screen">
@@ -81,13 +91,19 @@ export function App() {
   const story = boot.stories.find(
     (s) => path.split("?")[0] === `/story/${s.slug}`,
   );
-  const needNickname = !!boot.user && !boot.user.displayName;
+  const needsOnboarding =
+    !!boot.user && (!boot.user.displayName || !boot.user.policyAccepted);
+  const needNickname = needsOnboarding && !onboardingDismissed && !legalKind;
   const requireLogin = () => {
     if (!boot.user) {
       setLogin(true);
       return false;
     }
-    return !!boot.user.displayName;
+    if (needsOnboarding) {
+      setOnboardingDismissed(false);
+      return false;
+    }
+    return true;
   };
   const nav = (to: string, icon: ReactNode, label: string) => (
     <Link
@@ -99,7 +115,8 @@ export function App() {
     </Link>
   );
   let page: ReactNode;
-  if (path.startsWith("/story/"))
+  if (legalKind) page = <LegalPage kind={legalKind} />;
+  else if (path.startsWith("/story/"))
     page = (
       <StoryPage
         key={`${path.split("?")[0]}:${boot.user?.id ?? "guest"}`}
@@ -318,8 +335,8 @@ export function App() {
               AFTERLIGHT <i>Stories we make together.</i>
             </span>
             <div>
-              <Link to="/about?section=privacy">Privacy</Link>
-              <Link to="/about?section=terms">Terms & attribution</Link>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms & attribution</Link>
               <Link to="/about">Help</Link>
             </div>
           </footer>
@@ -336,7 +353,13 @@ export function App() {
           configured={boot.config.canSignIn}
         />
       )}
-      {needNickname && <NicknameModal done={resource.reload} />}
+      {needNickname && (
+        <NicknameModal
+          initialName={boot.user?.displayName ?? ""}
+          done={resource.reload}
+          decline={() => setOnboardingDismissed(true)}
+        />
+      )}
       {message && (
         <div className="toast" role="status">
           {message}
@@ -460,18 +483,37 @@ function LoginModal({
       {error && <Notice danger>{error}</Notice>}
       <p className="fine-print">
         Your email stays private. You’ll choose a public nickname for your
-        contributions. No credit card needed.
+        contributions. No credit card needed. Read our{" "}
+        <a href="/terms" target="_blank" rel="noopener">
+          Terms
+        </a>{" "}
+        and{" "}
+        <a href="/privacy" target="_blank" rel="noopener">
+          Privacy policy
+        </a>{" "}
+        before signing in.
       </p>
     </Modal>
   );
 }
-function NicknameModal({ done }: { done: () => Promise<void> }) {
-  const [nickname, setNickname] = useState(""),
+function NicknameModal({
+  done,
+  decline,
+  initialName,
+}: {
+  done: () => Promise<void>;
+  decline: () => void;
+  initialName: string;
+}) {
+  const [nickname, setNickname] = useState(initialName),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [accepted, setAccepted] = useState(false);
   return (
     <Modal
-      title="What should we call you?"
+      title={
+        initialName ? "Before your next scene." : "What should we call you?"
+      }
       eyebrow="YOUR STORYTELLER IDENTITY"
       dismissible={false}
       onClose={() => {}}
@@ -483,9 +525,15 @@ function NicknameModal({ done }: { done: () => Promise<void> }) {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (!accepted) return;
           setBusy(true);
           try {
             await api("/account/profile", "PUT", { nickname });
+            await api("/account/policies", "POST", {
+              version: policies.version,
+              termsAccepted: true,
+              privacyAcknowledged: true,
+            });
             await done();
           } catch (e) {
             setError((e as Error).message);
@@ -514,10 +562,43 @@ function NicknameModal({ done }: { done: () => Promise<void> }) {
             <strong>{nickname || "your nickname"}</strong>
           </span>
         </div>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(event) => setAccepted(event.target.checked)}
+            required
+          />
+          <span>
+            I agree to the{" "}
+            <a href="/terms" target="_blank" rel="noopener">
+              Terms of service
+            </a>{" "}
+            and acknowledge the{" "}
+            <a href="/privacy" target="_blank" rel="noopener">
+              Privacy policy
+            </a>
+            .
+          </span>
+        </label>
+        {policies.status === "draft" && (
+          <p className="fine-print">
+            Development draft · This records a preview acknowledgment. Final
+            policies will require a new review before public use.
+          </p>
+        )}
         {error && <Notice danger>{error}</Notice>}
-        <Button type="submit" className="full-width" busy={busy}>
+        <Button
+          type="submit"
+          className="full-width"
+          busy={busy}
+          disabled={!accepted}
+        >
           Make it yours <ArrowRight size={16} />
         </Button>
+        <button type="button" className="text-button" onClick={decline}>
+          Keep watching without accepting
+        </button>
       </form>
     </Modal>
   );

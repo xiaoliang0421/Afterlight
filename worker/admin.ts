@@ -14,6 +14,8 @@ import {
 import { serveR2 } from "./media";
 import { validatePlan, type ScenePlan } from "../shared/domain";
 import { approvedReference, materialSchema } from "./materials";
+import { archiveContext, dispatchArchives, type ArchiveRow } from "./archives";
+import { validateArchive } from "../shared/archive";
 
 export const admin = new Hono<AppEnv>();
 admin.use("*", async (c, next) => {
@@ -218,6 +220,7 @@ admin.post("/tasks/:id/approve", async (c) => {
     )
     .run();
   await audit(c.env, reviewer.id, "scene.approved", t.id);
+  c.executionCtx.waitUntil(dispatchArchives(c.env));
   await c.env.STORY_ROOMS.getByName(t.story_id).broadcast({
     type: "scene.published",
     storyId: t.story_id,
@@ -225,6 +228,97 @@ admin.post("/tasks/:id/approve", async (c) => {
   });
   await c.env.STORY_ROOMS.getByName(t.story_id).kick(t.story_id);
   return c.json({ ok: true, sceneId: t.id });
+});
+admin.get("/archives", async (c) => {
+  const rows = (
+    await c.env.DB.prepare(
+      "SELECT a.*,s.title AS storyTitle FROM story_archives a JOIN stories s ON s.id=a.story_id ORDER BY a.created_at DESC LIMIT 60",
+    ).all<ArchiveRow & { storyTitle: string }>()
+  ).results;
+  return c.json({
+    archives: rows.map((r) => ({
+      id: r.id,
+      storyId: r.story_id,
+      storyTitle: r.storyTitle,
+      version: r.version,
+      status: r.status,
+      reason: r.reason,
+      model: r.model,
+      context: r.input_json ? JSON.parse(r.input_json) : null,
+      draft: r.draft_json ? JSON.parse(r.draft_json) : null,
+      approved: r.approved_json ? JSON.parse(r.approved_json) : null,
+    })),
+  });
+});
+admin.post("/archives/:id/review", async (c) => {
+  const user = requireAdmin(c);
+  const input = z
+    .object({
+      action: z.enum(["approve", "reject"]),
+      content: z.unknown().optional(),
+      english: z.boolean().optional(),
+      sourcesChecked: z.boolean().optional(),
+    })
+    .parse(await c.req.json());
+  const row = await c.env.DB.prepare("SELECT * FROM story_archives WHERE id=?")
+    .bind(c.req.param("id"))
+    .first<ArchiveRow>();
+  if (!row) throw new AppError("not_found", "Archive unavailable.", 404);
+  if (!["review", "failed"].includes(row.status))
+    throw new AppError(
+      "archive_changed",
+      "This archive has already been reviewed or is still being prepared.",
+      409,
+    );
+  let content = null;
+  if (input.action === "approve") {
+    if (!input.english || !input.sourcesChecked)
+      throw new AppError(
+        "review_required",
+        "Confirm English and source review before publication.",
+        400,
+      );
+    // Re-read visible sources at approval time; removal after generation invalidates their citations.
+    const context = await archiveContext(c.env, row);
+    try {
+      content = validateArchive(input.content, context);
+    } catch (e) {
+      throw new AppError("invalid_archive", (e as Error).message, 400);
+    }
+    if (content.concerns.length)
+      throw new AppError(
+        "archive_concerns",
+        "Resolve the listed concerns against the source scenes before approval.",
+        409,
+      );
+  }
+  const changed = await c.env.DB.prepare(
+    "UPDATE story_archives SET status=?,approved_json=?,reviewer_id=?,reviewed_at=? WHERE id=? AND status IN ('review','failed') RETURNING id",
+  )
+    .bind(
+      input.action === "approve" ? "approved" : "rejected",
+      content ? JSON.stringify(content) : null,
+      user.id,
+      Date.now(),
+      row.id,
+    )
+    .first();
+  if (!changed)
+    throw new AppError(
+      "archive_changed",
+      "Another reviewer already handled this archive.",
+      409,
+    );
+  if (input.action === "approve")
+    await c.env.DB.prepare("UPDATE stories SET updated_at=? WHERE id=?")
+      .bind(Date.now(), row.story_id)
+      .run();
+  await audit(c.env, user.id, `archive.${input.action}`, row.id);
+  await c.env.STORY_ROOMS.getByName(row.story_id).broadcast({
+    type: "archive.updated",
+    storyId: row.story_id,
+  });
+  return c.json({ ok: true });
 });
 admin.post("/tasks/:id/reject", async (c) => {
   const t = await getTask(c.env, c.req.param("id"));

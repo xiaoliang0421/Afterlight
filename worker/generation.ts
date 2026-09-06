@@ -125,7 +125,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
               "The task is no longer ready to generate.",
               409,
             );
-          const result = await submitVideo(this.env, request);
+          const result = await submitVideo(this.env, request, t.provider_model);
           await this.env.DB.prepare(
             "UPDATE tasks SET provider_request_id=?,provider_status_url=?,provider_result_url=?,updated_at=? WHERE id=?",
           )

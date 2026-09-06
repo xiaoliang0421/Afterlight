@@ -33,7 +33,13 @@ export class StoryRoom extends DurableObject<Cloudflare.Env> {
     if (message === "ping") socket.send("pong");
   }
   webSocketClose(socket: WebSocket, code: number, reason: string) {
-    socket.close(code, reason);
+    // Browsers may report reserved no-status codes such as 1005; these cannot be sent.
+    const valid =
+      [
+        1000, 1001, 1002, 1003, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014,
+      ].includes(code) ||
+      (code >= 3000 && code <= 4999);
+    socket.close(valid ? code : 1000, valid ? reason : "Connection closed.");
   }
   async kick(storyId: string) {
     await this.ctx.storage.put("storyId", storyId);

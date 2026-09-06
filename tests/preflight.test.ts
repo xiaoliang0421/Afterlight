@@ -8,6 +8,10 @@ test("development config cannot be deployed and staging placeholders fail prefli
     });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Deployment is not ready/);
-    if (env === "production") assert.match(result.stderr, /actualEnglishVideo/);
+    if (env === "production") {
+      assert.match(result.stderr, /actualEnglishVideo/);
+      assert.match(result.stderr, /Finalize versioned policies/);
+      assert.match(result.stderr, /legalPolicies/);
+    }
   }
 });

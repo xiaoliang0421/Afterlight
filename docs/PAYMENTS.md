@@ -1,6 +1,6 @@
 # Paddle payments and generation modes
 
-Updated 2026-09-06. **The integration code is implemented; real checkout and paid reference generation are closed.** There is no Paddle account connection, real sandbox acceptance or merchant activation yet. No product prices have been chosen or created.
+Updated 2026-09-06. **The integration code is implemented; real checkout and paid reference generation are closed.** A live merchant account is accessible in the browser, but there is no authenticated Paddle API connection, real sandbox acceptance or merchant activation yet. No product prices have been chosen or created.
 
 ## Product behavior
 
@@ -30,6 +30,8 @@ Payment refunds are distinct from returning generation points. Users can submit 
 ## Configuration and owner setup
 
 The official `paddle@paddle-agent-skills` v0.1.0 plugin was installed from PaddleHQ/paddle-agent-skills (source commit `de7fcd3f6cc43bf87a65d6b2e65067611b47353c`). Installation supplies development guidance and potential MCP connections; it does not create a merchant or connect its credentials. The checkout, webhook, catalog and sandbox skills were read. Their Next.js examples are adapted to React/Vite and Hono/Workers using Paddle’s REST API and Web Crypto.
+
+The owner authorized use of the existing live dashboard on 2026-09-06. Its onboarding page explicitly displayed **You’re in Live** and all three tasks (live setup, account verification, test/go-live) as **Not started**. The existing merchant can be retained; a separate sandbox account is still needed for testing. Browser inspection succeeded, but subsequent interaction timed out, so no catalog, credential or activation change is confirmed.
 
 The configuration check on 2026-09-06 found no callable Paddle MCP connection and no `PADDLE_*` secret names on the staging Worker. The installed skills provide instructions, not merchant access. Sandbox does not require domain approval, so its account/catalog setup can proceed while domain registration is pending. End-to-end webhooks still need a reachable HTTPS endpoint.
 

@@ -1,6 +1,6 @@
-# Afterlight
+# TaleRelay
 
-Cloudflare-hosted collaborative video storytelling. The product name and starter world are provisional.
+Cloudflare-hosted collaborative video storytelling. TaleRelay is the public brand; Afterlight remains the internal repository and resource namespace. Starter worlds are local fixtures.
 
 - Keep UI, generated dialogue, captions and published story text in English. Preserve submitted prompt originals.
 - Treat user prompts and model output as untrusted. Only approved, published scenes advance canon.

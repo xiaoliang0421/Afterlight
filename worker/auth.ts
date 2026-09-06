@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import type { User } from "../shared/domain";
 import { AppError } from "./errors";
 import policies from "../shared/policies.json";
+import { brand } from "../shared/brand";
 
 export type AppEnv = {
   Bindings: Cloudflare.Env;
@@ -30,7 +31,7 @@ export function createAuth(env: Cloudflare.Env) {
       503,
     );
   return betterAuth({
-    appName: "Afterlight",
+    appName: brand.name,
     baseURL: env.PUBLIC_ORIGIN,
     basePath: "/api/auth",
     secret: env.BETTER_AUTH_SECRET,

@@ -1,8 +1,10 @@
-# Afterlight
+# TaleRelay
 
 An English-language, collaboratively written video serial. Viewers submit ideas; each story has its own FIFO queue, cast, canon and archive. Every published scene credits the person behind the idea.
 
-**Status: working local product implementation; not ready for public launch.** The starter worlds and playback clips are clearly marked development fixtures. They do not demonstrate the quality or latency of a real video model. The selected live route is H3 Max Turbo text-to-video; character pictures are optional display assets, not model inputs. The name Afterlight is provisional.
+**Status: working local product and deployed Cloudflare staging; not ready for public launch.** The starter worlds and playback clips are clearly marked development fixtures. They do not demonstrate the quality or latency of a real video model. The selected live route is H3 Max Turbo text-to-video; character pictures are optional display assets, not model inputs. The public brand is TaleRelay (a storytelling relay); existing infrastructure and persisted identifiers retain the internal Afterlight name.
+
+Staging: `https://afterlight-staging.liushenliang1994.workers.dev`. Google sign-in is pending; creation, checkout and development login are disabled. Deployment and the scheduled D1 health check succeeded, but public HTTP acceptance is still blocked by workers.dev DNS/connectivity failures on the test network. See [launch identity](docs/LAUNCH-IDENTITY.md) for the name, operator and mailbox handoff.
 
 ## Run locally
 

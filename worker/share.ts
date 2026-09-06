@@ -1,5 +1,6 @@
 import { getStory, getScenes } from "./store";
 import { sceneAt } from "../shared/domain";
+import { brand } from "../shared/brand";
 function escape(value: string) {
   return value.replace(
     /[&<>"']/g,
@@ -36,7 +37,7 @@ export async function sharePage(request: Request, env: Cloudflare.Env) {
     const title =
       scene && !scene.hidden
         ? `${scene.title} · Imagined by ${scene.author} — ${story.title}`
-        : `${story.title} — Afterlight`;
+        : `${story.title} — ${brand.name}`;
     const description =
       scene && !scene.hidden
         ? `A scene imagined by ${scene.author}. ${scene.englishPrompt}`

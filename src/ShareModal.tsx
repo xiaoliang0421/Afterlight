@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import type { Scene, Story } from "../shared/domain";
+import { brand } from "../shared/brand";
 import { Author, Button, Modal, Notice } from "./components";
 
 export function ShareModal({
@@ -19,7 +20,7 @@ export function ShareModal({
   if (scene) url.searchParams.set("scene", scene.id);
   const title = scene ? `${scene.title} · ${story.title}` : story.title;
   const text = scene
-    ? `A scene imagined by ${scene.author}. Watch it on Afterlight.`
+    ? `A scene imagined by ${scene.author}. Watch it on ${brand.name}.`
     : story.logline;
   return (
     <Modal

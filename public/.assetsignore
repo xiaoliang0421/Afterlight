@@ -1,0 +1,6 @@
+# Local fixture footage and story artwork must never be uploaded with the site.
+/samples/
+/art/characters/
+/art/last-light.png
+/art/quiet-orbit.png
+**/*.map

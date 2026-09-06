@@ -76,6 +76,7 @@
         "ENVIRONMENT": "staging",
         "PROVIDER_MODE": "disabled",
         "PUBLIC_ORIGIN": "https://afterlight-staging.liushenliang1994.workers.dev",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAEqTHX9P9ZiVO_fR",
         "ALLOW_DEV_LOGIN": "false",
         "PAYMENTS_ENABLED": "false",
         "DIRECTOR_API_URL": "https://api.deepseek.com/chat/completions",

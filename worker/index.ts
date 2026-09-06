@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { setCookie, deleteCookie, getCookie } from "hono/cookie";
 import { z, ZodError } from "zod";
+import { brand } from "../shared/brand";
 import {
   promptInputSchema,
   storyInputSchema,
@@ -223,7 +224,7 @@ app.post("/api/dev/login", async (c) => {
       persona === "newcomer"
         ? ""
         : persona === "studio"
-          ? "Afterlight Studio"
+          ? `${brand.name} Studio`
           : "You",
       persona === "studio" ? "admin" : "user",
       Date.now(),
@@ -289,6 +290,8 @@ app.put("/api/account/profile", async (c) => {
     [
       "afterlight",
       "afterlight studio",
+      brand.name.toLocaleLowerCase("en-US"),
+      `${brand.name} studio`.toLocaleLowerCase("en-US"),
       "admin",
       "administrator",
       "support",
@@ -369,7 +372,7 @@ app.get("/api/account/policies/:version", async (c) => {
   const document = JSON.parse(row.document_json) as typeof policies;
   if (c.req.query("download") === "1") {
     const text = [
-      `Afterlight policies — ${document.version}`,
+      `Service policies — ${document.version}`,
       `Operator: ${document.operatorName || "Pending"}`,
       `Contact: ${document.contactEmail || "Pending"}`,
       ...(["privacy", "terms"] as const).flatMap((kind) => [
@@ -383,8 +386,7 @@ app.get("/api/account/policies/:version", async (c) => {
     return new Response(text, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Content-Disposition":
-          "attachment; filename=afterlight-accepted-policies.txt",
+        "Content-Disposition": "attachment; filename=accepted-policies.txt",
         "Cache-Control": "no-store",
       },
     });
@@ -884,7 +886,7 @@ app.on(["GET", "HEAD"], "/api/scenes/:id/video", async (c) => {
   if (c.req.header("Sec-Fetch-Site") === "cross-site")
     throw new AppError(
       "embed_unavailable",
-      "Open this story on Afterlight to watch it.",
+      `Open this story on ${brand.name} to watch it.`,
       403,
     );
   const row = await c.env.DB.prepare(

@@ -6,6 +6,7 @@ import { inspect } from "../scripts/preflight.mjs";
 import policies from "../shared/policies.json";
 test("preflight rejects development, missing remote resources and unaccepted production even after staging is provisioned", () => {
   const config = parse(readFileSync("wrangler.jsonc", "utf8"));
+  assert.deepEqual(inspect(config, "staging", null, policies), []);
   assert.ok(inspect(config, "development", null, policies).length);
   const missing = structuredClone(config);
   missing.env.staging.vars.PUBLIC_ORIGIN = "https://configure-staging.example";
@@ -21,6 +22,7 @@ test("preflight rejects development, missing remote resources and unaccepted pro
   );
   const live = structuredClone(config);
   live.env.staging.vars.PROVIDER_MODE = "live";
+  delete live.env.staging.vars.TURNSTILE_SITE_KEY;
   assert.match(
     inspect(live, "staging", null, policies).join("\n"),
     /Turnstile/,

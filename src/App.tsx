@@ -29,6 +29,7 @@ import {
 import { StudioPage } from "./StudioPage";
 import { LegalPage } from "./LegalPage";
 import policies from "../shared/policies.json";
+import { brand } from "../shared/brand";
 
 export function App() {
   const path = useLocation(),
@@ -210,7 +211,7 @@ export function App() {
               <br />
               Here, you can stay with them.
             </p>
-            {nav("/about", <HelpCircle size={17} />, "How Afterlight works")}
+            {nav("/about", <HelpCircle size={17} />, `How ${brand.name} works`)}
             {boot.user?.role === "admin" &&
               nav("/studio", <Settings2 size={17} />, "Studio dashboard")}
             {boot.user ? (
@@ -251,7 +252,7 @@ export function App() {
                 aria-expanded={switcher}
               >
                 <Layers3 size={17} />
-                <span>{story?.title ?? "Explore Afterlight"}</span>
+                <span>{story?.title ?? `Explore ${brand.name}`}</span>
                 <ChevronDown size={15} />
               </button>
               {switcher && (
@@ -329,10 +330,25 @@ export function App() {
               · No paid generation
             </div>
           )}
+          {boot.config.environment === "staging" && (
+            <div className="development-banner">
+              <span />
+              Test site ·{" "}
+              {boot.config.canSignIn
+                ? "Google sign-in available"
+                : "Google sign-in is being configured"}
+              {boot.config.generationEnabled
+                ? " · Controlled generation testing"
+                : " · Generation is paused"}
+              {boot.config.paymentsEnabled
+                ? " · Sandbox checkout only"
+                : " · Purchases are unavailable"}
+            </div>
+          )}
           <main>{page}</main>
           <footer className="site-footer">
             <span>
-              AFTERLIGHT <i>Stories we make together.</i>
+              {brand.name.toUpperCase()} <i>Stories we make together.</i>
             </span>
             <div>
               <Link to="/privacy">Privacy</Link>
@@ -382,10 +398,12 @@ function Brand() {
   return (
     <Link to="/discover" className="brand">
       <span className="brand-mark">
-        a<span />
+        {brand.initial}
+        <span />
       </span>
       <span>
-        afterlight<span className="brand-period">.</span>
+        {brand.wordmark}
+        <span className="brand-period">.</span>
       </span>
     </Link>
   );

@@ -1,17 +1,18 @@
 {
-  "version": "2026-09-06-draft4",
+  "version": "2026-09-06-draft5",
   "status": "draft",
   "updatedAt": "2026-09-06",
   "effectiveAt": null,
   "operatorName": "",
-  "contactEmail": "",
+  "contactName": "TaleRelay Support",
+  "contactEmail": "talerelay@proton.me",
   "privacy": [
     {
       "id": "overview",
       "title": "Who we are and what this notice covers",
       "paragraphs": [
         "TaleRelay is a shared storytelling service. This notice explains the information used when you watch stories, sign in, submit creative ideas, generate scenes, or contact the studio. It applies to TaleRelay; services you visit through an external link have their own policies.",
-        "This is a development draft. The operator’s legal identity, public contact address, final retention schedule and regional arrangements must be completed before public launch. Local preview acknowledgments are test records, not acceptance of a finalized public service policy."
+        "This is a development draft. Operator identification, the final retention schedule and regional arrangements must be completed before public launch. TaleRelay Support is the customer-support display name, not a separate legal entity. Local preview acknowledgments are test records, not acceptance of a finalized public service policy."
       ]
     },
     {

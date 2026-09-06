@@ -75,7 +75,13 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       const publicData = await ok(guest("/api/bootstrap"));
       assert.equal(publicData.user, null);
       assert.equal(publicData.stories.length, 2);
-      assert.ok(!JSON.stringify(publicData).includes("@"));
+      // The published support address is intentional; account emails remain private.
+      const { config, ...publicState } = publicData;
+      const { supportEmail, ...publicConfig } = config;
+      assert.equal(supportEmail, policies.contactEmail);
+      assert.ok(
+        !JSON.stringify({ ...publicState, config: publicConfig }).includes("@"),
+      );
       assert.equal((await guest("/api/unknown")).status, 404);
       assert.equal((await guest("/api/admin/")).status, 401);
       assert.equal(

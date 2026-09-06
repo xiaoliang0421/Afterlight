@@ -24,7 +24,7 @@
     "DIRECTOR_MODEL": "deepseek-v4-flash",
     "FAL_MODEL": "minimax/h3-max-turbo/text-to-video",
     "STREAM_ACCOUNT_ID": "",
-    "SUPPORT_EMAIL": "",
+    "SUPPORT_EMAIL": "talerelay@proton.me",
   },
   "d1_databases": [
     {
@@ -83,7 +83,7 @@
         "DIRECTOR_MODEL": "deepseek-v4-flash",
         "FAL_MODEL": "minimax/h3-max-turbo/text-to-video",
         "STREAM_ACCOUNT_ID": "",
-        "SUPPORT_EMAIL": "",
+        "SUPPORT_EMAIL": "talerelay@proton.me",
       },
       "d1_databases": [
         {
@@ -132,7 +132,7 @@
         "DIRECTOR_MODEL": "deepseek-v4-flash",
         "FAL_MODEL": "minimax/h3-max-turbo/text-to-video",
         "STREAM_ACCOUNT_ID": "",
-        "SUPPORT_EMAIL": "",
+        "SUPPORT_EMAIL": "talerelay@proton.me",
       },
       "d1_databases": [
         {

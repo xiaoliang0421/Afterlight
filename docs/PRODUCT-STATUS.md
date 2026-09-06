@@ -25,7 +25,7 @@ Updated 2026-09-06. This is the implementation backlog, not permission to enable
 
 ## Account/configuration and real acceptance work
 
-1. Public name is TaleRelay. Its .com was available at the last authoritative check but has not been purchased. Owner must supply the public legal-name spelling and support mailbox; finalize the remaining policy provisions.
+1. Public name is TaleRelay. Its .com was available at the last authoritative check but has not been purchased. The owner supplied talerelay@proton.me for TaleRelay Support. Operator identity-disclosure wording and the remaining policy provisions still need finalization.
 2. Configure Google OAuth on the real callback origin; test first sign-in, nickname setup and account recovery.
 3. Configure Paddle sandbox, approved product/price IDs and callback secrets. Test checkout success/decline, duplicate/out-of-order webhooks, recovery, partial/full refunds, disputes and fulfillment. Choose point packages and commercial prices before enabling sales.
 4. R2 buckets and D1 databases are created separately for staging/production; R2 public access is disabled. All 17 remote migrations are applied, with no fixture data. Wrangler authentication, staging Worker/Workflows, session/Turnstile secrets and a successful remote cron run are complete. Public HTTP smoke tests remain blocked by the test network’s workers.dev DNS/connectivity failure; Google/provider/payment secrets, actual GitHub CI evidence and backup/restore drills remain.

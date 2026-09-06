@@ -15,8 +15,8 @@ export function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
       </p>
       {policies.status === "draft" && (
         <Notice>
-          Draft for review. Operator information, the contact email and launch
-          policies are being finalized. This is a development preview.
+          Draft for review. Operator information and launch policies are being
+          finalized. This is a development preview.
         </Notice>
       )}
       <div className="legal-contact">
@@ -25,7 +25,7 @@ export function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
         </strong>
         {policies.contactEmail ? (
           <a href={`mailto:${policies.contactEmail}`}>
-            {policies.contactEmail}
+            {policies.contactName} · {policies.contactEmail}
           </a>
         ) : (
           <span>Contact email: being prepared</span>

@@ -374,6 +374,7 @@ app.get("/api/account/policies/:version", async (c) => {
     const text = [
       `Service policies — ${document.version}`,
       `Operator: ${document.operatorName || "Pending"}`,
+      ...(document.contactName ? [`Support: ${document.contactName}`] : []),
       `Contact: ${document.contactEmail || "Pending"}`,
       ...(["privacy", "terms"] as const).flatMap((kind) => [
         kind === "privacy" ? "PRIVACY POLICY" : "TERMS OF SERVICE",

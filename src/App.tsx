@@ -354,6 +354,11 @@ export function App() {
               <Link to="/privacy">Privacy</Link>
               <Link to="/terms">Terms & attribution</Link>
               <Link to="/about">Help</Link>
+              {boot.config.supportEmail && (
+                <a href={`mailto:${boot.config.supportEmail}`}>
+                  {policies.contactName}
+                </a>
+              )}
             </div>
           </footer>
         </div>

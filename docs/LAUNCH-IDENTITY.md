@@ -8,15 +8,13 @@ TaleRelay means a storytelling relay: contributors take turns shaping the next s
 
 An exact-name web search on 2026-09-06 returned no indexed product matches. This is an initial collision check, not trademark clearance. Cloudflare Registrar's authoritative domain check returned `talerelay.com` as registrable at standard pricing: USD 10.46 for registration and USD 10.46 for annual renewal at the time of the check. No domain was purchased or reserved. Recheck availability and the checkout total before an authorized purchase.
 
-The support mailbox is pending. The intended domain mailbox is `support@talerelay.com` after domain ownership and mail routing are established; it must not be displayed as a working contact before then.
+The owner supplied `talerelay@proton.me` as the public support mailbox on 2026-09-06. Customer-facing support uses the display name **TaleRelay Support**. The app exposes a mailto link; no inbox automation, SMTP integration or test email has been configured or sent.
 
 ## Operator and merchant
 
-For an individual operator, prepare the public attribution as:
+Customer-service correspondence may use the brand display name. Paddle’s domain-review guidance expressly permits a sole proprietor’s brand in Terms & Conditions, while preferring the legal name. This corrects the earlier blanket instruction that the website must always publish the owner’s full legal name. It does not establish that a support alias meets every applicable privacy or consumer-law identity-disclosure requirement.
 
-> TaleRelay is operated by [full legal name], an independent developer operating under the TaleRelay brand.
-
-The owner must supply the exact public legal-name spelling and a working support email. Do not infer legal identity from repository usernames or use a company suffix for an unregistered company. Keep policy status as draft until the identity, retention/deletion process and other outstanding launch terms are completed. The rename advances the draft from `2026-09-06-draft3` to `2026-09-06-draft4`; previously accepted versions remain stored unchanged in D1.
+The operator field remains pending while the applicable identity-disclosure wording is settled. Do not invent a person/company, infer legal identity from repository usernames or treat TaleRelay Support as a legal entity. Keep policy status as draft until identity disclosure, retention/deletion and the outstanding launch terms are completed. Adding the confirmed mailbox and support contact advances the draft from `2026-09-06-draft4` to `2026-09-06-draft5`; previously accepted versions remain stored unchanged in D1.
 
 Paddle documents an individual onboarding route: individuals and sole traders do not need the company business-verification step, but the individual must complete identity verification. Its supplier exclusion list does not currently list mainland China. Eligibility and payouts still depend on Paddle's review of the actual identity, location, product and account. Enter truthful information in Paddle's own onboarding screens; government IDs and payout details should not be sent to the application repository or support chat.
 
@@ -27,7 +25,7 @@ Paddle documents an individual onboarding route: individuals and sole traders do
 
 ## Next configuration steps
 
-1. Owner creates a support mailbox and confirms the public operator name.
+1. Public support contact is configured. Complete operator identity disclosure for the intended launch markets; do not request or publish personal identity documents in the project.
 2. Configure a dedicated Google OAuth web client with TaleRelay branding; use the exact staging callback `https://afterlight-staging.liushenliang1994.workers.dev/api/auth/callback/google`. Avoid changing the existing ToolMoss client's consent branding. Store credentials only in the staging Worker's secret store, then test the actual Google redirect, callback, nickname onboarding and logout.
 3. Add the owned production domain and its separate Google callback when available. Complete policy and free-creation acceptance before enabling the public service.
 4. Owner completes Paddle merchant identity and payout onboarding. Configure sandbox catalog and verified webhooks and complete payment/refund/fulfillment acceptance before enabling real sales.

@@ -34,6 +34,7 @@ const plan: ScenePlan = {
   characterUpdates: [],
   proposedEvents: [],
   requiresReview: false,
+  majorChanges: [],
   reason: "",
   rejected: false,
 };

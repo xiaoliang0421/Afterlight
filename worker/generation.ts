@@ -9,6 +9,8 @@ import { AppError } from "./errors";
 import { pollVideo, submitVideo, prepareVideoRequest } from "./provider";
 import { probeStoredMedia, storeProviderMedia } from "./media";
 import type { ScenePlan } from "../shared/domain";
+import { flagMajorChanges } from "../shared/governance";
+import { hasOwnerApproval } from "./governance";
 
 export class GenerationWorkflow extends WorkflowEntrypoint<
   Cloudflare.Env,
@@ -57,6 +59,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
             );
             return null;
           }
+          flagMajorChanges(plan, t.prompt_original);
           await this.env.DB.prepare(
             "UPDATE tasks SET plan_json=?,base_version=?,updated_at=? WHERE id=? AND status='Preparing'",
           )
@@ -69,6 +72,18 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
               ["Preparing"],
               "NeedsReview",
               plan.reason,
+            );
+            return null;
+          }
+          if (
+            !(await hasOwnerApproval(this.env, await getTask(this.env, taskId)))
+          ) {
+            await transition(
+              this.env,
+              taskId,
+              ["Preparing"],
+              "NeedsReview",
+              "This plan contains a major story change. Request the story creator’s decision before rejoining. Any generation reservation has been returned.",
             );
             return null;
           }
@@ -200,9 +215,11 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
           uncertain
             ? "ReconciliationNeeded"
             : error instanceof AppError &&
-                ["references_required", "cost_review_required"].includes(
-                  error.code,
-                )
+                [
+                  "references_required",
+                  "cost_review_required",
+                  "owner_approval_required",
+                ].includes(error.code)
               ? "NeedsReview"
               : "Failed",
           reason,

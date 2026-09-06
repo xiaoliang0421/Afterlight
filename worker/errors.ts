@@ -8,9 +8,20 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
-  reference_unavailable: "Reference-guided creation is not open yet. Free text-to-video remains available.",
-  paid_credits_unavailable: "There are not enough available purchased points, or your payment needs review.",
-  "payment_orders.user_id": "You already have an unfinished checkout. Check its status in your account before starting another.",
+  owner_approval_required:
+    "This plan needs the story creator’s approval before it can enter generation.",
+  owner_review_changed:
+    "The story or plan changed. Prepare a fresh preview before requesting a decision.",
+  owner_review_pending:
+    "You already have a proposal waiting for this story creator. Withdraw it before requesting another.",
+  owner_review_full:
+    "This story has too many pending decisions. Your idea is saved; try again later.",
+  reference_unavailable:
+    "Reference-guided creation is not open yet. Free text-to-video remains available.",
+  paid_credits_unavailable:
+    "There are not enough available purchased points, or your payment needs review.",
+  "payment_orders.user_id":
+    "You already have an unfinished checkout. Check its status in your account before starting another.",
   generation_paused:
     "New creations are paused. Your idea is saved, and you can keep watching.",
   story_paused: "This story is not accepting new scenes right now.",

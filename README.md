@@ -36,6 +36,7 @@ The local studio account can watch and approve fixture scenes. The reviewer must
 - Dedicated draft Terms and Privacy pages, explicit versioned acceptance before creation, archived policy text, private downloadable acceptance records and per-submission attribution/plan consent. Final operator details and legal review are still pending.
 - Per-scene byline, hover/focus/tap provenance cards, original and English prompts, scene credits and share links to individual contributions. Shared story metadata includes the scene author.
 - Preview, explicit attribution consent, versioned approval, atomic quota/cost admission, per-story FIFO execution, recheck after canon changes and persistent contribution statuses.
+- Private major-change proposals and creator decisions, bound to the exact plan and canon version, with separate contributor admission and no generation reservation while waiting.
 - Durable Workflows, asynchronous provider polling, R2 archive and range delivery, actual MP4 duration probing, manual actual-content approval and atomic canon publication.
 - Full fixed character descriptions and latest state appended to each text-only video request, with an exact request identity snapshot. New characters become canon only on publication. The previous reference adapter and curated image/voice materials remain non-default capabilities.
 - Optional existing-cast picker with saved story-scoped IDs; publication-driven character history, source-backed story-guide drafts and studio review before those guides become public.

@@ -43,6 +43,11 @@ import { StoryArchive } from "./StoryArchive";
 import { ShareModal } from "./ShareModal";
 import { CastPicker } from "./CastPicker";
 import { GenerationChoice } from "./GenerationChoice";
+import {
+  OwnerApprovalGate,
+  OwnerReviews,
+  waitingForOwner,
+} from "./OwnerReviews";
 import type { GenerationMode } from "../shared/billing";
 
 export function StoryPage({ slug }: { slug: string }) {
@@ -372,6 +377,9 @@ export function StoryPage({ slug }: { slug: string }) {
               ["creators", "Scene credits", Users],
               ["world", "World & characters", Globe2],
               ["queue", "Creation queue", ListOrdered],
+              ...(story.ownerId === boot.user?.id
+                ? [["decisions", "Story decisions", Check]]
+                : []),
             ].map(([key, label, Icon]) => {
               const I = Icon as typeof Play;
               return (
@@ -502,6 +510,9 @@ export function StoryPage({ slug }: { slug: string }) {
                 </Empty>
               )}
             </div>
+          )}
+          {tab === "decisions" && story.ownerId === boot.user?.id && (
+            <OwnerReviews storyId={story.id} />
           )}
           <div className="story-bottom-actions">
             {owner && story.status !== "draft" && (
@@ -860,33 +871,44 @@ export function Composer({
               ? "Uses approved visual references. Points are reserved now and used on publication. Failed or rejected scenes return the reservation. Consistency is not guaranteed."
               : "Text-to-video uses character descriptions; appearances may vary. No payment required."}
           </p>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-            />
-            <span>
-              Publish my original idea and nickname with the finished scene, as
-              described in the{" "}
-              <a href="/terms#rights" target="_blank" rel="noopener">
-                contribution terms
-              </a>{" "}
-              and{" "}
-              <a href="/privacy#public" target="_blank" rel="noopener">
-                public information notice
-              </a>
-              . Small continuity edits are okay.
-            </span>
-          </label>
-          <Button
-            className="full-width"
-            disabled={!consent || task.plan.rejected || status !== "open"}
-            busy={busy === "accept"}
-            onClick={() => void submit()}
-          >
-            Join the story <ArrowRight size={16} />
-          </Button>
+          <OwnerApprovalGate
+            task={task}
+            onChange={(next) => {
+              setTask(next);
+              setConsent(false);
+            }}
+          />
+          {!waitingForOwner(task) && (
+            <>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                />
+                <span>
+                  Publish my original idea and nickname with the finished scene,
+                  as described in the{" "}
+                  <a href="/terms#rights" target="_blank" rel="noopener">
+                    contribution terms
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy#public" target="_blank" rel="noopener">
+                    public information notice
+                  </a>
+                  . Small continuity edits are okay.
+                </span>
+              </label>
+              <Button
+                className="full-width"
+                disabled={!consent || task.plan.rejected || status !== "open"}
+                busy={busy === "accept"}
+                onClick={() => void submit()}
+              >
+                Join the story <ArrowRight size={16} />
+              </Button>
+            </>
+          )}
           <button
             className="text-button full-width"
             onClick={() => setTask(null)}

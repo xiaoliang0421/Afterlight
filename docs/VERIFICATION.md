@@ -2,9 +2,12 @@
 
 Updated 2026-09-06. The local website remains in fixture mode. Four isolated real DeepSeek calls and four real fal videos (two reference, two text-only) plus two reference-clip speech checks have completed; no cloud deployment has been performed. See [the complete test scope and limitations](LIVE-PROVIDER-TESTS.md).
 
+See the [prioritized product completion checklist](PRODUCT-STATUS.md) for implementation work and account/configuration dependencies.
+
 ## Verified locally
 
 - TypeScript checks and production frontend build.
+- Major-change owner decisions: explicit private sharing, owner-only access (no administrator override), immutable exact-plan/version decisions, duplicate request protection, no video credit reservation while waiting, withdrawal/rejection, plan/canon invalidation, and admission/provider-start database guards. Local HTTP tests cover approval through the fixture Workflow and return of the generation credit. Browser inspection covers the creator inbox entry and its empty state; a populated decision modal has not received browser end-to-end acceptance.
 - Local Paddle contract tests: raw-body HMAC, replay rejection, transaction/order/amount/currency matching, duplicate notifications, current-state reconciliation, partial/full refunds, dispute holds, point reservations, immutable mode/quotes, and uncertain checkout creation. These use mocked Paddle responses, not a real Paddle sandbox account.
 - The account and composer show separate free allowances / purchased points, mode differences, empty order history and a closed checkout.
 - Cloudflare Worker dry-run bundle: about 2.5 MiB uncompressed, 442 KiB compressed at the initial dry run.
@@ -28,7 +31,7 @@ The local Workflow emulator emitted a hung-request diagnostic around its sleep w
 3. English speech/OCR validation, faces and voices across at least ten clips, returning characters, new-character entrance and smooth causal/visual transitions.
 4. Production media ingestion, adaptive Stream playback or FFmpeg episode packaging, complete chapter playback and archive recovery. Current player switches MP4 clips and cannot promise a gapless real-media episode.
 5. Public abuse controls such as Turnstile, incident alerts and automatic provider billing reconciliation. In-site image generation, appearance confirmation and owned reference ingestion are deferred from the pure-text video path. See [character identity workflow](CHARACTER-IDENTITY.md).
-6. Dedicated owner approval before expensive major world/character changes. The director currently flags intent changes and every publication requires a studio reviewer; the separate pre-generation owner approval policy still needs enforcement.
+6. Live evaluation of major-change classification across languages and adversarial proposals. Owner approval enforcement is implemented locally; the editor's semantic classification and conservative English backstop are not a guarantee that every change is detected. Unplanned changes in generated footage must still be rejected during content review.
 7. Full account deletion execution and confirmed retention policy, operator identity/contact, public age eligibility, regional legal review and backup restore drill. Draft privacy/terms pages and acceptance records are implemented; they are not finalized public policies.
 8. Actual Paddle sandbox checkout, declined card, webhook delivery, refund/reversal handling, approved merchant/catalog/settlement details and paid-reference fulfillment. Paddle adapter and local accounting exist; real payments remain disabled.
 9. Provisioned Cloudflare environments, a successful remote GitHub CI run, actual deployed-domain smoke tests and production release approval.

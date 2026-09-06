@@ -22,6 +22,11 @@ import { api, navigate, useResource } from "./api";
 import { useApp } from "./context";
 import { BillingPanel } from "./BillingPanel";
 import {
+  OwnerApprovalGate,
+  OwnerReviews,
+  waitingForOwner,
+} from "./OwnerReviews";
+import {
   Author,
   Avatar,
   Button,
@@ -581,6 +586,9 @@ export function ContributionsPage() {
             ))}
           </div>
           {resource.error && <Notice danger>{resource.error}</Notice>}
+          {boot.stories.some((s) => s.ownerId === boot.user?.id) && (
+            <OwnerReviews />
+          )}
           <div className="contribution-list">
             {resource.data?.tasks
               .filter(
@@ -606,7 +614,13 @@ export function ContributionsPage() {
                         {story?.title ?? "Your story"}{" "}
                         <ArrowUpRight size={13} />
                       </Link>
-                      <Status state={t.status} />
+                      {t.ownerReview?.status === "pending" ? (
+                        <span className="free-tag">
+                          CREATOR DECISION PENDING
+                        </span>
+                      ) : (
+                        <Status state={t.status} />
+                      )}
                     </div>
                     <h3>{t.plan?.title || "A saved possibility"}</h3>
                     <p className="contribution-prompt">“{t.prompt}”</p>
@@ -721,6 +735,15 @@ function ReviewModal({
         </Notice>
       )}
       {task.plan && (
+        <OwnerApprovalGate
+          task={task}
+          onChange={(next) => {
+            setTask(next);
+            setConsent(false);
+          }}
+        />
+      )}
+      {task.plan && !waitingForOwner(task) && (
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -734,41 +757,43 @@ function ReviewModal({
         </label>
       )}
       {error && <Notice danger>{error}</Notice>}
-      <Button
-        className="full-width"
-        disabled={!!task.plan && (!consent || task.plan.rejected)}
-        busy={busy}
-        onClick={async () => {
-          setBusy(true);
-          setError("");
-          try {
-            if (!task.plan) {
-              const r = await api<{ task: Task }>(
-                `/tasks/${task.id}/preview`,
-                "POST",
-                {},
-              );
-              setTask(r.task);
-            } else {
-              await api(`/tasks/${task.id}/accept`, "POST", {
-                planUpdatedAt: task.updatedAt,
-                publicAttributionAccepted: consent,
-              });
-              await done();
-              close();
+      {!waitingForOwner(task) && (
+        <Button
+          className="full-width"
+          disabled={!!task.plan && (!consent || task.plan.rejected)}
+          busy={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            try {
+              if (!task.plan) {
+                const r = await api<{ task: Task }>(
+                  `/tasks/${task.id}/preview`,
+                  "POST",
+                  {},
+                );
+                setTask(r.task);
+              } else {
+                await api(`/tasks/${task.id}/accept`, "POST", {
+                  planUpdatedAt: task.updatedAt,
+                  publicAttributionAccepted: consent,
+                });
+                await done();
+                close();
+              }
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
             }
-          } catch (e) {
-            setError((e as Error).message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {task.plan
-          ? `Join the queue · ${task.generationMode === "reference" ? `${task.quotedPoints} points` : "1 free credit"}`
-          : "Prepare my scene plan"}
-        <ArrowRight size={16} />
-      </Button>
+          }}
+        >
+          {task.plan
+            ? `Join the queue · ${task.generationMode === "reference" ? `${task.quotedPoints} points` : "1 free credit"}`
+            : "Prepare my scene plan"}
+          <ArrowRight size={16} />
+        </Button>
+      )}
     </Modal>
   );
 }

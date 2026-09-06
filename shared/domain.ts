@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { GenerationMode } from "./billing";
+import { majorChangeSchema, type OwnerReview } from "./governance";
 
 export const taskStates = [
   "Draft",
@@ -49,6 +50,7 @@ export const planSchema = z.object({
     .array(z.object({ id: z.string(), state: z.string().min(1).max(1200) }))
     .max(3),
   requiresReview: z.boolean(),
+  majorChanges: z.array(majorChangeSchema).max(3).default([]),
   reason: z.string().max(600),
   rejected: z.boolean(),
 });
@@ -155,6 +157,7 @@ export interface Scene {
   hidden: boolean;
 }
 export interface Task {
+  ownerReview: OwnerReview | null;
   generationMode: GenerationMode;
   quotedPoints: number;
   id: string;

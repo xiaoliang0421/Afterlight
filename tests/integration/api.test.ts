@@ -641,4 +641,167 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       assert.equal(webhook.status, 503); // Exact webhook path bypasses browser Origin, but requires configured signature verification.
     },
   );
+  await t.test(
+    "major proposals stay private until explicitly shared; only the story owner can decide",
+    async () => {
+      const before = (await ok(newcomer("/api/bootstrap"))).credits;
+      let proposal = (
+        await ok(
+          newcomer("/api/stories/last-light/tasks", "POST", {
+            prompt: "Mara dies beside the lantern, without graphic violence.",
+            idempotencyKey: randomUUID(),
+            characterIds: ["mara-vale"],
+          }),
+        )
+      ).task;
+      proposal = (
+        await ok(newcomer(`/api/tasks/${proposal.id}/preview`, "POST", {}))
+      ).task;
+      assert.deepEqual(proposal.plan.majorChanges, ["character-death"]);
+      const accept = {
+        planUpdatedAt: proposal.updatedAt,
+        publicAttributionAccepted: true,
+      };
+      assert.equal(
+        (await newcomer(`/api/tasks/${proposal.id}/accept`, "POST", accept))
+          .data.error.code,
+        "owner_approval_required",
+      );
+      assert.equal((await guest("/api/owner-reviews")).status, 401);
+      assert.equal(
+        (await creator("/api/owner-reviews?storyId=last-light")).status,
+        403,
+      );
+      assert.equal((await ok(studio("/api/owner-reviews"))).reviews.length, 0);
+      assert.equal(
+        (
+          await newcomer(`/api/tasks/${proposal.id}/owner-review`, "POST", {
+            planUpdatedAt: proposal.updatedAt,
+            shareWithOwner: false,
+          })
+        ).status,
+        400,
+      );
+      const requestBody = {
+        planUpdatedAt: proposal.updatedAt,
+        shareWithOwner: true,
+      };
+      const [r1, r2] = await Promise.all([
+        newcomer(`/api/tasks/${proposal.id}/owner-review`, "POST", requestBody),
+        newcomer(`/api/tasks/${proposal.id}/owner-review`, "POST", requestBody),
+      ]);
+      // Either an idempotent response or an optimistic conflict is safe; one private request survives.
+      assert.ok(
+        [200, 409].includes(r1.status) && [200, 409].includes(r2.status),
+      );
+      proposal = (await ok(newcomer(`/api/tasks/${proposal.id}`))).task;
+      assert.equal(proposal.ownerReview.status, "pending");
+      assert.equal(proposal.status, "NeedsReview");
+      assert.equal(proposal.sequence, null);
+      assert.deepEqual((await ok(newcomer("/api/bootstrap"))).credits, before);
+      const inbox = (await ok(studio("/api/owner-reviews?storyId=last-light")))
+        .reviews;
+      assert.equal(inbox.length, 1);
+      assert.equal(inbox[0].prompt, proposal.prompt);
+      assert.ok(inbox[0].worldRules.includes("coastal town"));
+      assert.equal(inbox[0].cast[0].name, "Mara Vale");
+      assert.ok(inbox[0].latestSummary);
+      assert.ok(!JSON.stringify(inbox).includes("@"));
+      assert.equal((await ok(creator("/api/owner-reviews"))).reviews.length, 0);
+      const path = `/api/owner-reviews/${proposal.ownerReview.id}/decision`;
+      const decision = {
+        decision: "approved",
+        note: "This proposed ending fits the direction I intend.",
+        reviewedPlan: true,
+      };
+      assert.equal((await newcomer(path, "POST", decision)).status, 404);
+      assert.equal((await creator(path, "POST", decision)).status, 404);
+      assert.equal(
+        (await studio(path, "POST", { ...decision, reviewedPlan: false }))
+          .status,
+        400,
+      );
+      await ok(studio(path, "POST", decision));
+      await ok(studio(path, "POST", decision));
+      proposal = (await ok(newcomer(`/api/tasks/${proposal.id}`))).task;
+      assert.equal(proposal.ownerReview.status, "approved");
+      assert.equal(proposal.status, "NeedsReview");
+      assert.deepEqual((await ok(newcomer("/api/bootstrap"))).credits, before);
+      await ok(
+        newcomer(`/api/tasks/${proposal.id}/accept`, "POST", {
+          planUpdatedAt: proposal.updatedAt,
+          publicAttributionAccepted: true,
+        }),
+      );
+      await waitTask(newcomer, proposal.id, "NeedsModeration");
+      await ok(
+        studio(`/api/admin/tasks/${proposal.id}/reject`, "POST", {
+          reason:
+            "Fixture completed the approval flow; no real video was generated.",
+        }),
+      );
+      assert.deepEqual((await ok(newcomer("/api/bootstrap"))).credits, before);
+    },
+  );
+  await t.test(
+    "declined and withdrawn proposals cannot enter generation or receive a later decision",
+    async () => {
+      for (const action of ["rejected", "withdrawn"]) {
+        let p = (
+          await ok(
+            newcomer("/api/stories/last-light/tasks", "POST", {
+              prompt: `An impostor replaces Mara in this ${action} test proposal.`,
+              idempotencyKey: randomUUID(),
+            }),
+          )
+        ).task;
+        p = (await ok(newcomer(`/api/tasks/${p.id}/preview`, "POST", {}))).task;
+        p = (
+          await ok(
+            newcomer(`/api/tasks/${p.id}/owner-review`, "POST", {
+              planUpdatedAt: p.updatedAt,
+              shareWithOwner: true,
+            }),
+          )
+        ).task;
+        const path = `/api/owner-reviews/${p.ownerReview.id}/decision`;
+        if (action === "rejected")
+          await ok(
+            studio(path, "POST", {
+              decision: "rejected",
+              note: "Please keep the existing character identity intact.",
+              reviewedPlan: true,
+            }),
+          );
+        else await ok(newcomer(`/api/tasks/${p.id}/cancel`, "POST", {}));
+        p = (await ok(newcomer(`/api/tasks/${p.id}`))).task;
+        assert.equal(p.ownerReview.status, action);
+        assert.equal(
+          (
+            await newcomer(`/api/tasks/${p.id}/accept`, "POST", {
+              planUpdatedAt: p.updatedAt,
+              publicAttributionAccepted: true,
+            })
+          ).status,
+          409,
+        );
+        assert.equal(
+          (
+            await studio(path, "POST", {
+              decision: "approved",
+              note: "Attempt to change a final decision afterward.",
+              reviewedPlan: true,
+            })
+          ).status,
+          409,
+        );
+      }
+      const worlds = (await ok(newcomer("/api/bootstrap"))).stories;
+      const owned = worlds.find((s: any) => s.ownerId === "dev-newcomer");
+      assert.equal(
+        (await studio(`/api/owner-reviews?storyId=${owned.id}`)).status,
+        403,
+      );
+    },
+  );
 });

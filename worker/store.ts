@@ -13,8 +13,14 @@ import {
 } from "../shared/domain";
 import { AppError } from "./errors";
 import policies from "../shared/policies.json";
+import type { OwnerReviewStatus } from "../shared/governance";
 
 export interface TaskRow {
+  plan_revision: number;
+  preview_lock: string | null;
+  owner_review_id: string | null;
+  owner_review_status: OwnerReviewStatus | null;
+  owner_review_note: string | null;
   generation_mode: "text" | "reference";
   provider_model: string;
   quoted_points: number;
@@ -157,6 +163,14 @@ export function taskDto(
 ): Task {
   return {
     generationMode: t.generation_mode ?? "text",
+    ownerReview:
+      privateView && t.owner_review_id && t.owner_review_status
+        ? {
+            id: t.owner_review_id,
+            status: t.owner_review_status,
+            note: t.owner_review_note ?? "",
+          }
+        : null,
     quotedPoints: t.quoted_points ?? 0,
     id: t.id,
     storyId: t.story_id,

@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
 import { unstable_splitSqlQuery } from "wrangler";
 import { selectedMaterials } from "../worker/materials";
+import { detectMajorChanges } from "../shared/governance";
 
 function database() {
   const db = new DatabaseSync(":memory:");
@@ -19,6 +20,140 @@ function database() {
   return db;
 }
 const now = 1788669000000;
+function majorDraft(db: DatabaseSync, id: string) {
+  draft(db, id);
+  db.prepare(
+    "UPDATE tasks SET plan_json=json_set(plan_json,'$.majorChanges',json('[\"character-death\"]')) WHERE id=?",
+  ).run(id);
+}
+function requestOwner(db: DatabaseSync, id: string) {
+  return db
+    .prepare(
+      `INSERT INTO owner_reviews(id,task_id,story_id,requester_id,plan_revision,plan_json,base_version,created_at)
+    SELECT ?||':'||plan_revision,id,story_id,user_id,plan_revision,plan_json,base_version,? FROM tasks WHERE id=?`,
+    )
+    .run(id, now + 1, id);
+}
+function decideOwner(
+  db: DatabaseSync,
+  id: string,
+  actor = "dev-studio",
+  decision = "approved",
+) {
+  return db
+    .prepare(
+      "UPDATE owner_reviews SET status=?,note='This direction fits the current story.',decided_by=?,decided_at=? WHERE task_id=? AND status='pending'",
+    )
+    .run(decision, actor, now + 2, id);
+}
+test("major changes require an exact owner decision, without reserving credits while waiting", () => {
+  const db = database();
+  majorDraft(db, "major");
+  assert.throws(() => accept(db, "major"), /owner_approval_required/);
+  requestOwner(db, "major");
+  assert.equal(numbers(db).credit!.reserved, 0);
+  assert.equal(
+    db
+      .prepare("SELECT active_task_id FROM stories WHERE id='last-light'")
+      .get()!.active_task_id,
+    null,
+  );
+  assert.throws(
+    () => decideOwner(db, "major", "dev-creator"),
+    /owner_review_changed/,
+  );
+  db.exec("UPDATE tasks SET owner_review_status='approved' WHERE id='major'");
+  assert.throws(() => accept(db, "major"), /owner_approval_required/);
+  decideOwner(db, "major");
+  accept(db, "major");
+  assert.equal(numbers(db).credit!.reserved, 1);
+  assert.throws(
+    () => db.exec("UPDATE owner_reviews SET note='Changed after approval'"),
+    /owner_review_immutable|owner_review_changed/,
+  );
+  db.exec("UPDATE stories SET version=version+1 WHERE id='last-light'");
+  assert.throws(
+    () => db.exec("UPDATE tasks SET status='Generating' WHERE id='major'"),
+    /owner_approval_required/,
+  );
+  db.exec(
+    "UPDATE tasks SET status='NeedsReview',updated_at=updated_at+1 WHERE id='major'",
+  );
+  assert.equal(numbers(db).credit!.reserved, 0);
+  db.close();
+});
+test("changed plans and story versions expire requests; withdrawal and rejection cannot be approved later", () => {
+  const db = database();
+  majorDraft(db, "changed");
+  requestOwner(db, "changed");
+  db.exec(
+    "UPDATE tasks SET plan_json=json_set(plan_json,'$.summary','A different proposed outcome.') WHERE id='changed'",
+  );
+  assert.equal(
+    db
+      .prepare("SELECT status FROM owner_reviews WHERE task_id='changed'")
+      .get()!.status,
+    "expired",
+  );
+  assert.equal(
+    db.prepare("SELECT owner_review_id FROM tasks WHERE id='changed'").get()!
+      .owner_review_id,
+    null,
+  );
+  requestOwner(db, "changed");
+  decideOwner(db, "changed", "dev-studio", "rejected");
+  assert.throws(() => accept(db, "changed"), /owner_approval_required/);
+  assert.throws(
+    () =>
+      db.exec(
+        "UPDATE owner_reviews SET status='approved' WHERE status='rejected'",
+      ),
+    /owner_review_immutable/,
+  );
+  majorDraft(db, "withdraw");
+  requestOwner(db, "withdraw");
+  db.exec("UPDATE tasks SET status='Cancelled' WHERE id='withdraw'");
+  assert.equal(
+    db
+      .prepare("SELECT status FROM owner_reviews WHERE task_id='withdraw'")
+      .get()!.status,
+    "withdrawn",
+  );
+  majorDraft(db, "stale");
+  requestOwner(db, "stale");
+  db.exec("UPDATE stories SET version=version+1 WHERE id='quiet-orbit'");
+  assert.equal(
+    db.prepare("SELECT status FROM owner_reviews WHERE task_id='stale'").get()!
+      .status,
+    "pending",
+  );
+  db.exec("UPDATE stories SET version=version+1 WHERE id='last-light'");
+  assert.equal(
+    db.prepare("SELECT status FROM owner_reviews WHERE task_id='stale'").get()!
+      .status,
+    "expired",
+  );
+  assert.equal(numbers(db).credit!.reserved, 0);
+  db.close();
+});
+test("ordinary character entrances stay open while obvious irreversible proposals are flagged", () => {
+  assert.deepEqual(
+    detectMajorChanges(
+      "June, a new courier, arrives with a letter and introduces herself.",
+    ),
+    [],
+  );
+  assert.deepEqual(
+    detectMajorChanges("Mara dies while protecting the radio."),
+    ["character-death"],
+  );
+  assert.deepEqual(
+    detectMajorChanges(
+      "The keeper is replaced by an impostor who rewrites the world rules.",
+    ),
+    ["identity-change", "world-rules"],
+  );
+});
 test("a requested cast is immutable, unique and restricted to introduced characters in its story", () => {
   const db = database();
   const insert = db.prepare(

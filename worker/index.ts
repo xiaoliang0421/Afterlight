@@ -52,6 +52,7 @@ import { sharePage } from "./share";
 import { admin, refreshBalance } from "./admin";
 import policies from "../shared/policies.json";
 import { publicArchive, dispatchArchives } from "./archives";
+import { governance, assertOwnerApproval } from "./governance";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -795,6 +796,7 @@ app.post("/api/tasks/:id/accept", async (c) => {
       "The scene plan has changed. Review it before continuing.",
       409,
     );
+  await assertOwnerApproval(c.env, t);
   if (String(c.env.PROVIDER_MODE) === "disabled")
     throw new AppError(
       "generation_unavailable",
@@ -965,6 +967,7 @@ app.post("/api/notifications/read", async (c) => {
   return c.json({ ok: true });
 });
 app.route("/api/billing", billing);
+app.route("/api", governance);
 app.route("/api/admin", admin);
 app.notFound((c) =>
   c.json(

@@ -1,5 +1,13 @@
 # Operations
 
+## Story creator decisions
+
+Story → Story decisions, or Your contributions → Story decisions, shows proposals explicitly shared with the story creator. A studio role alone does not permit deciding for another creator. The creator sees the original prompt, English adaptation, latest visible scene, world rules, selected cast and exact proposed changes; approval and rejection both require a written explanation and review acknowledgment.
+
+Waiting proposals remain outside the generation queue and do not reserve video credits. Editor previews can still incur their separately budgeted model cost. Approval never starts generation automatically: the contributor must confirm attribution and admission. D1 checks an immutable approved record matching the plan revision, exact JSON and canon version at admission and provider start. Plan edits and advancing canon invalidate the approval. Withdrawn, declined and expired requests cannot be approved later; a fresh valid plan requires a new request.
+
+The editor supplies major-change categories and an English keyword backstop adds conservative flags. Neither guarantees semantic detection. Only reviewed footage can advance canon; reject an unexpected death, identity change or contradictory event even if the original plan was approved. Owner decisions do not edit world rules or bypass safety/publication review.
+
 ## Opening or pausing creation
 
 Studio → Capacity & settings controls admission within the separately authorized spending ceiling. Pausing admission keeps published stories watchable. A story owner can pause only their own world. Already submitted external requests require reconciliation; pausing the website does not cancel provider billing.

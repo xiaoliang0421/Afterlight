@@ -3729,3 +3729,50 @@ video {
     flex-direction: column;
   }
 }
+
+.human-verification {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 28px;
+  border: 1px solid #3d4942;
+  border-radius: 18px;
+  background: #18211d;
+  color: #f1f3ed;
+}
+.human-verification::backdrop {
+  background: #07110dbb;
+}
+.human-verification h2 {
+  font-size: 21px;
+  margin-top: 0;
+}
+.human-verification p {
+  color: #b4c0b8;
+  line-height: 1.5;
+}
+.human-verification button {
+  margin-top: 18px;
+  padding: 10px 18px;
+  border: 1px solid #6b8072;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.connection-indicator {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 85%;
+  background: #18211ded;
+  border: 1px solid #786a49;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+}
+.video-frame:focus-visible {
+  outline: 2px solid #a7bc90;
+  outline-offset: 3px;
+}

@@ -51,6 +51,19 @@ interface StudioData {
   authorizedSpendCents: number;
   recordedSpendCents: number;
   readiness: Record<string, boolean>;
+  operations: {
+    runtime: {
+      startedAt: number;
+      completedAt: number;
+      failureAt: number;
+    } | null;
+    queue: {
+      held: number;
+      missingRequestIds: number;
+      reservedCents: number;
+    } | null;
+    overdue: boolean;
+  };
 }
 const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
 export function StudioPage() {
@@ -141,6 +154,7 @@ export function StudioPage() {
           "Capacity & settings",
           "Reports",
           "Activity log",
+          "Operations",
         ].map((t) => (
           <button
             key={t}
@@ -153,6 +167,47 @@ export function StudioPage() {
           </button>
         ))}
       </div>
+      {tab === "Operations" && (
+        <section className="panel">
+          <h2>Recovery & protection</h2>
+          <p>
+            Last completed scheduled check:{" "}
+            {d.operations.runtime?.completedAt
+              ? new Date(d.operations.runtime.completedAt).toLocaleString()
+              : "No scheduled checks recorded yet."}
+          </p>
+          {d.operations.overdue && (
+            <Notice danger>
+              Scheduled reconciliation has not completed in the last 15 minutes.
+              Check Cloudflare Worker logs and cron triggers.
+            </Notice>
+          )}
+          {!!d.operations.runtime?.failureAt &&
+            d.operations.runtime.failureAt >
+              d.operations.runtime.completedAt && (
+              <Notice danger>
+                The latest scheduled check failed. Inspect the
+                reconciliation.failed event in Cloudflare logs.
+              </Notice>
+            )}
+          <p>
+            {d.operations.queue?.held ?? 0} attempts on hold ·{" "}
+            {d.operations.queue?.missingRequestIds ?? 0} missing provider IDs ·{" "}
+            {dollars(d.operations.queue?.reservedCents ?? 0)} reserved
+          </p>
+          <p>
+            Creation verification:{" "}
+            {d.readiness.turnstile
+              ? "Keys configured; confirm the live widget and host in staging."
+              : "Not configured. Remote creation stays closed; local fixtures can be tested offline."}
+          </p>
+          <p className="fine-print">
+            Recovery uses the existing provider request. Do not restart a paid
+            submission or remove its attempt marker. These diagnostics are
+            visible only to the studio.
+          </p>
+        </section>
+      )}
       {tab === "Character materials" && <MaterialsPanel />}
       {tab === "Story guides" && <ArchiveReview />}
       {tab === "Account requests" && <StudioRequests />}
@@ -591,8 +646,40 @@ function ResolveModal({
 }) {
   const [reason, setReason] = useState(""),
     [cost, setCost] = useState(""),
+    [requestId, setRequestId] = useState(task.providerRequestId ?? ""),
+    [linked, setLinked] = useState(!!task.providerRequestId),
+    [evidence, setEvidence] = useState<{
+      model: string;
+      sentAt: string;
+      status: string;
+    } | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const recover = async (confirm: boolean) => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<{
+        model: string;
+        sentAt: string;
+        status: string;
+      }>(`/admin/tasks/${task.id}/recovery`, "POST", {
+        requestId,
+        reason,
+        confirm,
+      });
+      setEvidence(result);
+      if (confirm) {
+        setLinked(true);
+        await done();
+      }
+    } catch (e) {
+      setError((e as Error).message);
+      setEvidence(null);
+    } finally {
+      setBusy(false);
+    }
+  };
   const act = async (resume: boolean) => {
     setBusy(true);
     try {
@@ -618,8 +705,9 @@ function ResolveModal({
       <p className="modal-copy">
         Provider request:{" "}
         <code>
-          {task.providerRequestId ??
-            "Not yet recorded — check the provider request log."}
+          {linked
+            ? requestId
+            : "Not yet recorded — check the provider request log."}
         </code>
       </p>
       <label className="field-label">
@@ -630,7 +718,50 @@ function ResolveModal({
           onChange={(e) => setReason(e.target.value)}
         />
       </label>
-      {task.providerRequestId && (
+      {!linked && (
+        <>
+          <label className="field-label">
+            Existing fal request ID
+            <input
+              value={requestId}
+              onChange={(e) => {
+                setRequestId(e.target.value.trim());
+                setEvidence(null);
+              }}
+              placeholder="Request UUID from the fal dashboard"
+            />
+          </label>
+          <p className="fine-print">
+            Read-only verification compares the model, submission time and saved
+            input. Older attempts without saved evidence remain on hold.
+          </p>
+          <Button
+            kind="secondary"
+            busy={busy}
+            disabled={!requestId || reason.trim().length < 10}
+            onClick={() => void recover(false)}
+          >
+            Verify existing request
+          </Button>
+          {evidence && (
+            <Notice>
+              <p>
+                {evidence.model} · {evidence.status}
+                <br />
+                Sent {new Date(evidence.sentAt).toLocaleString()}
+              </p>
+              <p>
+                The saved input matches. Linking keeps this task on hold until
+                you resume it.
+              </p>
+              <Button busy={busy} onClick={() => void recover(true)}>
+                Link this verified request
+              </Button>
+            </Notice>
+          )}
+        </>
+      )}
+      {linked && (
         <Button
           busy={busy}
           disabled={reason.length < 10}

@@ -194,6 +194,7 @@ export async function pollVideo(env: Cloudflare.Env, task: TaskRow) {
       409,
     );
   const response = await fetch(trustedFalUrl(task.provider_status_url, true), {
+    redirect: "error",
     headers: { Authorization: `Key ${env.FAL_KEY}` },
     signal: AbortSignal.timeout(20000),
   });
@@ -208,6 +209,7 @@ export async function pollVideo(env: Cloudflare.Env, task: TaskRow) {
     if (data.error || !task.provider_result_url)
       return { status: "failed" as const };
     const result = await fetch(trustedFalUrl(task.provider_result_url, true), {
+      redirect: "error",
       headers: { Authorization: `Key ${env.FAL_KEY}` },
       signal: AbortSignal.timeout(20000),
     });

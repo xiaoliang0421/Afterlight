@@ -16,6 +16,12 @@ import { validatePlan, type ScenePlan } from "../shared/domain";
 import { approvedReference, materialSchema } from "./materials";
 import { archiveContext, dispatchArchives, type ArchiveRow } from "./archives";
 import { validateArchive } from "../shared/archive";
+import {
+  requireStoppedWorkflow,
+  verifyRecoveredRequest,
+  scheduleRecovery,
+} from "./recovery";
+import { operationHealth } from "./operations";
 
 export const admin = new Hono<AppEnv>();
 admin.use("*", async (c, next) => {
@@ -23,7 +29,7 @@ admin.use("*", async (c, next) => {
   await next();
 });
 admin.get("/", async (c) => {
-  const [settings, tasks, budgets, reports, logs, ceiling, costs] =
+  const [settings, tasks, budgets, reports, logs, ceiling, costs, operations] =
     await Promise.all([
       getSettings(c.env),
       c.env.DB.prepare(
@@ -44,8 +50,10 @@ admin.get("/", async (c) => {
       c.env.DB.prepare(
         "SELECT COALESCE(SUM(cents),0) AS cents FROM ledger WHERE kind IN ('consume','release','director-cost-ceiling')",
       ).first<{ cents: number }>(),
+      operationHealth(c.env),
     ]);
   return c.json({
+    operations,
     settings,
     tasks: tasks.results.map((t) => ({
       ...taskDto(t),
@@ -59,6 +67,7 @@ admin.get("/", async (c) => {
     authorizedSpendCents: ceiling?.cents ?? 0,
     recordedSpendCents: costs?.cents ?? 0,
     readiness: {
+      turnstile: !!(c.env.TURNSTILE_SITE_KEY && c.env.TURNSTILE_SECRET_KEY),
       google: !!(
         c.env.GOOGLE_CLIENT_ID &&
         c.env.GOOGLE_CLIENT_SECRET &&
@@ -350,6 +359,7 @@ admin.post("/tasks/:id/resolve", async (c) => {
       "This task is not awaiting reconciliation.",
       409,
     );
+  await requireStoppedWorkflow(c.env, t);
   if (input.action === "fail-confirmed") {
     if (input.recordedCostCents === undefined)
       throw new AppError(
@@ -357,32 +367,87 @@ admin.post("/tasks/:id/resolve", async (c) => {
         "Record the reconciled upstream cost before releasing the reservation.",
         409,
       );
-    await c.env.DB.prepare(
-      "UPDATE tasks SET recorded_cost_cents=?,cost_status='reconciled',status='Failed',reason=?,updated_at=? WHERE id=? AND status='ReconciliationNeeded'",
+    const changed = await c.env.DB.prepare(
+      "UPDATE tasks SET recorded_cost_cents=?,cost_status='reconciled',status='Failed',reason=?,updated_at=? WHERE id=? AND status='ReconciliationNeeded' AND workflow_id IS ? RETURNING id",
     )
-      .bind(input.recordedCostCents, input.reason, Date.now(), t.id)
-      .run();
-  } else {
-    if (!t.provider_request_id || !t.workflow_id)
+      .bind(
+        input.recordedCostCents,
+        input.reason,
+        Date.now(),
+        t.id,
+        t.workflow_id,
+      )
+      .first();
+    if (!changed)
       throw new AppError(
-        "request_missing",
-        "No provider request ID is recorded. Confirm it with the provider before attempting recovery.",
+        "task_changed",
+        "Another operator already handled this task.",
         409,
       );
-    const workflowId = `recovery-${t.id}-${crypto.randomUUID().slice(0, 8)}`;
-    await c.env.DB.prepare(
-      "UPDATE tasks SET status='Generating',workflow_id=?,reason=?,updated_at=? WHERE id=? AND status='ReconciliationNeeded'",
-    )
-      .bind(workflowId, input.reason, Date.now(), t.id)
-      .run();
-    await c.env.GENERATION.create({
-      id: workflowId,
-      params: { taskId: t.id, storyId: t.story_id, resumeKnown: true },
-    });
+  } else {
+    await scheduleRecovery(c.env, t, input.reason);
   }
   await audit(c.env, requireAdmin(c).id, "task.reconciled", t.id, input);
-  await c.env.STORY_ROOMS.getByName(t.story_id).kick(t.story_id);
+  c.executionCtx.waitUntil(
+    c.env.STORY_ROOMS.getByName(t.story_id)
+      .kick(t.story_id)
+      .catch(() => {
+        console.error(
+          JSON.stringify({ event: "recovery.dispatch-deferred", taskId: t.id }),
+        );
+      }),
+  );
   return c.json({ ok: true });
+});
+admin.post("/tasks/:id/recovery", async (c) => {
+  const input = z
+    .object({
+      requestId: z.uuid(),
+      confirm: z.boolean().default(false),
+      reason: z.string().trim().min(10).max(600),
+    })
+    .parse(await c.req.json());
+  const task = await getTask(c.env, c.req.param("id"));
+  if (task.status !== "ReconciliationNeeded")
+    throw new AppError(
+      "task_changed",
+      "This task is not awaiting reconciliation.",
+      409,
+    );
+  await requireStoppedWorkflow(c.env, task);
+  const evidence = await verifyRecoveredRequest(c.env, task, input.requestId);
+  if (input.confirm) {
+    const changed = await c.env.DB.prepare(
+      "UPDATE tasks SET provider_request_id=?,provider_status_url=?,provider_result_url=?,reason=?,updated_at=? WHERE id=? AND status='ReconciliationNeeded' AND provider_request_id IS NULL AND provider_attempt_id=? RETURNING id",
+    )
+      .bind(
+        evidence.requestId,
+        evidence.statusUrl,
+        evidence.resultUrl,
+        input.reason,
+        Date.now(),
+        task.id,
+        task.provider_attempt_id,
+      )
+      .first();
+    if (!changed)
+      throw new AppError(
+        "task_changed",
+        "The request has already been linked or the task changed. Refresh its status.",
+        409,
+      );
+    await audit(c.env, requireAdmin(c).id, "task.request-linked", task.id, {
+      requestId: evidence.requestId,
+      reason: input.reason,
+    });
+  }
+  return c.json({
+    requestId: evidence.requestId,
+    model: evidence.model,
+    sentAt: evidence.sentAt,
+    status: evidence.status,
+    linked: input.confirm,
+  });
 });
 admin.post("/reports/:id/resolve", async (c) => {
   await c.env.DB.prepare("UPDATE reports SET status='resolved' WHERE id=?")

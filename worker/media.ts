@@ -170,6 +170,7 @@ export async function serveR2(
     ETag: head.httpEtag,
     "Cache-Control": publicMedia ? "public, max-age=60" : "private, no-store",
     "X-Content-Type-Options": "nosniff",
+    "Cross-Origin-Resource-Policy": "same-origin",
   });
   if (range) headers.set("Content-Range", `bytes ${start}-${end}/${head.size}`);
   if (request.method === "HEAD")

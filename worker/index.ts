@@ -53,6 +53,9 @@ import { admin, refreshBalance } from "./admin";
 import policies from "../shared/policies.json";
 import { publicArchive, dispatchArchives } from "./archives";
 import { governance, assertOwnerApproval } from "./governance";
+import { creationAction } from "../shared/protection";
+import { verifyHuman } from "./turnstile";
+import { recordedReconciliation } from "./operations";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -104,6 +107,19 @@ app.use("/api/*", async (c, next) => {
       throw new AppError("json_required", "Send this request as JSON.", 400);
   }
   if (!c.req.path.startsWith("/api/auth/")) c.set("user", await currentUser(c));
+  const action = creationAction(c.req.path.slice(4), c.req.method);
+  if (action) {
+    const user = requireUser(c, true);
+    await rateLimit(c.env, `creation:${user.id}`, 30);
+    const ip = c.req.header("CF-Connecting-IP");
+    if (ip)
+      await rateLimit(
+        c.env,
+        `creation-ip:${await sha256(`${new Date().toISOString().slice(0, 10)}:${ip}`)}`,
+        60,
+      );
+    await verifyHuman(c.env, c.req.raw, action);
+  }
   await next();
 });
 app.onError((error, c) => {
@@ -865,6 +881,12 @@ app.get("/api/tasks/:id", async (c) => {
   return c.json({ task: taskDto(t) });
 });
 app.on(["GET", "HEAD"], "/api/scenes/:id/video", async (c) => {
+  if (c.req.header("Sec-Fetch-Site") === "cross-site")
+    throw new AppError(
+      "embed_unavailable",
+      "Open this story on Afterlight to watch it.",
+      403,
+    );
   const row = await c.env.DB.prepare(
     "SELECT s.media_key,s.hidden,s.story_id,st.fixture FROM scenes s JOIN stories st ON s.story_id=st.id WHERE s.id=?",
   )
@@ -987,7 +1009,7 @@ async function reconcile(env: Cloudflare.Env) {
   }
   const stories = (
     await env.DB.prepare(
-      "SELECT id FROM stories WHERE status='open' AND (active_task_id IS NOT NULL OR EXISTS(SELECT 1 FROM tasks WHERE story_id=stories.id AND status='Queued')) LIMIT 100",
+      "SELECT id FROM stories WHERE active_task_id IS NOT NULL OR (status='open' AND EXISTS(SELECT 1 FROM tasks WHERE story_id=stories.id AND status='Queued')) LIMIT 100",
     ).all<{ id: string }>()
   ).results;
   for (const s of stories) {
@@ -1032,7 +1054,7 @@ export default {
     return env.ASSETS.fetch(request);
   },
   async scheduled(_controller: ScheduledController, env: Cloudflare.Env) {
-    await reconcile(env);
+    await recordedReconciliation(env, () => reconcile(env));
   },
 } satisfies ExportedHandler<Cloudflare.Env>;
 

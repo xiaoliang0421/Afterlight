@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { creationAction } from "../shared/protection";
+import { configureVerification, humanToken } from "./humanVerification";
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -13,10 +15,15 @@ export async function api<T>(
   data?: unknown,
   signal?: AbortSignal,
 ): Promise<T> {
+  const action = creationAction(path, method);
+  const token = action ? await humanToken(action, signal) : null;
   const response = await fetch(`/api${path}`, {
     method,
     credentials: "same-origin",
-    headers: data === undefined ? {} : { "Content-Type": "application/json" },
+    headers: {
+      ...(data === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { "X-Turnstile-Token": token } : {}),
+    },
     body: data === undefined ? undefined : JSON.stringify(data),
     signal,
   });
@@ -35,6 +42,11 @@ export async function api<T>(
       body.error?.message ?? "The request could not be completed.",
       body.error?.code,
     );
+  if (path === "/bootstrap") {
+    const config = (body as { config?: { turnstileSiteKey?: string } }).config;
+    if (typeof config?.turnstileSiteKey === "string")
+      configureVerification(config.turnstileSiteKey);
+  }
   return body as T;
 }
 export function navigate(path: string, replace = false) {

@@ -38,7 +38,8 @@ export function Player({
   const video = useRef<HTMLVideoElement>(null),
     frame = useRef<HTMLDivElement>(null),
     autoPlay = useRef(false),
-    pendingSeek = useRef(0);
+    pendingSeek = useRef(0),
+    latestPosition = useRef(0);
   const [index, setIndex] = useState(0),
     [time, setTime] = useState(0),
     [playing, setPlaying] = useState(false),
@@ -47,9 +48,14 @@ export function Player({
     [error, setError] = useState(""),
     [hover, setHover] = useState<string | null>(null),
     [original, setOriginal] = useState(false),
-    [loading, setLoading] = useState(false);
+    [loading, setLoading] = useState(false),
+    [retry, setRetry] = useState(0),
+    [offline, setOffline] = useState(!navigator.onLine);
   const scene = scenes[index];
   const seek = (target: number) => {
+    target = Number.isFinite(target)
+      ? Math.max(0, Math.min(target, episode.durationMs))
+      : 0;
     const selected =
       sceneAt(scenes, Math.max(0, Math.min(target, episode.durationMs))) ??
       scenes[0];
@@ -61,7 +67,7 @@ export function Player({
           Math.max(0, target - selected.startMs),
         ) / 1000;
     pendingSeek.current = within;
-    if (i === index && video.current) {
+    if (i === index && video.current && video.current.readyState >= 1) {
       video.current.currentTime = within;
       pendingSeek.current = 0;
     } else {
@@ -69,6 +75,7 @@ export function Player({
       setIndex(i);
     }
     setTime(target);
+    latestPosition.current = within;
     onPosition(target, selected.version);
   };
   useEffect(() => {
@@ -91,6 +98,7 @@ export function Player({
       }
       setIndex(scenes.findIndex((s) => s.id === target.id));
       setTime(clamped);
+      latestPosition.current = within;
       onPosition(clamped, target.version);
     }
   }, [episode.id, startTime]);
@@ -112,28 +120,35 @@ export function Player({
       scene.mediaUrl.endsWith(".m3u8") &&
       !el.canPlayType("application/vnd.apple.mpegurl")
     ) {
-      void import("hls.js").then(({ default: Hls }) => {
-        if (cancelled) return;
-        if (!Hls.isSupported()) {
-          setError(
-            "This browser cannot play this stream. Try a current browser.",
-          );
-          setLoading(false);
-          return;
-        }
-        const hls = new Hls();
-        hls.loadSource(scene.mediaUrl);
-        hls.attachMedia(el);
-        hls.on(Hls.Events.ERROR, (_e, data) => {
-          if (data.fatal) {
+      void import("hls.js")
+        .then(({ default: Hls }) => {
+          if (cancelled) return;
+          if (!Hls.isSupported()) {
             setError(
-              "Playback was interrupted. You can retry from this scene.",
+              "This browser cannot play this stream. Try a current browser.",
             );
+            setLoading(false);
+            return;
+          }
+          const hls = new Hls();
+          hls.loadSource(scene.mediaUrl);
+          hls.attachMedia(el);
+          hls.on(Hls.Events.ERROR, (_e, data) => {
+            if (data.fatal) {
+              setError(
+                "Playback was interrupted. You can retry from this scene.",
+              );
+              setLoading(false);
+            }
+          });
+          cleanup = () => hls.destroy();
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setError("The streaming player could not load. Please retry.");
             setLoading(false);
           }
         });
-        cleanup = () => hls.destroy();
-      });
     } else {
       el.src = scene.mediaUrl;
       el.load();
@@ -142,7 +157,50 @@ export function Player({
       cancelled = true;
       cleanup?.();
     };
-  }, [scene?.id, scene?.mediaUrl, scene?.hidden]);
+  }, [scene?.id, scene?.mediaUrl, scene?.hidden, retry]);
+  useEffect(() => {
+    const update = () => setOffline(!navigator.onLine);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+  const nextScene = scenes[index + 1];
+  useEffect(() => {
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+    if (
+      !playing ||
+      offline ||
+      !nextScene ||
+      nextScene.hidden ||
+      nextScene.mediaUrl.includes(".m3u8") ||
+      connection?.saveData ||
+      /(^|-)2g$/.test(connection?.effectiveType ?? "")
+    )
+      return;
+    // Only warm the next short MP4. Browser HTTP caching can reuse these bytes; this does not promise gapless playback.
+    const warm = document.createElement("video");
+    warm.preload = "auto";
+    warm.muted = true;
+    warm.src = nextScene.mediaUrl;
+    warm.load();
+    return () => {
+      warm.removeAttribute("src");
+      warm.load();
+    };
+  }, [nextScene?.id, nextScene?.mediaUrl, nextScene?.hidden, playing, offline]);
+  const retryPlayback = () => {
+    pendingSeek.current = latestPosition.current;
+    setError("");
+    setLoading(true);
+    setRetry((n) => n + 1);
+  };
   useEffect(() => {
     const el = video.current;
     if (el) {
@@ -154,6 +212,11 @@ export function Player({
   const toggle = () => {
     const el = video.current;
     if (!el) return;
+    if (el.ended && index === scenes.length - 1) {
+      seek(0);
+      autoPlay.current = true;
+      if (index !== 0) return;
+    }
     if (el.paused) {
       autoPlay.current = true;
       void el.play().catch(() => {
@@ -169,30 +232,50 @@ export function Player({
   if (!scene) return null;
   return (
     <div className="player-block">
-      <div className="video-frame" ref={frame}>
+      <div
+        className="video-frame"
+        ref={frame}
+        tabIndex={0}
+        aria-label="Story player. Space to play or pause; arrow keys to seek."
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || scene.hidden) return;
+          if (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight")
+            e.preventDefault();
+          if (e.key === " ") toggle();
+          if (e.key === "ArrowLeft") seek(time - 5000);
+          if (e.key === "ArrowRight") seek(time + 5000);
+        }}
+      >
         <video
           ref={video}
           poster={poster}
           playsInline
-          preload="metadata"
+          preload="auto"
           aria-label={`${episode.title}: ${scene.title}`}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onWaiting={() => setLoading(true)}
+          onPlaying={() => setLoading(false)}
           onCanPlay={() => setLoading(false)}
           onLoadedMetadata={() => {
             if (!video.current) return;
-            if (pendingSeek.current)
-              video.current.currentTime = Math.min(
+            video.current.currentTime = Math.max(
+              0,
+              Math.min(
                 pendingSeek.current,
-                video.current.duration - 0.01,
-              );
+                Number.isFinite(video.current.duration)
+                  ? video.current.duration - 0.01
+                  : pendingSeek.current,
+              ),
+            );
             pendingSeek.current = 0;
             if (autoPlay.current)
               void video.current.play().catch(() => setPlaying(false));
           }}
           onTimeUpdate={() => {
             if (!video.current) return;
+            if (video.current.readyState < 1) return;
+            latestPosition.current = video.current.currentTime;
             const t =
               scene.startMs +
               Math.min(scene.durationMs, video.current.currentTime * 1000);
@@ -202,6 +285,7 @@ export function Player({
           onEnded={() => {
             if (index + 1 < scenes.length) {
               pendingSeek.current = 0;
+              latestPosition.current = 0;
               autoPlay.current = true;
               setIndex(index + 1);
             } else {
@@ -224,6 +308,13 @@ export function Player({
             label="English"
             src={scene.captionsUrl}
             default={captions}
+            onLoad={() => {
+              if (video.current)
+                for (let i = 0; i < video.current.textTracks.length; i++)
+                  video.current.textTracks[i].mode = captions
+                    ? "showing"
+                    : "hidden";
+            }}
           />
         </video>
         <div className="video-top">
@@ -240,7 +331,11 @@ export function Player({
           <button className="big-play" aria-label="Play story" onClick={toggle}>
             <Play size={30} fill="currentColor" />
             <span>
-              {time > 0 ? "Continue watching" : "Step into the story"}
+              {time >= episode.durationMs
+                ? "Replay this chapter"
+                : time > 0
+                  ? "Continue watching"
+                  : "Step into the story"}
             </span>
           </button>
         )}
@@ -255,17 +350,20 @@ export function Player({
             {!scene.hidden && (
               <Button
                 kind="secondary"
-                onClick={() => {
-                  setError("");
-                  video.current?.load();
-                }}
+                disabled={offline}
+                onClick={retryPlayback}
               >
                 Retry playback
               </Button>
             )}
           </div>
         )}
-        {loading && playing && (
+        {offline && (
+          <span className="connection-indicator" role="status">
+            You’re offline. Reconnect to load more video.
+          </span>
+        )}
+        {loading && !error && !scene.hidden && !offline && (
           <span className="buffering-indicator" role="status">
             Buffering…
           </span>

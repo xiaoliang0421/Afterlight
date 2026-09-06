@@ -37,7 +37,9 @@ Ingestion and validation of these reference files into owned storage is still a 
 - `ReconciliationNeeded`: verify the provider request and charge. If a request ID is recorded, use **Resume known request** to poll/archive that request. Do not issue another paid POST. If the attempt outcome is unknown, investigate with the provider first.
 - **Fail after verification** requires the actual reconciled upstream cost before releasing reserved funds. Never enter zero just to free the queue.
 
-Attaching a recovered external request ID when the original response was lost is not yet supported in the studio UI. That case requires a reviewed database repair and remains a launch acceptance item. Old-day tasks retain their original budget periods.
+For a lost response, open the task’s recovery dialog, enter the existing fal request UUID and explain the provider checks. **Verify existing request** performs GET-only history/status checks and compares the model, submission time and every saved input field. **Link this verified request** verifies again before atomically attaching it; the task remains on hold. Then **Resume the existing request** records a unique recovery Workflow ID in D1. Competing operators cannot schedule a second recovery. If dispatch is temporarily unavailable, StoryRoom and scheduled reconciliation use that same saved workflow ID and resume flag.
+
+The old Workflow must report a terminal state before linking, recovery or failure closure. A provider ID can belong to only one task and cannot be replaced; the attempt marker and saved submission evidence cannot be cleared. No recovery step sends a new paid POST. Input/model/time mismatches, unavailable provider history, or legacy attempts without an input snapshot stay on hold for provider reconciliation. Old-day tasks retain their original budget periods.
 
 ## Reports and account requests
 
@@ -52,3 +54,9 @@ The full deletion execution policy is a remaining launch item: verify identity, 
 Periodic Workers recovery wakes durable queues and unsent outbox events. Observability records request IDs, safe error codes and task audit actions rather than secrets or full user prompts.
 
 Before production, configure and test D1 recovery plus durable R2 media backup/version retention. A code rollback does not undo a database migration or restore deleted media. Keep migrations compatible with the prior release or schedule a reviewed data migration. Provider/media failures must never reset a task to a blind paid retry.
+
+## Studio diagnostics
+
+Studio → Operations shows scheduled reconciliation start/completion/failure timestamps, held attempts, missing request IDs, retained cost reservations and Turnstile key readiness. A remote completion older than 15 minutes is flagged. A completed pass does not prove every downstream service is healthy: balance freshness and provider errors are also visible in capacity/logs. The cron retries existing active tasks even if new submissions to their story are paused.
+
+Use `recovery.dispatch-deferred`, `reconciliation.failed`, `queue.recovery-failed`, `provider.balance-check-failed` and `request.error` events in Cloudflare logs. Before launch, route actionable failures to the operator’s chosen alert destination and rehearse outage, recovery and backup restoration. No outbound alert destination has been configured or messaged.

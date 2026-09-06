@@ -50,13 +50,14 @@ export class StoryRoom extends DurableObject<Cloudflare.Env> {
       .bind(storyId, storyId)
       .run();
     const row = await this.env.DB.prepare(
-      "SELECT t.id,t.status,t.workflow_id,t.queue_sequence FROM stories s JOIN tasks t ON t.id=s.active_task_id WHERE s.id=?",
+      "SELECT t.id,t.status,t.workflow_id,t.queue_sequence,t.provider_request_id FROM stories s JOIN tasks t ON t.id=s.active_task_id WHERE s.id=?",
     )
       .bind(storyId)
       .first<{
         id: string;
         status: string;
         workflow_id: string | null;
+        provider_request_id: string | null;
         queue_sequence: number;
       }>();
     if (
@@ -82,7 +83,11 @@ export class StoryRoom extends DurableObject<Cloudflare.Env> {
     try {
       await this.env.GENERATION.create({
         id: workflowId,
-        params: { taskId: row.id, storyId },
+        params: {
+          taskId: row.id,
+          storyId,
+          resumeKnown: row.status === "Generating" && !!row.provider_request_id,
+        },
       });
     } catch (error) {
       try {

@@ -39,6 +39,8 @@ export interface TaskRow {
   reason: string;
   provider_request_id: string | null;
   provider_attempt_id: string | null;
+  provider_input_json: string | null;
+  provider_submitted_at: number | null;
   provider_status_url: string | null;
   provider_result_url: string | null;
   media_key: string | null;

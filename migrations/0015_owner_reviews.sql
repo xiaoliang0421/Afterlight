@@ -21,7 +21,7 @@ CREATE TABLE owner_reviews (
 CREATE INDEX owner_reviews_inbox ON owner_reviews(story_id,status,created_at);
 
 CREATE TRIGGER owner_review_request_guard BEFORE INSERT ON owner_reviews BEGIN
- SELECT CASE WHEN NEW.status!='pending' OR NEW.decided_by IS NOT NULL OR NOT EXISTS(
+ SELECT (CASE WHEN NEW.status!='pending' OR NEW.decided_by IS NOT NULL OR NOT EXISTS(
   SELECT 1 FROM tasks t JOIN stories s ON s.id=t.story_id WHERE t.id=NEW.task_id
   AND t.story_id=NEW.story_id AND t.user_id=NEW.requester_id
   AND t.status IN ('Draft','NeedsReview') AND t.preview_lock IS NULL
@@ -30,9 +30,9 @@ CREATE TRIGGER owner_review_request_guard BEFORE INSERT ON owner_reviews BEGIN
   AND t.base_version=NEW.base_version AND s.version=NEW.base_version
   AND COALESCE(json_array_length(t.plan_json,'$.majorChanges'),0)>0
   AND COALESCE(json_extract(t.plan_json,'$.rejected'),0)=0
- ) THEN RAISE(ABORT,'owner_review_changed') END;
- SELECT CASE WHEN EXISTS(SELECT 1 FROM owner_reviews WHERE story_id=NEW.story_id AND requester_id=NEW.requester_id AND status='pending') THEN RAISE(ABORT,'owner_review_pending') END;
- SELECT CASE WHEN (SELECT COUNT(*) FROM owner_reviews WHERE story_id=NEW.story_id AND status='pending')>=20 THEN RAISE(ABORT,'owner_review_full') END;
+ ) THEN RAISE(ABORT,'owner_review_changed') END);
+ SELECT (CASE WHEN EXISTS(SELECT 1 FROM owner_reviews WHERE story_id=NEW.story_id AND requester_id=NEW.requester_id AND status='pending') THEN RAISE(ABORT,'owner_review_pending') END);
+ SELECT (CASE WHEN (SELECT COUNT(*) FROM owner_reviews WHERE story_id=NEW.story_id AND status='pending')>=20 THEN RAISE(ABORT,'owner_review_full') END);
 END;
 CREATE TRIGGER owner_review_requested AFTER INSERT ON owner_reviews BEGIN
  UPDATE tasks SET status='NeedsReview',owner_review_id=NEW.id,owner_review_status='pending',owner_review_note='',reason='Waiting for the story creator’s decision. No generation credit is reserved.',updated_at=NEW.created_at WHERE id=NEW.task_id;
@@ -44,16 +44,16 @@ CREATE TRIGGER owner_review_immutable BEFORE UPDATE ON owner_reviews WHEN
  OR NEW.created_at!=OLD.created_at OR OLD.status!='pending'
  BEGIN SELECT RAISE(ABORT,'owner_review_immutable'); END;
 CREATE TRIGGER owner_review_decision_guard BEFORE UPDATE ON owner_reviews WHEN NEW.status IN ('approved','rejected') BEGIN
- SELECT CASE WHEN NEW.decided_at IS NULL OR length(trim(NEW.note))<10 OR NOT EXISTS(
+ SELECT (CASE WHEN NEW.decided_at IS NULL OR length(trim(NEW.note))<10 OR NOT EXISTS(
   SELECT 1 FROM tasks t JOIN stories s ON s.id=t.story_id WHERE t.id=NEW.task_id AND s.owner_id=NEW.decided_by
   AND s.version=NEW.base_version AND t.base_version=NEW.base_version AND t.plan_revision=NEW.plan_revision
   AND t.plan_json=NEW.plan_json AND t.status IN ('Draft','NeedsReview') AND t.preview_lock IS NULL
- ) THEN RAISE(ABORT,'owner_review_changed') END;
+ ) THEN RAISE(ABORT,'owner_review_changed') END);
 END;
 CREATE TRIGGER owner_review_decided AFTER UPDATE OF status ON owner_reviews BEGIN
- UPDATE tasks SET owner_review_status=NEW.status,owner_review_note=NEW.note,updated_at=COALESCE(NEW.decided_at,updated_at),reason= CASE NEW.status WHEN 'approved' THEN 'The story creator approved this plan. Confirm it before joining the queue.' WHEN 'rejected' THEN 'The story creator declined this plan. You can withdraw it and propose another idea.' WHEN 'expired' THEN 'The story or plan changed. Preview the scene again before requesting a new decision.' ELSE reason END WHERE id=NEW.task_id AND owner_review_id=NEW.id;
+ UPDATE tasks SET owner_review_status=NEW.status,owner_review_note=NEW.note,updated_at=COALESCE(NEW.decided_at,updated_at),reason= (CASE NEW.status WHEN 'approved' THEN 'The story creator approved this plan. Confirm it before joining the queue.' WHEN 'rejected' THEN 'The story creator declined this plan. You can withdraw it and propose another idea.' WHEN 'expired' THEN 'The story or plan changed. Preview the scene again before requesting a new decision.' ELSE reason END) WHERE id=NEW.task_id AND owner_review_id=NEW.id;
  INSERT INTO notifications SELECT NEW.id||':'||NEW.status,NEW.requester_id,NEW.story_id,NEW.task_id,
-  CASE NEW.status WHEN 'approved' THEN 'Your story change was approved. Confirm the plan to join the queue.' WHEN 'rejected' THEN 'The story creator left a decision on your proposal.' ELSE 'Your story-change request is no longer current.' END,NULL,COALESCE(NEW.decided_at,NEW.created_at)
+  (CASE NEW.status WHEN 'approved' THEN 'Your story change was approved. Confirm the plan to join the queue.' WHEN 'rejected' THEN 'The story creator left a decision on your proposal.' ELSE 'Your story-change request is no longer current.' END),NULL,COALESCE(NEW.decided_at,NEW.created_at)
   WHERE NEW.status!='withdrawn';
 END;
 CREATE TRIGGER owner_review_plan_changed AFTER UPDATE OF plan_json,base_version ON tasks
@@ -73,10 +73,10 @@ END;
 CREATE TRIGGER owner_review_generation_guard BEFORE UPDATE OF status ON tasks
  WHEN NEW.status IN ('Queued','Generating') AND NEW.status!=OLD.status
  AND COALESCE(json_array_length(NEW.plan_json,'$.majorChanges'),0)>0 BEGIN
- SELECT CASE WHEN NOT EXISTS(
+ SELECT (CASE WHEN NOT EXISTS(
   SELECT 1 FROM owner_reviews r JOIN stories s ON s.id=r.story_id
   WHERE r.task_id=NEW.id AND r.status='approved' AND r.decided_by=s.owner_id
   AND r.base_version=NEW.base_version AND s.version=NEW.base_version
   AND r.plan_revision=NEW.plan_revision AND r.plan_json=NEW.plan_json
- ) THEN RAISE(ABORT,'owner_approval_required') END;
+ ) THEN RAISE(ABORT,'owner_approval_required') END);
 END;

@@ -93,6 +93,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
       if (!prepared) return { status: "needs-review-or-stopped" };
       const plan: ScenePlan = prepared;
       if (
+        !event.payload.resumeKnown &&
         String(this.env.PROVIDER_MODE) === "fixture" &&
         String(this.env.ENVIRONMENT) === "development"
       ) {
@@ -130,9 +131,15 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
           const request = await prepareVideoRequest(this.env, t, plan);
           // The durable attempt marker precedes network I/O. A crash here never blindly resubmits.
           const claimed = await this.env.DB.prepare(
-            "UPDATE tasks SET status='Generating',provider_attempt_id=?,updated_at=? WHERE id=? AND status='Preparing' AND provider_attempt_id IS NULL RETURNING id",
+            "UPDATE tasks SET status='Generating',provider_attempt_id=?,provider_input_json=?,provider_submitted_at=?,updated_at=? WHERE id=? AND status='Preparing' AND provider_attempt_id IS NULL RETURNING id",
           )
-            .bind(crypto.randomUUID(), Date.now(), taskId)
+            .bind(
+              crypto.randomUUID(),
+              JSON.stringify(request),
+              Date.now(),
+              Date.now(),
+              taskId,
+            )
             .first();
           if (!claimed)
             throw new AppError(

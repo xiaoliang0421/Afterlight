@@ -75,7 +75,7 @@
       "vars": {
         "ENVIRONMENT": "staging",
         "PROVIDER_MODE": "disabled",
-        "PUBLIC_ORIGIN": "https://configure-staging.example",
+        "PUBLIC_ORIGIN": "https://afterlight-staging.liushenliang1994.workers.dev",
         "ALLOW_DEV_LOGIN": "false",
         "PAYMENTS_ENABLED": "false",
         "DIRECTOR_API_URL": "https://api.deepseek.com/chat/completions",
@@ -88,7 +88,7 @@
         {
           "binding": "DB",
           "database_name": "afterlight-staging",
-          "database_id": "REPLACE_STAGING_DATABASE_ID",
+          "database_id": "c8adaf38-4cd0-4bdb-ad7d-97227c07c033",
           "migrations_dir": "migrations",
         },
       ],
@@ -137,7 +137,7 @@
         {
           "binding": "DB",
           "database_name": "afterlight-production",
-          "database_id": "REPLACE_PRODUCTION_DATABASE_ID",
+          "database_id": "27290569-b38d-47a6-9e4e-ff4e84a055d9",
           "migrations_dir": "migrations",
         },
       ],

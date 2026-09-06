@@ -25,6 +25,13 @@ export function inspect(config, environment, release, policies) {
     failures.push("Disable development login and use the correct environment.");
   if (!["disabled", "live"].includes(vars.PROVIDER_MODE))
     failures.push("Fixture mode is forbidden outside local development.");
+  if (
+    (environment === "production" || vars.PROVIDER_MODE === "live") &&
+    (!vars.TURNSTILE_SITE_KEY || /^[123]x0{8}/.test(vars.TURNSTILE_SITE_KEY))
+  )
+    failures.push(
+      "Configure a real Turnstile site key for this environment; provision the matching secret and verify the exact hostname before opening creation.",
+    );
   if (vars.PAYMENTS_ENABLED !== "false") {
     if (vars.PAYMENTS_ENABLED !== "true")
       failures.push("Set an explicit payments switch.");

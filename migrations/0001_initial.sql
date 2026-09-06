@@ -41,17 +41,17 @@ CREATE TABLE rate_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL, expires_
 
 -- Admission is a single D1 transaction. A second request cannot promise the same money or credit.
 CREATE TRIGGER task_admission BEFORE UPDATE OF status ON tasks WHEN NEW.status='Queued' AND OLD.status IN ('Draft','NeedsReview') BEGIN
- SELECT CASE WHEN (SELECT generation_enabled FROM settings WHERE id=1)!=1 THEN RAISE(ABORT,'generation_paused') END;
- SELECT CASE WHEN (SELECT status FROM stories WHERE id=NEW.story_id)!='open' THEN RAISE(ABORT,'story_paused') END;
- SELECT CASE WHEN NEW.plan_json IS NULL OR NEW.approved_plan_json IS NULL THEN RAISE(ABORT,'plan_required') END;
- SELECT CASE WHEN NEW.policy_version!='free-v1' THEN RAISE(ABORT,'payment_disabled') END;
- SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE story_id=NEW.story_id AND user_id=NEW.user_id AND id!=NEW.id AND reservation_active=1) THEN RAISE(ABORT,'already_in_queue') END;
- SELECT CASE WHEN (SELECT count(*) FROM tasks WHERE story_id=NEW.story_id AND reservation_active=1)>=(SELECT max_queue_per_story FROM settings WHERE id=1) THEN RAISE(ABORT,'queue_full') END;
- SELECT CASE WHEN COALESCE((SELECT limit_units-reserved-spent FROM credit_accounts WHERE user_id=NEW.user_id AND period=NEW.quota_period),0)<1 THEN RAISE(ABORT,'credits_exhausted') END;
- SELECT CASE WHEN COALESCE((SELECT limit_cents-reserved_cents-spent_cents FROM budget_periods WHERE kind='day' AND period=NEW.budget_day),0)<NEW.reserved_cents THEN RAISE(ABORT,'capacity_full') END;
- SELECT CASE WHEN COALESCE((SELECT limit_cents-reserved_cents-spent_cents FROM budget_periods WHERE kind='month' AND period=NEW.budget_month),0)<NEW.reserved_cents THEN RAISE(ABORT,'capacity_full') END;
- SELECT CASE WHEN (SELECT checked_at FROM provider_wallet WHERE id=1)<NEW.updated_at-300000 THEN RAISE(ABORT,'balance_stale') END;
- SELECT CASE WHEN (SELECT balance_cents-reserved_cents-debited_cents FROM provider_wallet WHERE id=1)<NEW.reserved_cents THEN RAISE(ABORT,'provider_capacity') END;
+ SELECT (CASE WHEN (SELECT generation_enabled FROM settings WHERE id=1)!=1 THEN RAISE(ABORT,'generation_paused') END);
+ SELECT (CASE WHEN (SELECT status FROM stories WHERE id=NEW.story_id)!='open' THEN RAISE(ABORT,'story_paused') END);
+ SELECT (CASE WHEN NEW.plan_json IS NULL OR NEW.approved_plan_json IS NULL THEN RAISE(ABORT,'plan_required') END);
+ SELECT (CASE WHEN NEW.policy_version!='free-v1' THEN RAISE(ABORT,'payment_disabled') END);
+ SELECT (CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE story_id=NEW.story_id AND user_id=NEW.user_id AND id!=NEW.id AND reservation_active=1) THEN RAISE(ABORT,'already_in_queue') END);
+ SELECT (CASE WHEN (SELECT count(*) FROM tasks WHERE story_id=NEW.story_id AND reservation_active=1)>=(SELECT max_queue_per_story FROM settings WHERE id=1) THEN RAISE(ABORT,'queue_full') END);
+ SELECT (CASE WHEN COALESCE((SELECT limit_units-reserved-spent FROM credit_accounts WHERE user_id=NEW.user_id AND period=NEW.quota_period),0)<1 THEN RAISE(ABORT,'credits_exhausted') END);
+ SELECT (CASE WHEN COALESCE((SELECT limit_cents-reserved_cents-spent_cents FROM budget_periods WHERE kind='day' AND period=NEW.budget_day),0)<NEW.reserved_cents THEN RAISE(ABORT,'capacity_full') END);
+ SELECT (CASE WHEN COALESCE((SELECT limit_cents-reserved_cents-spent_cents FROM budget_periods WHERE kind='month' AND period=NEW.budget_month),0)<NEW.reserved_cents THEN RAISE(ABORT,'capacity_full') END);
+ SELECT (CASE WHEN (SELECT checked_at FROM provider_wallet WHERE id=1)<NEW.updated_at-300000 THEN RAISE(ABORT,'balance_stale') END);
+ SELECT (CASE WHEN (SELECT balance_cents-reserved_cents-debited_cents FROM provider_wallet WHERE id=1)<NEW.reserved_cents THEN RAISE(ABORT,'provider_capacity') END);
 END;
 CREATE TRIGGER task_reserve AFTER UPDATE OF status ON tasks WHEN NEW.status='Queued' AND OLD.status IN ('Draft','NeedsReview') BEGIN
  UPDATE credit_accounts SET reserved=reserved+1 WHERE user_id=NEW.user_id AND period=NEW.quota_period;
@@ -62,18 +62,18 @@ CREATE TRIGGER task_reserve AFTER UPDATE OF status ON tasks WHEN NEW.status='Que
  INSERT INTO ledger VALUES(NEW.id||':reserve:'||NEW.updated_at,NEW.id,NEW.user_id,'reserve',1,NEW.reserved_cents,NEW.policy_version,NEW.updated_at);
 END;
 CREATE TRIGGER task_settle AFTER UPDATE OF status ON tasks WHEN OLD.reservation_active=1 AND NEW.status IN ('Published','Cancelled','Failed','NeedsReview') BEGIN
- UPDATE credit_accounts SET reserved=reserved-1,spent=spent+ CASE WHEN NEW.status='Published' THEN 1 ELSE 0 END WHERE user_id=NEW.user_id AND period=NEW.quota_period;
+ UPDATE credit_accounts SET reserved=reserved-1,spent=spent+ (CASE WHEN NEW.status='Published' THEN 1 ELSE 0 END) WHERE user_id=NEW.user_id AND period=NEW.quota_period;
  UPDATE budget_periods SET reserved_cents=reserved_cents-NEW.reserved_cents,spent_cents=spent_cents+NEW.recorded_cost_cents WHERE (kind='day' AND period=NEW.budget_day) OR (kind='month' AND period=NEW.budget_month);
  UPDATE provider_wallet SET reserved_cents=reserved_cents-NEW.reserved_cents,debited_cents=debited_cents+NEW.recorded_cost_cents WHERE id=1;
  UPDATE tasks SET reservation_active=0 WHERE id=NEW.id;
  UPDATE stories SET active_task_id=NULL WHERE id=NEW.story_id AND active_task_id=NEW.id;
- INSERT INTO ledger VALUES(NEW.id||':settle:'||NEW.updated_at,NEW.id,NEW.user_id, CASE WHEN NEW.status='Published' THEN 'consume' ELSE 'release' END, CASE WHEN NEW.status='Published' THEN 1 ELSE 0 END,NEW.recorded_cost_cents,NEW.policy_version,NEW.updated_at);
- INSERT INTO notifications VALUES(NEW.id||':'||NEW.status||':'||NEW.updated_at,NEW.user_id,NEW.story_id,NEW.id, CASE NEW.status WHEN 'Published' THEN 'Your scene is now part of the story.' WHEN 'NeedsReview' THEN 'The story has changed. Review the updated scene before rejoining.' ELSE 'Your creation credit has been returned.' END,NULL,NEW.updated_at);
+ INSERT INTO ledger VALUES(NEW.id||':settle:'||NEW.updated_at,NEW.id,NEW.user_id, (CASE WHEN NEW.status='Published' THEN 'consume' ELSE 'release' END), (CASE WHEN NEW.status='Published' THEN 1 ELSE 0 END),NEW.recorded_cost_cents,NEW.policy_version,NEW.updated_at);
+ INSERT INTO notifications VALUES(NEW.id||':'||NEW.status||':'||NEW.updated_at,NEW.user_id,NEW.story_id,NEW.id, (CASE NEW.status WHEN 'Published' THEN 'Your scene is now part of the story.' WHEN 'NeedsReview' THEN 'The story has changed. Review the updated scene before rejoining.' ELSE 'Your creation credit has been returned.' END),NULL,NEW.updated_at);
 END;
 CREATE TRIGGER publish_guard BEFORE UPDATE OF status ON tasks WHEN NEW.status='Published' AND OLD.status!='Published' BEGIN
- SELECT CASE WHEN OLD.status NOT IN ('NeedsModeration','Packaging') OR NEW.media_ready!=1 OR NEW.media_key IS NULL OR NEW.media_duration_ms<=0 OR NEW.reviewer_id IS NULL OR NEW.approved_summary IS NULL THEN RAISE(ABORT,'media_not_approved') END;
- SELECT CASE WHEN (SELECT version FROM stories WHERE id=NEW.story_id)!=NEW.base_version OR (SELECT active_task_id FROM stories WHERE id=NEW.story_id) IS NOT NEW.id THEN RAISE(ABORT,'story_version_conflict') END;
- SELECT CASE WHEN NEW.reservation_active!=1 THEN RAISE(ABORT,'reservation_required') END;
+ SELECT (CASE WHEN OLD.status NOT IN ('NeedsModeration','Packaging') OR NEW.media_ready!=1 OR NEW.media_key IS NULL OR NEW.media_duration_ms<=0 OR NEW.reviewer_id IS NULL OR NEW.approved_summary IS NULL THEN RAISE(ABORT,'media_not_approved') END);
+ SELECT (CASE WHEN (SELECT version FROM stories WHERE id=NEW.story_id)!=NEW.base_version OR (SELECT active_task_id FROM stories WHERE id=NEW.story_id) IS NOT NEW.id THEN RAISE(ABORT,'story_version_conflict') END);
+ SELECT (CASE WHEN NEW.reservation_active!=1 THEN RAISE(ABORT,'reservation_required') END);
 END;
 CREATE TRIGGER publish_scene AFTER UPDATE OF status ON tasks WHEN NEW.status='Published' AND OLD.status!='Published' BEGIN
  INSERT INTO episodes(id,story_id,number,title)
@@ -85,7 +85,7 @@ CREATE TRIGGER publish_scene AFTER UPDATE OF status ON tasks WHEN NEW.status='Pu
  INSERT INTO characters(id,story_id,name,description,state,introduced_version)
  SELECT json_extract(value,'$.id'),NEW.story_id,json_extract(value,'$.name'),json_extract(value,'$.description'),json_extract(value,'$.state'),NEW.base_version+1 FROM json_each(COALESCE(NEW.approved_new_characters_json,'[]'));
  UPDATE characters SET state=(SELECT json_extract(value,'$.state') FROM json_each(COALESCE(NEW.approved_characters_json,'[]')) WHERE json_extract(value,'$.id')=characters.id) WHERE story_id=NEW.story_id AND id IN (SELECT json_extract(value,'$.id') FROM json_each(COALESCE(NEW.approved_characters_json,'[]')));
- UPDATE episodes SET duration_ms=duration_ms+NEW.media_duration_ms,status= CASE WHEN duration_ms+NEW.media_duration_ms>=180000 THEN 'complete' ELSE 'open' END WHERE story_id=NEW.story_id AND status='open';
+ UPDATE episodes SET duration_ms=duration_ms+NEW.media_duration_ms,status= (CASE WHEN duration_ms+NEW.media_duration_ms>=180000 THEN 'complete' ELSE 'open' END) WHERE story_id=NEW.story_id AND status='open';
  UPDATE stories SET version=version+1,active_task_id=NULL,updated_at=NEW.updated_at WHERE id=NEW.story_id;
  INSERT INTO outbox VALUES(NEW.id||':published',NEW.story_id,json_object('type','scene.published','sceneId',NEW.id,'version',NEW.base_version+1),NULL,NEW.updated_at);
 END;

@@ -1,6 +1,6 @@
 # Cloudflare deployment
 
-The owner has supplied a dedicated GitHub repository for this product. No Cloudflare resources have been provisioned by this implementation. The tracked configuration deliberately contains invalid remote resource placeholders, and preflight prevents accidental deployment with them.
+The owner has supplied a dedicated GitHub repository for this product. On 2026-09-06, the owner activated R2 and the implementation created `afterlight-staging-media` and `afterlight-production-media`. Both have r2.dev access disabled and no public custom domains; their names match the existing MEDIA bindings. Separate D1 databases `afterlight-staging` and `afterlight-production` were also created and their IDs saved in `wrangler.jsonc`. The staging origin is `https://afterlight-staging.liushenliang1994.workers.dev`; this URL is configured but not deployed. All 17 schema migrations were applied to both databases through the authenticated Cloudflare API, with standard Wrangler migration tracking. Read-back confirmed zero users/stories/scenes, generation disabled and an authorized model-spend ceiling of zero. Worker deployment and secrets remain pending. The production origin remains a placeholder and production preflight still blocks release.
 
 ## GitHub
 
@@ -51,3 +51,11 @@ Archived MP4 range delivery currently works. The broader design calls for evalua
 - [Workflows local development](https://developers.cloudflare.com/workflows/build/local-development/)
 - [Stream readiness webhooks](https://developers.cloudflare.com/stream/manage-video-library/using-webhooks/)
 - [Cloudflare Containers](https://developers.cloudflare.com/containers/)
+
+## Creation verification and private media
+
+Configure a separate managed Turnstile widget for each deployment hostname. Set its public site key in `TURNSTILE_SITE_KEY` and the matching secret through Cloudflare Secrets as `TURNSTILE_SECRET_KEY`. Only local fixture mode with a loopback PUBLIC_ORIGIN can bypass missing keys. Staging/production creation fails closed if either key is missing. Never allow localhost on a production widget or use Cloudflare dummy test keys in a remote environment. The server validates the exact action and PUBLIC_ORIGIN hostname; each browser action renders a fresh single-use widget. Run a real challenge/expiration/reuse test after deployment.
+
+Keep R2 public domains off. Published MP4s are delivered by the Worker after checking scene visibility; unpublished originals require studio authentication. Cross-site browser video requests are rejected and R2 responses use `Cross-Origin-Resource-Policy: same-origin`. These are basic embedding/access controls, not DRM: someone allowed to watch a public clip can still copy or record it.
+
+The existing Cloudflare MCP connection can provision resources. Local Wrangler is not yet authenticated; the attempted browser OAuth flow was interrupted before completion. Continue the official Wrangler login with OS keychain storage, confirm the migration journal, then deploy the disabled-generation shell. Never copy OAuth tokens into the repository.

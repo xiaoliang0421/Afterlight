@@ -1,16 +1,26 @@
 # Cloudflare deployment
 
-TaleRelay staging was deployed on 2026-09-06 at `https://afterlight-staging.liushenliang1994.workers.dev`. Worker version `1e7a4f3c-b430-4047-a46f-7fbd59ccf3a0` includes the TaleRelay identity and a managed Turnstile widget restricted to that exact hostname. The public support contact is TaleRelay Support at `talerelay@proton.me`, reflected in policy draft `2026-09-06-draft5`. Session and Turnstile secrets are in the Worker secret store; the public site key is in `wrangler.jsonc`. Google client credentials, model keys and payment credentials have not been uploaded. Generation, checkout and development login remain disabled.
+TaleRelay staging was deployed on 2026-09-06 at `https://afterlight-staging.liushenliang1994.workers.dev`. Worker version `02a313c4-4cbc-4bba-8000-f6fa2e2e05d9` includes authenticated account-record export, the TaleRelay identity and a managed Turnstile widget restricted to that exact hostname. The public support contact is TaleRelay Support at `talerelay@proton.me`, reflected in policy draft `2026-09-06-draft5`. Session and Turnstile secrets are in the Worker secret store; the public site key is in `wrangler.jsonc`. Google client credentials, model keys and payment credentials have not been uploaded. Generation, checkout and development login remain disabled.
 
 Separate private R2 buckets (`afterlight-staging-media`, `afterlight-production-media`) and D1 databases exist for staging/production. All 17 schema migrations are applied with standard Wrangler tracking. Read-back confirmed zero users/stories/scenes. `StoryRoom`, both staging Workflows and the five-minute cron are deployed. The remote reconciliation health row recorded a successful completion with no failure. No fixture data was seeded remotely; `.assetsignore` also excludes local sample footage, fixture character/story artwork and client source maps from asset uploads.
 
-Public HTTP acceptance is incomplete: the test machine resolved the workers.dev hostname to `31.13.81.4` and timed out; the public fetch tool also could not open it. A separate DNS query returned a different unexpected address. These results indicate a DNS/network path problem but do not establish end-to-end application health. Verify on a working network and bind the owned custom domain before Google OAuth acceptance. The production origin remains a placeholder and production preflight still blocks release.
+Public HTTP acceptance is incomplete: the test machine resolved the workers.dev hostname to `31.13.81.4` and timed out; the public fetch tool also could not open it. A separate DNS query returned a different unexpected address. These results indicate a DNS/network path problem but do not establish end-to-end application health. Verify on a working network before hosted Google OAuth acceptance. A custom domain is not required for local Google testing; register the loopback callback on a dedicated development client, then add the owned domain to the hosted client when available. The production origin remains a placeholder and production preflight still blocks release.
 
 ## GitHub
 
 Use a dedicated private repository containing this product directory only. Do not publish the surrounding personal context repository. Push the `codex/initial-product` branch for review. `.github/workflows/check.yml` runs type checks, application tests, build and isolated Cloudflare integration tests without cloud secrets or paid model calls.
 
 Connect the repository to Cloudflare Workers Builds after selecting the actual account and worker. Keep staging and production as distinct workers and bindings. Preview builds must use staging resources. Production publication remains an explicit reviewed release, not an automatic consequence of opening a pull request.
+
+## Google setup while domain registration is pending
+
+The application already uses Better Auth with Google. Client credentials are still required; deployment and a domain purchase do not create them automatically. Keep TaleRelay separate from the existing ToolMoss consent branding.
+
+For local development, create a **Web application** OAuth client and register the exact callback `http://127.0.0.1:5178/api/auth/callback/google`. Supply `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and a local `BETTER_AUTH_SECRET` through the approved secret mechanism, not tracked files. Keep PUBLIC_ORIGIN consistent with that origin. A local end-to-end test still contacts real Google and needs a reachable Google account; fixture login is not OAuth evidence.
+
+The hosted staging callback remains `https://afterlight-staging.liushenliang1994.workers.dev/api/auth/callback/google`; its network path must work before hosted acceptance. Once registration completes, add the exact custom-domain callback and align PUBLIC_ORIGIN, Google app links and Turnstile hostname settings. The login implementation does not need to be rebuilt.
+
+[Google web-server OAuth documentation](https://developers.google.com/identity/protocols/oauth2/web-server) documents loopback callbacks for testing and exact redirect-URI matching. Domain registration, public consent/branding review and a tested login are separate steps.
 
 ## Provisioning order
 

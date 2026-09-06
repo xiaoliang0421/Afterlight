@@ -31,7 +31,9 @@ Payment refunds are distinct from returning generation points. Users can submit 
 
 The official `paddle@paddle-agent-skills` v0.1.0 plugin was installed from PaddleHQ/paddle-agent-skills (source commit `de7fcd3f6cc43bf87a65d6b2e65067611b47353c`). Installation supplies development guidance and potential MCP connections; it does not create a merchant or connect its credentials. The checkout, webhook, catalog and sandbox skills were read. Their Next.js examples are adapted to React/Vite and Hono/Workers using Paddle’s REST API and Web Crypto.
 
-Start with a separate [Paddle Sandbox account](https://sandbox-vendors.paddle.com/). The owner completes account creation and any agreement. After connection, the remaining setup can be operated with Paddle tools/API within the owner’s authorization:
+The configuration check on 2026-09-06 found no callable Paddle MCP connection and no `PADDLE_*` secret names on the staging Worker. The installed skills provide instructions, not merchant access. Sandbox does not require domain approval, so its account/catalog setup can proceed while domain registration is pending. End-to-end webhooks still need a reachable HTTPS endpoint.
+
+Start with a separate [Paddle Sandbox account](https://sandbox-login.paddle.com/signup). The owner completes account creation and any agreement. After connection, the remaining setup can be operated with Paddle tools/API within the owner’s authorization:
 
 - Agree on the one-time point packages, USD base price, points per scene and refund/delivery terms. Create one-time catalog prices with no recurring cycle, no regional overrides/discounts and tax-exclusive USD amounts for this initial adapter. Insert matching package records in D1 only after verifying the catalog.
 - Supply server secrets `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, and the public `PADDLE_CLIENT_TOKEN` via the hosting secret/config mechanism. Never put keys in source, config files or Git. Sandbox and live use separate credentials, prices and databases.

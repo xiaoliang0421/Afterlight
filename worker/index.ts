@@ -57,6 +57,7 @@ import { governance, assertOwnerApproval } from "./governance";
 import { creationAction } from "../shared/protection";
 import { verifyHuman } from "./turnstile";
 import { recordedReconciliation } from "./operations";
+import { accountExport } from "./account-export";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -394,6 +395,7 @@ app.get("/api/account/policies/:version", async (c) => {
   }
   return c.json(document);
 });
+app.route("/api/account/export", accountExport);
 app.get("/api/account/requests", async (c) => {
   const user = requireUser(c);
   return c.json({

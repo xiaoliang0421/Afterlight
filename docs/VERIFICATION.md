@@ -45,7 +45,7 @@ The local Workflow emulator emitted a hung-request diagnostic around its sleep w
 
 These are release gates, not optional claims of completed work. `release.acceptance.example.json` deliberately starts unchecked and deployment preflight prevents publishing the placeholder configuration.
 
-Staging static preflight and deployment passed. The latest deployed Worker bundle is 2668.48 KiB, gzip 466.47 KiB, with 75 ms measured startup. Its 7 uploaded assets exclude all fixture footage/art and source maps. Production remains blocked on its origin, policies, protection and acceptance gates. The local network could not reach the workers.dev hostname, so public HTTP and Google sign-in acceptance are not claimed.
+Staging static preflight and deployment passed. The latest deployed Worker bundle is 2675.73 KiB, gzip 468.42 KiB, with 67 ms measured startup. Its 7 uploaded assets exclude all fixture footage/art and source maps. Production remains blocked on its origin, policies, protection and acceptance gates. The local network could not reach the workers.dev hostname, so public HTTP and Google sign-in acceptance are not claimed.
 
 Remote D1 acceptance: schema initialization initially failed with `incomplete input`; the server-side splitter interpreted unparenthesized CASE/END inside triggers incorrectly. Parenthesizing those expressions without changing their meaning resolved the failure ([Cloudflare issue](https://github.com/cloudflare/workers-sdk/issues/4727)). Local migration/ledger tests still passed. Both remote environments then applied 17 migrations successfully; read-back confirmed zero users/stories/scenes, generation disabled and authorization ceiling zero. Earlier local databases do not need their applied history rewritten: the parentheses change preserves the SQL behavior. No existing remote application data was present or deleted.
 
@@ -53,3 +53,12 @@ Remote D1 acceptance: schema initialization initially failed with `incomplete in
 TaleRelay identity acceptance: 43 application/DB/contract tests and 16 reported isolated Worker integration tests passed after the rename and policy version bump. Type checks passed after adding the real staging Turnstile site key. Browser inspection confirmed the TaleRelay title, navigation and footer; no draft terms were accepted. Earlier accepted policy text remains immutable in D1.
 
 Support contact acceptance: the supplied Proton mailbox is present in all environment configurations, the legal contact section and site footer. Browser inspection verified the exact mailto address and TaleRelay Support label. The privacy test now distinguishes the intentionally public support email from private account emails; all 43 application checks and 16 reported isolated integration tests passed. The staging update deployed successfully. No test email was sent, and inbox delivery has not been independently verified. Operator identity disclosure remains pending.
+
+
+## Account-record export (2026-09-06)
+
+`npm run check` passed: type checking, 46 application tests and the Vite build. `npm run test:integration` passed all 17 reported tests in an isolated local Workers runtime/database, including the new export test across every section and more than 205 notification records. Authentication, origin checks, account switching, explicit field exclusions, exact policy documents, page completeness, cancellation and byte ceilings are covered. The staging static preflight and deploy dry run passed. No paid provider or Paddle call was made.
+
+See [account export](ACCOUNT-EXPORT.md) for included/excluded records and limits. Browser-rendered UI/download acceptance is still pending: automatic browser approval rejected access to the entire local origin. No alternate browser or indirect browser access was attempted. This does not constitute real Google login, live payment or completed account-deletion acceptance.
+
+The account-export iteration was deployed to the existing staging Worker as version `02a313c4-4cbc-4bba-8000-f6fa2e2e05d9`. Two updated static assets were uploaded; existing fixture exclusions remain in force. Generation, checkout and development login remain disabled. Public HTTP and browser UI acceptance remain outstanding as noted above.

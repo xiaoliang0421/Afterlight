@@ -480,6 +480,129 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
     },
   );
   await t.test(
+    "account export is authenticated, complete across pages, and excludes credentials and other users",
+    async () => {
+      assert.equal(
+        (await guest("/api/account/export", "POST", {})).status,
+        401,
+      );
+      assert.equal(
+        (
+          await creator(
+            "/api/account/export",
+            "POST",
+            {},
+            { Origin: "https://attacker.invalid" },
+          )
+        ).status,
+        403,
+      );
+      const manifest = await ok(creator("/api/account/export", "POST", {}));
+      assert.equal(manifest.accountId, "dev-creator");
+      const records: Record<string, any[]> = {};
+      for (const section of manifest.sections) {
+        records[section.name] = [];
+        let after = 0,
+          pages = 0;
+        do {
+          const result = await creator("/api/account/export/page", "POST", {
+            accountId: manifest.accountId,
+            section: section.name,
+            after,
+            through: section.through,
+          });
+          const page = await ok(Promise.resolve(result));
+          assert.match(
+            result.response.headers.get("cache-control") ?? "",
+            /no-store/,
+          );
+          assert.equal(page.accountId, manifest.accountId);
+          assert.equal(page.section, section.name);
+          assert.ok(page.rows.length <= 100);
+          records[section.name].push(...page.rows);
+          pages++;
+          assert.ok(pages < 10, "cursor must make progress");
+          if (page.next === null) break;
+          assert.ok(page.next > after);
+          after = page.next;
+        } while (true);
+        assert.equal(records[section.name].length, section.count);
+      }
+      assert.equal(records.profile[0].email, "creator@example.invalid");
+      assert.equal(records.linkedAccounts[0].accountId, "own-google-id");
+      assert.equal(records.sessions[0].ipAddress, "192.0.2.1");
+      assert.ok(records.notifications.length >= 205);
+      assert.equal(
+        new Set(records.notifications.map((r) => r.id)).size,
+        records.notifications.length,
+      );
+      assert.ok(records.scenes.length > 0);
+      assert.ok(records.ideas.length > 0);
+      assert.ok(records.contributionAcceptances.length > 0);
+      assert.ok(
+        records.policyAcceptances[0].document_json.includes(policies.version),
+      );
+      const text = JSON.stringify(records);
+      assert.doesNotMatch(
+        text,
+        /DO_NOT_EXPORT|PRIVATE_OTHER|OTHER_ACCESS_SENTINEL|OTHER_SESSION_SENTINEL|studio@example.invalid/,
+      );
+      assert.doesNotMatch(
+        text,
+        /"(?:token|token_hash|accessToken|refreshToken|idToken|password|media_key|provider_input_json|sync_lock|export_cursor)"/,
+      );
+      const pageInput = {
+        accountId: "dev-creator",
+        section: "profile",
+        after: 0,
+        through: Number.MAX_SAFE_INTEGER,
+      };
+      assert.equal(
+        (await newcomer("/api/account/export/page", "POST", pageInput)).status,
+        409,
+      );
+      assert.equal(
+        (await guest("/api/account/export/page", "POST", pageInput)).status,
+        401,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/export/page", "POST", {
+            ...pageInput,
+            section: "verification",
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/export/page", "POST", {
+            ...pageInput,
+            after: -1,
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/export/page", "POST", {
+            ...pageInput,
+            userId: "dev-studio",
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await creator("/api/account/export/page", "POST", pageInput, {
+            Origin: "https://attacker.invalid",
+          })
+        ).status,
+        403,
+      );
+    },
+  );
+  await t.test(
     "new worlds stay private until the owner opens them; characters and progress stay scoped",
     async () => {
       const input = {

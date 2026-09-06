@@ -11,6 +11,14 @@ try {
   for (const args of [
     ["d1", "migrations", "apply", "DB", "--local"],
     ["d1", "execute", "DB", "--local", "--file", "fixtures/seed.sql"],
+    [
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--file",
+      "tests/fixtures/account-export.sql",
+    ],
   ]) {
     const result = spawnSync(
       process.execPath,

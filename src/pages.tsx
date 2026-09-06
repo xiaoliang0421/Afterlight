@@ -21,6 +21,7 @@ import {
 import { api, navigate, useResource } from "./api";
 import { useApp } from "./context";
 import { BillingPanel } from "./BillingPanel";
+import { AccountExport } from "./AccountExport";
 import {
   OwnerApprovalGate,
   OwnerReviews,
@@ -917,6 +918,7 @@ export function AccountPage() {
         </section>
       </div>
       <BillingPanel />
+      <AccountExport key={boot.user.id} />
       <AccountRequests />
       <div className="account-bottom">
         <Button

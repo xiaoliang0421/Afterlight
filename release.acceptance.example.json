@@ -1,0 +1,20 @@
+{
+  "reviewedAt": null,
+  "testApprovedAt": null,
+  "approvedBudgetCents": 0,
+  "evidence": null,
+  "checks": {
+    "googleLogin": false,
+    "actualEnglishVideo": false,
+    "characterContinuity": false,
+    "newCharacterEntrance": false,
+    "crossSceneTransition": false,
+    "mediaRecovery": false,
+    "budgetCutoff": false,
+    "providerCostCeiling": false,
+    "mobilePlayback": false,
+    "accountRequests": false,
+    "abuseProtection": false,
+    "cloudResourceSmokeTest": false
+  }
+}

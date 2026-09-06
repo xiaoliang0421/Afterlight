@@ -1,0 +1,9 @@
+# Optional real service credentials. Local fixture mode uses none of these.
+# Variable names only. Supply real values through server-side Cloudflare Secrets.
+# Do not paste credentials into source files, chat messages, or GitHub issues.
+BETTER_AUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+FAL_KEY=
+FAL_ADMIN_KEY=
+DIRECTOR_API_KEY=

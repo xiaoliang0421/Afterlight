@@ -103,7 +103,7 @@ export async function verifyRecoveredRequest(
   }).toString();
   const response = await fetch(url, {
     headers: { Authorization: `Key ${key}` },
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(15000),
   });
   if (!response.ok)
@@ -139,7 +139,7 @@ export async function verifyRecoveredRequest(
   const statusUrl = `${resultUrl}/status`;
   const statusResponse = await fetch(statusUrl, {
     headers: { Authorization: `Key ${env.FAL_KEY ?? key}` },
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(15000),
   });
   const state = z

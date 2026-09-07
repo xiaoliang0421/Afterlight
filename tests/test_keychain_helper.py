@@ -78,6 +78,32 @@ class KeychainHelperTests(unittest.TestCase):
             self.assertEqual(helper.SERVICE, ("afterlight." + provider).encode())
             self.assertEqual(helper.ACCOUNT, account)
 
+    def test_fal_admin_uses_a_separate_keychain_item_and_environment(self):
+        helper = load_helper("fal-admin")
+        self.assertEqual(helper.SERVICE, b"afterlight.fal-admin")
+        self.assertEqual(helper.ACCOUNT, b"billing")
+        with patch("sys.argv", [str(PATH), "run", "node", "provision.mjs", "FAL_ADMIN_KEY"]), patch.dict(helper.os.environ, {"FAL_KEY": "existing-video-key"}, clear=True), patch.object(helper, "keychain", return_value="synthetic-admin-key"), patch.object(helper.subprocess, "run", return_value=Mock(returncode=0)) as run:
+            self.assertEqual(helper.main(), 0)
+        self.assertEqual(run.call_args.kwargs["env"], {"FAL_KEY": "existing-video-key", "FAL_ADMIN_KEY": "synthetic-admin-key"})
+        self.assertNotIn("synthetic-admin-key", run.call_args.args[0])
+
+    def test_fal_admin_check_only_reads_billing_and_hides_errors(self):
+        helper = load_helper("fal-admin")
+        opener = Mock()
+        opener.open.side_effect = helper.urllib.error.HTTPError(
+            "https://api.fal.ai/v1/account/billing?expand=credits", 403,
+            "synthetic-private-error", {}, io.BytesIO(b"synthetic-admin-key")
+        )
+        output = io.StringIO()
+        with patch("sys.argv", [str(PATH), "check"]), patch.object(helper, "keychain", return_value="synthetic-admin-key"), patch.object(helper.urllib.request, "build_opener", return_value=opener), contextlib.redirect_stdout(output):
+            self.assertEqual(helper.main(), 1)
+        request = opener.open.call_args.args[0]
+        self.assertEqual(request.get_method(), "GET")
+        self.assertEqual(request.full_url, "https://api.fal.ai/v1/account/billing?expand=credits")
+        self.assertEqual(request.get_header("Authorization"), "Key synthetic-admin-key")
+        self.assertEqual(json.loads(output.getvalue()), {"check_failed": True, "provider": "fal-admin", "http_status": 403})
+        opener.open.side_effect.close()
+
 
 if __name__ == "__main__":
     unittest.main()

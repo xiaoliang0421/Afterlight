@@ -108,7 +108,7 @@ test("a lost fal response can be verified with GETs only; wrong time/model/input
     "fetch",
     async (url: string | URL, init?: RequestInit) => {
       methods.push(init?.method ?? "GET");
-      assert.equal(init?.redirect, "error");
+      assert.equal(init?.redirect, "manual");
       if (
         String(url).startsWith(
           "https://api.fal.ai/v1/models/requests/by-endpoint?",

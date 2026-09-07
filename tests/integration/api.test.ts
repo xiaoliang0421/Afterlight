@@ -70,6 +70,90 @@ async function waitTask(
 
 test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow and credit accounting", async (t) => {
   await t.test(
+    "Google OAuth start uses the app callback, basic scopes, PKCE and private state",
+    async () => {
+      const oauth = client();
+      const r = await oauth("/api/auth/sign-in/social", "POST", {
+        provider: "google",
+        callbackURL: `${base}/account`,
+        disableRedirect: true,
+      });
+      assert.equal(r.status, 200, JSON.stringify(r.data));
+      const authorization = new URL(r.data.url);
+      assert.equal(authorization.origin, "https://accounts.google.com");
+      assert.equal(
+        authorization.searchParams.get("client_id"),
+        "integration-only.apps.googleusercontent.com",
+      );
+      assert.equal(
+        authorization.searchParams.get("redirect_uri"),
+        `${base}/api/auth/callback/google`,
+      );
+      assert.deepEqual(
+        new Set(authorization.searchParams.get("scope")?.split(" ")),
+        new Set(["openid", "email", "profile"]),
+      );
+      assert.ok(authorization.searchParams.get("state"));
+      assert.equal(
+        authorization.searchParams.get("code_challenge_method"),
+        "S256",
+      );
+      assert.ok(authorization.searchParams.get("code_challenge"));
+      assert.ok(!r.data.url.includes("integration-only-google-secret"));
+      assert.ok(
+        r.response.headers
+          .getSetCookie()
+          .some(
+            (cookie) =>
+              /HttpOnly/i.test(cookie) && /SameSite=Lax/i.test(cookie),
+          ),
+      );
+      assert.equal((await ok(oauth("/api/bootstrap"))).user, null);
+    },
+  );
+  await t.test(
+    "Google OAuth rejects foreign callbacks and origins before redirecting",
+    async () => {
+      for (const field of [
+        "callbackURL",
+        "errorCallbackURL",
+        "newUserCallbackURL",
+      ]) {
+        const body = {
+          provider: "google",
+          disableRedirect: true,
+          [field]: "https://attacker.invalid/collect",
+        };
+        let r = await guest("/api/auth/sign-in/social", "POST", body);
+        if (r.status === 429) {
+          // Better Auth allows three sign-in attempts per ten seconds. Respect
+          // that window, then verify the callback rule rather than accepting 429.
+          const retryAfter = Number(r.response.headers.get("x-retry-after"));
+          assert.ok(retryAfter > 0 && retryAfter <= 10);
+          assert.equal(r.response.headers.get("location"), null);
+          await new Promise((resolve) =>
+            setTimeout(resolve, retryAfter * 1000 + 100),
+          );
+          r = await guest("/api/auth/sign-in/social", "POST", body);
+        }
+        assert.equal(r.status, 403, `${field}: ${JSON.stringify(r.data)}`);
+        assert.equal(r.response.headers.get("location"), null);
+      }
+      const r = await guest(
+        "/api/auth/sign-in/social",
+        "POST",
+        {
+          provider: "google",
+          callbackURL: `${base}/account`,
+          disableRedirect: true,
+        },
+        { Origin: "https://attacker.invalid" },
+      );
+      assert.equal(r.status, 403);
+      assert.equal(r.response.headers.get("location"), null);
+    },
+  );
+  await t.test(
     "public endpoints omit private emails; unknown API paths do not return SPA HTML",
     async () => {
       const publicData = await ok(guest("/api/bootstrap"));

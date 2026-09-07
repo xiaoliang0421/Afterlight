@@ -112,7 +112,7 @@ export async function storeProviderMedia(
 ) {
   if (await env.MEDIA.head(key)) return;
   const response = await fetch(trustedFalUrl(rawUrl), {
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(60000),
   });
   const length = Number(response.headers.get("content-length"));

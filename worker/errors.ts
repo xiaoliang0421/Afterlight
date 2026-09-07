@@ -8,6 +8,8 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
+  generation_restricted:
+    "Generation is currently limited to approved test accounts. Your idea is saved.",
   account_deleted:
     "This account has been deleted. Sign in again to start a new account.",
   owner_approval_required:

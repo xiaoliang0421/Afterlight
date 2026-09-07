@@ -79,3 +79,11 @@ The existing Cloudflare MCP connection provisions resources. Wrangler device log
 ## Storage drill — 2026-09-07
 
 A disposable 58-byte object in a random staging `ops-drill/` prefix was uploaded, downloaded as a backup, restored to a second key and downloaded again. Both copies matched SHA-256 `0d772a6194f7151d0051c9044f6f22fc77082404cbd59410f3cabe8f7d1c0c21`; both remote objects and local temporary files were then removed. No user object was touched. This verifies the object transfer/recovery procedure; an independently retained media backup and deletion-replay process still need to be configured before production.
+
+## Controlled staging and source delivery
+
+Apply migration `0020_generation_access.sql` before deploying the dependent Worker. New environments restrict all model calls to explicitly admitted testers; an administrator role alone is insufficient. Local fixtures explicitly opt out of the restriction. Apply environment-specific budgets and tester admission through authorized operations, not a committed live-account SQL seed.
+
+`release.acceptance.json` is intentionally ignored. Keep the dated authorization and operating evidence in the operator's private records; copy the reviewed acceptance file locally only for the intended environment. The tracked Wrangler configuration remains generation-disabled by default. Never treat a repository clone or CI success as production acceptance.
+
+The existing GitHub repository is public and contains the product only. Keep the parent context repository, credentials, actual billing balances and private request records outside it. Publish the product commit before updating its parent submodule pointer. See [the engineering validation summary](STAGING-VALIDATION.md) for the code and tests.

@@ -441,7 +441,7 @@ function LoginModal({
   return (
     <Modal
       title="Every story needs you."
-      eyebrow="WELCOME TO AFTERLIGHT"
+      eyebrow={`WELCOME TO ${brand.name.toUpperCase()}`}
       onClose={close}
     >
       <p className="modal-copy">

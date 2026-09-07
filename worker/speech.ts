@@ -155,7 +155,7 @@ export async function startSpeechCheck(env: Cloudflare.Env, id: string) {
     // No language hint: detection must be independent of the desired English output.
     const init: RequestInit & { duplex: "half" } = {
       method: "POST",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: `Key ${env.FAL_KEY}`,
         "Content-Type": "application/json",
@@ -206,7 +206,7 @@ export async function refreshSpeechCheck(env: Cloudflare.Env, id: string) {
     return;
   const request = (url: string) =>
     fetch(trustedFalUrl(url, true), {
-      redirect: "error",
+      redirect: "manual",
       headers: { Authorization: `Key ${env.FAL_KEY}` },
       signal: AbortSignal.timeout(20000),
     });

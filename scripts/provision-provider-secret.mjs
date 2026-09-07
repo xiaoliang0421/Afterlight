@@ -3,7 +3,9 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 const name = process.argv[2];
 if (
-  !["FAL_KEY", "DIRECTOR_API_KEY", "PADDLE_API_KEY"].includes(name) ||
+  !["FAL_KEY", "FAL_ADMIN_KEY", "DIRECTOR_API_KEY", "PADDLE_API_KEY"].includes(
+    name,
+  ) ||
   !process.env[name]
 )
   throw new Error(

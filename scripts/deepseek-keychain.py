@@ -3,6 +3,8 @@
 python3 scripts/deepseek-keychain.py save
 python3 scripts/deepseek-keychain.py check
 python3 scripts/deepseek-keychain.py run <command> [args...]
+python3 scripts/deepseek-keychain.py --provider fal-admin save
+python3 scripts/deepseek-keychain.py --provider fal-admin check
 python3 scripts/deepseek-keychain.py --provider paddle-sandbox save
 python3 scripts/deepseek-keychain.py --provider paddle-sandbox check
 """
@@ -21,10 +23,10 @@ PROVIDER = "deepseek"
 if len(sys.argv)>2 and sys.argv[1] == "--provider":
     PROVIDER = sys.argv[2]
     del sys.argv[1:3]
-if PROVIDER not in ("deepseek", "fal", "paddle-sandbox"):
-    raise SystemExit("Provider must be deepseek, fal or paddle-sandbox.")
+if PROVIDER not in ("deepseek", "fal", "fal-admin", "paddle-sandbox"):
+    raise SystemExit("Provider must be deepseek, fal, fal-admin or paddle-sandbox.")
 SERVICE = ("afterlight." + PROVIDER).encode()
-ACCOUNT = {"deepseek": b"director", "fal": b"video", "paddle-sandbox": b"api"}[PROVIDER]
+ACCOUNT = {"deepseek": b"director", "fal": b"video", "fal-admin": b"billing", "paddle-sandbox": b"api"}[PROVIDER]
 
 
 def validate_secret(secret):
@@ -89,16 +91,17 @@ def main():
         endpoint = {
             "deepseek": "https://api.deepseek.com/user/balance",
             "fal": "https://api.fal.ai/v1/account/billing?expand=credits",
+            "fal-admin": "https://api.fal.ai/v1/account/billing?expand=credits",
             "paddle-sandbox": "https://sandbox-api.paddle.com/products?per_page=1",
         }[PROVIDER]
-        request = urllib.request.Request(endpoint, headers={"Authorization": ("Key " if PROVIDER == "fal" else "Bearer ") + validate_secret(keychain())})
+        request = urllib.request.Request(endpoint, headers={"Authorization": ("Key " if PROVIDER in ("fal", "fal-admin") else "Bearer ") + validate_secret(keychain())})
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
             with opener.open(request, timeout=30) as response:
                 payload = json.load(response)
                 if PROVIDER == "deepseek":
                     print(json.dumps({"authenticated": True, "available": payload.get("is_available"), "balances": [{"currency": b.get("currency"), "total": b.get("total_balance")} for b in payload.get("balance_infos", [])]}))
-                elif PROVIDER == "fal":
+                elif PROVIDER in ("fal", "fal-admin"):
                     print(json.dumps({"billing_access":True,"credits":payload.get("credits")}))
                 else:
                     print(json.dumps({"authenticated": True, "environment": "sandbox", "product_read": True}))
@@ -107,7 +110,7 @@ def main():
             return 1
     elif action == "run" and len(sys.argv) > 2:
         env = dict(os.environ)
-        env_name = {"deepseek": "DIRECTOR_API_KEY", "fal": "FAL_KEY", "paddle-sandbox": "PADDLE_API_KEY"}[PROVIDER]
+        env_name = {"deepseek": "DIRECTOR_API_KEY", "fal": "FAL_KEY", "fal-admin": "FAL_ADMIN_KEY", "paddle-sandbox": "PADDLE_API_KEY"}[PROVIDER]
         env[env_name] = validate_secret(keychain())
         if PROVIDER == "paddle-sandbox":
             env["PADDLE_ENVIRONMENT"] = "sandbox"

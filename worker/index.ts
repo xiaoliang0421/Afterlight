@@ -193,7 +193,14 @@ app.get("/api/bootstrap", async (c) => {
       canSignIn: authConfigured(c.env) || isDevelopment(c.env),
       turnstileSiteKey: c.env.TURNSTILE_SITE_KEY ?? "",
       generationEnabled:
-        settings.generationEnabled && c.env.PROVIDER_MODE !== "disabled",
+        settings.generationEnabled &&
+        c.env.PROVIDER_MODE !== "disabled" &&
+        !!user &&
+        !!(await c.env.DB.prepare(
+          "SELECT id FROM generation_allowed_users WHERE id=?",
+        )
+          .bind(user.id)
+          .first()),
       paymentsEnabled: checkoutConfigured(c.env) && offer.referenceEnabled,
       referenceEnabled: offer.referenceEnabled,
       referencePoints: offer.referencePoints,

@@ -20,6 +20,104 @@ function database() {
   return db;
 }
 const now = 1788669000000;
+test("restricted generation admits only named users, with no implicit admin bypass or rejected reservation side effects", () => {
+  const db = database();
+  try {
+    assert.equal(
+      db
+        .prepare(
+          "SELECT dflt_value FROM pragma_table_info('settings') WHERE name='generation_restricted'",
+        )
+        .get()!.dflt_value,
+      "1",
+    );
+    db.exec(
+      "UPDATE settings SET generation_restricted=1; INSERT INTO generation_testers VALUES('dev-creator',1)",
+    );
+    draft(db, "permitted");
+    draft(db, "not-permitted", "quiet-orbit", "dev-studio");
+    const before = numbers(db);
+    assert.throws(() => accept(db, "not-permitted"), /generation_restricted/);
+    assert.deepEqual(numbers(db), before);
+    assert.equal(
+      db.prepare("SELECT status FROM tasks WHERE id='not-permitted'").get()!
+        .status,
+      "Draft",
+    );
+    accept(db, "permitted");
+    assert.equal(numbers(db).credit!.reserved, 1);
+    db.exec(
+      "DELETE FROM generation_testers WHERE user_id='dev-creator'; UPDATE tasks SET status='Preparing' WHERE id='permitted'",
+    );
+    assert.throws(
+      () =>
+        db.exec(
+          "UPDATE tasks SET status='Generating',provider_attempt_id='new-attempt',provider_submitted_at=1 WHERE id='permitted'",
+        ),
+      /generation_restricted/,
+    );
+    assert.equal(
+      db
+        .prepare("SELECT provider_attempt_id FROM tasks WHERE id='permitted'")
+        .get()!.provider_attempt_id,
+      null,
+    );
+    db.exec("UPDATE tasks SET status='Cancelled' WHERE id='permitted'");
+    assert.equal(numbers(db).credit!.reserved, 0);
+  } finally {
+    db.close();
+  }
+});
+
+test("restricted previews, execution audits, speech and archive calls cannot debit a non-tester", () => {
+  const db = database();
+  try {
+    draft(db, "blocked");
+    db.exec("UPDATE settings SET generation_restricted=1");
+    const before = JSON.stringify({
+      wallet: numbers(db),
+      ledger: db.prepare("SELECT * FROM ledger").all(),
+      budgets: db.prepare("SELECT * FROM budget_periods").all(),
+    });
+    for (const kind of [
+      "preview",
+      "continuity-audit",
+      "speech-check",
+      "archive",
+    ])
+      assert.throws(
+        () =>
+          db
+            .prepare(
+              "INSERT INTO model_calls(id,task_id,day,month,cost_ceiling_cents,kind,created_at) VALUES(?,'blocked','2026-09-06','2026-09',25,?,1)",
+            )
+            .run(kind, kind),
+        /generation_restricted/,
+      );
+    assert.equal(
+      db.prepare("SELECT COUNT(*) AS n FROM model_calls").get()!.n,
+      0,
+    );
+    assert.equal(
+      JSON.stringify({
+        wallet: numbers(db),
+        ledger: db.prepare("SELECT * FROM ledger").all(),
+        budgets: db.prepare("SELECT * FROM budget_periods").all(),
+      }),
+      before,
+    );
+    db.exec("INSERT INTO generation_testers VALUES('dev-creator',1)");
+    db.exec(
+      "INSERT INTO model_calls(id,task_id,day,month,cost_ceiling_cents,kind,created_at) VALUES('allowed','blocked','2026-09-06','2026-09',25,'preview',1)",
+    );
+    assert.equal(
+      db.prepare("SELECT COUNT(*) AS n FROM model_calls").get()!.n,
+      1,
+    );
+  } finally {
+    db.close();
+  }
+});
 function majorDraft(db: DatabaseSync, id: string) {
   draft(db, id);
   db.prepare(

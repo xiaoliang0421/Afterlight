@@ -50,6 +50,9 @@ export function createAuth(env: Cloudflare.Env) {
     session: { expiresIn: 60 * 60 * 24 * 14, updateAge: 60 * 60 * 24 },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 60 },
     advanced: {
+      // This Worker receives Cloudflare's visitor address. Forwarded proxy
+      // chains must not collapse unrelated visitors into one auth rate bucket.
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
       useSecureCookies: new URL(env.PUBLIC_ORIGIN).protocol === "https:",
       cookiePrefix: "afterlight",
     },

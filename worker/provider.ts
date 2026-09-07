@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { validatePlan, type ScenePlan } from "../shared/domain";
 import { AppError } from "./errors";
-import { getSettings, getCharacters, type TaskRow } from "./store";
+import { getSettings, getCharacters, getStory, type TaskRow } from "./store";
 import { selectedMaterials } from "./materials";
 import { trustedFalUrl } from "./media";
 import { assertVideoReservation } from "./pricing";
@@ -11,6 +11,7 @@ import { generationOffer, paidWallet } from "./billing";
 export function textVideoInput(
   plan: ScenePlan,
   cast: { id: string; name: string; description: string; state: string }[],
+  world: { worldRules: string; visualStyle: string },
 ) {
   const selected = plan.characterIds.map((id) => {
     const ch = cast.find((c) => c.id === id);
@@ -29,7 +30,7 @@ export function textVideoInput(
   });
   return {
     input: {
-      prompt: `${plan.videoPrompt}\nCHARACTER DESCRIPTIONS — retain these recognizable traits throughout the scene:\n${selected.map((ch) => `${ch.name}: ${ch.description}\nCurrent story state: ${ch.state}`).join("\n")}\nStory connection: ${plan.bridge}\nAll dialogue, narration, lyrics and readable text must be English. No unrelated text overlays. Preserve the stated clothes, hair, props and scene conditions.`,
+      prompt: `FIXED STORY SETTING — preserve the period, location, lighting and world rules:\n${world.worldRules}\nFIXED VISUAL STYLE — apply throughout every shot:\n${world.visualStyle}\nSCENE ACTION:\n${plan.videoPrompt}\nCHARACTER DESCRIPTIONS — retain these recognizable traits throughout the scene:\n${selected.map((ch) => `${ch.name}: ${ch.description}\nCurrent story state: ${ch.state}`).join("\n")}\nStory connection: ${plan.bridge}\nAll dialogue, narration, lyrics and readable text must be English. No unrelated text overlays. Preserve the stated clothes, hair, props and scene conditions.`,
       duration: 10,
       resolution: "768P",
       aspect_ratio: "16:9",
@@ -86,17 +87,21 @@ export async function prepareVideoRequest(
   }
   if (videoMode(model) === "text") {
     const canonical = await getCharacters(env, task.story_id);
+    const { worldRules, visualStyle } = await getStory(env, task.story_id);
+    const world = { worldRules, visualStyle };
     validatePlan(plan, canonical);
     assertTextVideoReservation(task.reserved_cents, 10);
-    const prepared = textVideoInput(plan, [
-      ...canonical,
-      ...plan.newCharacters,
-    ]);
+    const prepared = textVideoInput(
+      plan,
+      [...canonical, ...plan.newCharacters],
+      world,
+    );
     await env.DB.prepare("UPDATE tasks SET material_snapshot_json=? WHERE id=?")
       .bind(
         JSON.stringify({
           mode: "text",
           model,
+          world,
           characters: prepared.characters,
           previousSceneId: null,
         }),
@@ -167,7 +172,7 @@ export async function submitVideo(
   videoMode(model);
   const response = await fetch(`https://queue.fal.run/${model}`, {
     method: "POST",
-    redirect: "error",
+    redirect: "manual",
     headers: {
       Authorization: `Key ${env.FAL_KEY}`,
       "Content-Type": "application/json",
@@ -194,7 +199,7 @@ export async function pollVideo(env: Cloudflare.Env, task: TaskRow) {
       409,
     );
   const response = await fetch(trustedFalUrl(task.provider_status_url, true), {
-    redirect: "error",
+    redirect: "manual",
     headers: { Authorization: `Key ${env.FAL_KEY}` },
     signal: AbortSignal.timeout(20000),
   });
@@ -209,7 +214,7 @@ export async function pollVideo(env: Cloudflare.Env, task: TaskRow) {
     if (data.error || !task.provider_result_url)
       return { status: "failed" as const };
     const result = await fetch(trustedFalUrl(task.provider_result_url, true), {
-      redirect: "error",
+      redirect: "manual",
       headers: { Authorization: `Key ${env.FAL_KEY}` },
       signal: AbortSignal.timeout(20000),
     });

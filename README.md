@@ -4,7 +4,7 @@ An English-language, collaboratively written video serial. Viewers submit ideas;
 
 **Status: working local product and deployed Cloudflare staging; not ready for public launch.** The starter worlds and playback clips are clearly marked development fixtures. They do not demonstrate the quality or latency of a real video model. The selected live route is H3 Max Turbo text-to-video; character pictures are optional display assets, not model inputs. The public brand is TaleRelay (a storytelling relay); existing infrastructure and persisted identifiers retain the internal Afterlight name.
 
-Staging: **https://app.tailrelay.com**. Google sign-in is pending; creation, checkout and development login are disabled. Deployment, scheduled D1 health and public HTTP checks passed; interactive login and complete website generation/payment acceptance remain pending. The old workers.dev endpoint is disabled.
+Staging: **https://app.tailrelay.com**. Google sign-in is verified. Text generation is restricted to the approved staging tester and budget; checkout and development login are disabled. The first website video reached review and was rejected for a setting/style mismatch; that prompt fix is deployed. The next draft awaits scene-attribution approval, and accepted publication/payment flows remain pending. The old workers.dev endpoint is disabled.
 
 **Continue here:** [remaining engineering plan / 剩余工程计划](docs/ENGINEERING-PLAN.md) lists priorities, ownership, dependencies, acceptance criteria and the remaining test budget. See [launch identity](docs/LAUNCH-IDENTITY.md) for the name, operator and mailbox handoff.
 
@@ -42,7 +42,7 @@ The local studio account can watch and approve fixture scenes. The reviewer must
 - Preview, explicit attribution consent, versioned approval, atomic quota/cost admission, per-story FIFO execution, recheck after canon changes and persistent contribution statuses.
 - Private major-change proposals and creator decisions, bound to the exact plan and canon version, with separate contributor admission and no generation reservation while waiting.
 - Durable Workflows, asynchronous provider polling, R2 archive and range delivery, actual MP4 duration probing, manual actual-content approval and atomic canon publication.
-- Full fixed character descriptions and latest state appended to each text-only video request, with an exact request identity snapshot. New characters become canon only on publication. The previous reference adapter and curated image/voice materials remain non-default capabilities.
+- Fixed story rules, visual style, character descriptions and latest state appended to each text-only video request, with an exact request identity snapshot. New characters become canon only on publication. The previous reference adapter and curated image/voice materials remain non-default capabilities.
 - Optional existing-cast picker with saved story-scoped IDs; publication-driven character history, source-backed story-guide drafts and studio review before those guides become public.
 - Free launch policy, UTC credit periods, global daily/monthly/lifetime ceilings, provider-balance freshness checks, cancellation/refund accounting, uncertain-request reconciliation and disabled checkout.
 - Responsive player with chapters, captions, seek, replay/resume, scene attribution, reports and admin operations.
@@ -62,7 +62,7 @@ Browser regression specifications are in `tests/browser/`; with the two preview 
 
 ## Before launch
 
-Real Google OAuth, end-to-end live website generation, production media processing, infrastructure resources and remote deployment require the remaining configuration and acceptance work. Isolated paid provider checks are documented in [live experiments](docs/LIVE-PROVIDER-TESTS.md); [character image preparation](docs/CHARACTER-IDENTITY.md) tracks implemented and pending work. Never turn an unchecked item in `release.acceptance.example.json` into a passing result merely to get through preflight.
+Accepted end-to-end website publication, broader OAuth failure cases, production media processing and production release require the remaining configuration and acceptance work. Isolated paid provider checks are documented in [live experiments](docs/LIVE-PROVIDER-TESTS.md); [character image preparation](docs/CHARACTER-IDENTITY.md) tracks implemented and pending work. Never turn an unchecked item in `release.acceptance.example.json` into a passing result merely to get through preflight.
 
 The default adapter targets fal's `minimax/h3-max-turbo/text-to-video`; the paid reference path retains `minimax/h3-max/reference-to-video`. Both routes have isolated real sample results, but the live website fulfillment flow has not yet passed end-to-end acceptance. Character consistency and English speech are quality requirements, not guarantees supplied by IDs or prompt text.
 

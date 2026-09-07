@@ -43,7 +43,9 @@ export async function verifyHuman(
       {
         method: "POST",
         body,
-        redirect: "error",
+        // workerd rejects redirect:"error". Manual mode returns redirects to
+        // the non-2xx check below without forwarding the secret or token.
+        redirect: "manual",
         signal: AbortSignal.timeout(10000),
       },
     );

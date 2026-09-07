@@ -91,7 +91,7 @@ export async function callEditor(
     );
   const response = await fetch(endpoint, {
     method: "POST",
-    redirect: "error",
+    redirect: "manual",
     headers: {
       Authorization: `Bearer ${env.DIRECTOR_API_KEY}`,
       "Content-Type": "application/json",

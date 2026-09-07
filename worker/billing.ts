@@ -79,7 +79,7 @@ async function paddleRequest(
     `https://${production ? "api" : "sandbox-api"}.paddle.com${path}`,
     {
       method: body ? "POST" : "GET",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: `Bearer ${env.PADDLE_API_KEY}`,
         "Content-Type": "application/json",

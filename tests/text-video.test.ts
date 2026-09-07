@@ -20,6 +20,10 @@ const june = {
   description: "A courier in a blue canvas jacket with a white scarf.",
   state: "Outside the closed door.",
 };
+const world = {
+  worldRules: "A quiet post office in the 1930s at night. No modern devices.",
+  visualStyle: "Original hand-painted 2D animation with ink and gouache textures.",
+};
 const plan: ScenePlan = {
   englishPrompt: "Mara answers a knock from the courier.",
   title: "A caller",
@@ -59,6 +63,8 @@ test("text-only preparation needs no reference assets and records the exact text
           };
         if (query.startsWith("SELECT id,story_id AS storyId"))
           return { bind: () => ({ all: async () => ({ results: [mara] }) }) };
+        if (query.includes("FROM stories s WHERE s.id=? OR s.slug=?"))
+          return { bind: () => ({ first: async () => ({ id: "world", ...world }) }) };
         if (query === "UPDATE tasks SET material_snapshot_json=? WHERE id=?")
           return {
             bind: (value: string) => ({
@@ -93,6 +99,11 @@ test("text-only preparation needs no reference assets and records the exact text
   ]);
   assert.ok(input.prompt.includes(mara.description));
   assert.ok(input.prompt.includes(june.description));
+  // The director can omit fixed setting/style from its shot description.
+  assert.ok(!plan.videoPrompt.includes(world.worldRules));
+  assert.ok(input.prompt.includes(world.worldRules));
+  assert.ok(input.prompt.includes(world.visualStyle));
+  assert.deepEqual(JSON.parse(snapshot).world, world);
   assert.ok(!JSON.stringify(input).includes("example.com"));
   assert.deepEqual(
     JSON.parse(snapshot).characters.map((c: { id: string }) => c.id),
@@ -126,7 +137,7 @@ test("text model pricing ignores temporary discounts and rejects unreviewed mode
   for (const value of [39, NaN, -1])
     assert.throws(() => assertTextVideoReservation(value, 10));
   assert.throws(
-    () => textVideoInput({ ...plan, characterIds: ["foreign"] }, [mara, june]),
+    () => textVideoInput({ ...plan, characterIds: ["foreign"] }, [mara, june], world),
     /continuity review/,
   );
 });

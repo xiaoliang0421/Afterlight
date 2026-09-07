@@ -36,7 +36,7 @@ test("Turnstile verifies secret on the server and binds success to the exact hos
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
     );
     assert.equal(init.method, "POST");
-    assert.equal(init.redirect, "error");
+    assert.equal(init.redirect, "manual");
     assert.equal((init.body as URLSearchParams).get("secret"), "test-secret");
     return Response.json(result);
   });

@@ -35,3 +35,7 @@ Use the [remaining engineering plan](ENGINEERING-PLAN.md) as the continuation ch
 5. Run the complete text-to-video website flow and a longer story test: returning/new characters, English, visible causal transitions, review, archiving and playback. Reconcile actual invoices and capacity cutoffs.
 
 The free path may launch before purchases once its own release gates pass. Do not call the whole product production-ready until the applicable evidence in `release.acceptance.example.json` is present. See [verification](VERIFICATION.md), [deployment](DEPLOYMENT.md) and [operations](OPERATIONS.md).
+
+## Controlled staging update
+
+The hosted login, real text-video generation, private media ingestion, speech check and moderation rejection/credit return have been exercised. A visual mismatch exposed missing fixed setting/style in the outgoing video prompt; that propagation is now fixed and covered by a regression. Accepted publication, longer-story continuity and production release remain pending. See [the current validation summary](STAGING-VALIDATION.md).

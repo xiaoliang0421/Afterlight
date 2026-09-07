@@ -1,4 +1,5 @@
 -- Development-only illustrative fixtures. Never run against a remote database.
+UPDATE settings SET generation_restricted=0 WHERE id=1;
 INSERT OR IGNORE INTO users(id,email,display_name,role,created_at,nickname_key) VALUES('dev-studio','studio@example.invalid','Afterlight Studio','admin',1788667200000,'afterlight studio');
 INSERT OR IGNORE INTO users(id,email,display_name,role,created_at,nickname_key) VALUES('dev-creator','creator@example.invalid','You','user',1788667200000,'you');
 UPDATE settings SET generation_enabled=1,daily_budget_cents=3000,monthly_budget_cents=10000,task_reserve_cents=150,authorized_spend_cents=10000 WHERE id=1;

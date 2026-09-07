@@ -51,3 +51,7 @@ Use [the deployment procedure](DEPLOYMENT.md) after choosing the account and ori
 - [fal account balance and required ADMIN scope](https://fal.ai/docs/platform-apis/v1/account/billing)
 - [H3 output and reference-input prices](https://fal.ai/models/minimax/h3-max/reference-to-video)
 - [DeepSeek API setup and current model identifiers](https://api-docs.deepseek.com/)
+
+## Separate fal balance credential
+
+After the operator explicitly approves the ADMIN scope, store its credential separately with `python3 scripts/deepseek-keychain.py --provider fal-admin save`. The `check` action only reads billing; `run node scripts/provision-provider-secret.mjs FAL_ADMIN_KEY` provisions the encrypted staging binding using an already authenticated Wrangler session. The existing video key is preserved. ADMIN is broader than read-only billing, and provisioning does not grant spending authorization. Keep actual keys and account billing evidence outside this public repository.

@@ -2,6 +2,8 @@
 
 Updated 2026-09-07. This is the implementation backlog, not permission to enable payments, spend on providers or deploy cloud resources. TaleRelay runs locally with clearly labeled fixtures; the empty staging shell is now deployed with generation and payments disabled. Real provider experiments were isolated from the website.
 
+Use the [remaining engineering plan](ENGINEERING-PLAN.md) as the continuation checklist: it tracks owners, dependencies, pending confirmations, acceptance criteria and budget. This page remains the capability overview; [verification](VERIFICATION.md) records the evidence.
+
 ## Working locally
 
 - Independent worlds, stable character IDs, creator attribution, prompt provenance, sharing, per-story watch progress and chapter replay.

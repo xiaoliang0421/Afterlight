@@ -4,7 +4,9 @@ An English-language, collaboratively written video serial. Viewers submit ideas;
 
 **Status: working local product and deployed Cloudflare staging; not ready for public launch.** The starter worlds and playback clips are clearly marked development fixtures. They do not demonstrate the quality or latency of a real video model. The selected live route is H3 Max Turbo text-to-video; character pictures are optional display assets, not model inputs. The public brand is TaleRelay (a storytelling relay); existing infrastructure and persisted identifiers retain the internal Afterlight name.
 
-Staging: `https://afterlight-staging.liushenliang1994.workers.dev`. Google sign-in is pending; creation, checkout and development login are disabled. Deployment and the scheduled D1 health check succeeded, but public HTTP acceptance is still blocked by workers.dev DNS/connectivity failures on the test network. See [launch identity](docs/LAUNCH-IDENTITY.md) for the name, operator and mailbox handoff.
+Staging: **https://app.tailrelay.com**. Google sign-in is pending; creation, checkout and development login are disabled. Deployment, scheduled D1 health and public HTTP checks passed; interactive login and complete website generation/payment acceptance remain pending. The old workers.dev endpoint is disabled.
+
+**Continue here:** [remaining engineering plan / 剩余工程计划](docs/ENGINEERING-PLAN.md) lists priorities, ownership, dependencies, acceptance criteria and the remaining test budget. See [launch identity](docs/LAUNCH-IDENTITY.md) for the name, operator and mailbox handoff.
 
 ## Run locally
 

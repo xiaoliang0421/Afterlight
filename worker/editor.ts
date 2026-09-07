@@ -22,7 +22,9 @@ async function readLimitedJson(response: Response) {
         503,
       );
     }
-    chunks.push(value);
+    // Some stream producers reuse their backing buffer on the next read.
+    // Retain owned bytes until assembly; the total is bounded to 128 KiB.
+    chunks.push(value.slice());
   }
   const bytes = new Uint8Array(total);
   let offset = 0;
@@ -30,7 +32,23 @@ async function readLimitedJson(response: Response) {
     bytes.set(c, offset);
     offset += c.byteLength;
   }
-  return JSON.parse(new TextDecoder().decode(bytes)) as {
+  let data: unknown;
+  try {
+    data = JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new AppError(
+      "editor_response_invalid",
+      "The story editor returned an unreadable response. Your idea is saved; no video was started.",
+      503,
+    );
+  }
+  if (!data || typeof data !== "object")
+    throw new AppError(
+      "editor_response_invalid",
+      "The story editor returned an unreadable response. Your idea is saved; no video was started.",
+      503,
+    );
+  return data as {
     choices?: { message?: { content?: string } }[];
     model?: string;
     usage?: { prompt_tokens?: number; completion_tokens?: number };

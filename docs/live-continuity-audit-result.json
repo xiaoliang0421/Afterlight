@@ -1,0 +1,24 @@
+{
+  "state": "completed",
+  "testedAt": "2026-09-07T01:53:44.604Z",
+  "scope": "One real DeepSeek audit of a previously saved flawed fictional plan against local canon. No writer/video call, publication or cloud fixture upload.",
+  "sourceCase": "identity-fr-diagnostic",
+  "audit": {
+    "verdict": "contradiction",
+    "reason": "The proposal reveals that Mara and Elias are the same person, which contradicts established character identities and world rules. No prior event supports this identity change, and it introduces a supernatural or metaphysical element not established in the story. The plan also has Elias arriving at the lighthouse without a plausible bridge, as he was in the workshop and no call was established.",
+    "majorChanges": [
+      "identity-change"
+    ]
+  },
+  "rejected": true,
+  "reason": "Continuity check: The proposal reveals that Mara and Elias are the same person, which contradicts established character identities and world rules. No prior event supports this identity change, and it introduces a supernatural or metaphysical element not established in the story. The plan also has Elias arriving at the lighthouse without a plausible bridge, as he was in the workshop and no call was established. The proposal reveals that Mara and Elias are the same person, a lasting identity transformation that contradicts established character identities and requires owner approval.",
+  "usage": [
+    {
+      "kind": "continuity-audit",
+      "status": "completed",
+      "input_tokens": 1144,
+      "output_tokens": 95,
+      "cost_ceiling_cents": 25
+    }
+  ]
+}

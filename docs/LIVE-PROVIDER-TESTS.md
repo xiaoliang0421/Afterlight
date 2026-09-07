@@ -1,6 +1,6 @@
 # Live provider experiment
 
-2026-09-06. These are isolated opt-in tests using original fictional content and an original visual interpretation of literary Sherlock Holmes. The website remains in visibly labeled fixture mode; no live test footage was inserted into public story canon and no Cloudflare deployment occurred.
+Updated 2026-09-07. These are isolated opt-in tests using original fictional content and an original visual interpretation of literary Sherlock Holmes. The local website uses labeled fixtures; the empty cloud staging shell is separately deployed at `app.tailrelay.com`. No experiment footage was inserted into public story canon. Historical experiments below retain their original scope and limits; later dated entries supersede them. The latest real text-editor evaluation and limitations are in [editor acceptance](DIRECTOR-ACCEPTANCE.md).
 
 ## Text editor
 

@@ -1,0 +1,144 @@
+{
+  "testedAt": "2026-09-07T01:52:06.074Z",
+  "scope": "Bounded real DeepSeek calls through the application editor against local illustrative canon, including one explicit diagnostic after a completed response failed validation. No video, remote fixture data, automatic publication or Paddle activity. Deterministic checks are limited evidence, not multilingual semantic assurance.",
+  "results": [
+    {
+      "state": "completed",
+      "case": "new-character",
+      "prompt": "一个新邮差 June 沿着山坡走到灯塔门口，向玛拉递上一封信。只演这一小段，不要新增旧经历，不要改变已有角色。",
+      "expected": "ordinary",
+      "testedAt": "2026-09-07T01:51:59.544Z",
+      "latencyMs": 5519,
+      "checks": {
+        "englishScript": true,
+        "classification": true,
+        "selectedCast": true,
+        "newCharacter": true,
+        "noDuplicateCast": true,
+        "impossibleRetconRejected": true,
+        "noPrivilegeClaims": true,
+        "canonUnchanged": true
+      },
+      "plan": {
+        "englishPrompt": "A new mail carrier, June, walks up the hillside path to the lighthouse entrance, where Mara Vale stands holding a brass key. June hands Mara a letter.",
+        "title": "The Letter",
+        "summary": "June, a new mail carrier, arrives at the lighthouse and delivers a letter to Mara, who is still holding the brass key.",
+        "bridge": "Mara is at the lighthouse entrance, having just discovered the brass door. She still holds the key. A new mail carrier approaches along the coastal path.",
+        "videoPrompt": "Exterior, coastal path leading to the lighthouse. Mara stands at the entrance, holding a brass key, looking at the door. A young woman, June, wearing a postal uniform and carrying a leather satchel, walks up the path. She stops a few feet away, takes a letter from her satchel, and holds it out to Mara. Mara turns, surprised, and reaches for the letter. The wind rustles, and the sound of the sea is in the background.",
+        "language": "en",
+        "durationSeconds": 10,
+        "characterIds": [
+          "mara-vale",
+          "governance:new-character:character:1"
+        ],
+        "newCharacters": [
+          {
+            "id": "governance:new-character:character:1",
+            "name": "June",
+            "description": "A new mail carrier in her twenties, with a practical ponytail and a worn postal uniform. She carries a leather satchel.",
+            "state": "Arriving at the lighthouse entrance, holding a letter for Mara."
+          }
+        ],
+        "proposedEvents": [
+          "June walks up the hillside path to the lighthouse entrance.",
+          "June hands a letter to Mara."
+        ],
+        "characterUpdates": [
+          {
+            "id": "mara-vale",
+            "state": "At the lighthouse entrance, holding a brass key and a letter just delivered by June."
+          }
+        ],
+        "requiresReview": false,
+        "majorChanges": [],
+        "reason": "",
+        "rejected": false
+      }
+    },
+    {
+      "state": "completed",
+      "case": "returning-cast",
+      "prompt": "Elias speaks to Mara over the radio from his workshop, asking her to describe the brass door. Mara remains at the entrance holding her key. Keep their separate locations and existing identities.",
+      "expected": "ordinary",
+      "testedAt": "2026-09-07T01:52:06.073Z",
+      "latencyMs": 6525,
+      "checks": {
+        "englishScript": true,
+        "classification": true,
+        "selectedCast": true,
+        "newCharacter": true,
+        "noDuplicateCast": true,
+        "impossibleRetconRejected": true,
+        "noPrivilegeClaims": true,
+        "canonUnchanged": true
+      },
+      "plan": {
+        "englishPrompt": "Mara stands at the lighthouse entrance, holding the brass key, examining the narrow brass door. Her radio crackles with Elias's voice asking her to describe the door. She replies briefly, then continues to inspect the door.",
+        "title": "Radio Contact",
+        "summary": "Mara, at the lighthouse entrance, receives a radio call from Elias, who asks her to describe the brass door she found. She responds, confirming the door's details, while still holding the key.",
+        "bridge": "From the last published moment, Mara is at the entrance with the key, having just discovered the brass door. The radio, which previously spoke her name, now crackles with Elias's voice, connecting the two locations.",
+        "videoPrompt": "Interior of lighthouse entrance. Mara, in her rust-orange raincoat, stands before a narrow brass door set into the stone wall. She holds a large brass key in her hand. A portable radio on a nearby shelf crackles. Elias's voice comes through: 'Mara, can you describe the door?' Mara glances at the radio, then back at the door. She replies, 'It's brass, narrow, with a strange symbol.' She steps closer, running her fingers over the door's edge. The camera holds on her face as she examines the door, the key glinting in the amber light. Sound of wind outside, radio static.",
+        "language": "en",
+        "durationSeconds": 10,
+        "characterIds": [
+          "mara-vale",
+          "elias-reed"
+        ],
+        "newCharacters": [],
+        "proposedEvents": [
+          "Mara receives a radio call from Elias asking her to describe the brass door.",
+          "Mara describes the door as brass, narrow, with a strange symbol.",
+          "Mara continues to hold the key and inspect the door."
+        ],
+        "characterUpdates": [
+          {
+            "id": "mara-vale",
+            "state": "At the lighthouse entrance, holding the brass key. She has described the brass door to Elias over the radio."
+          },
+          {
+            "id": "elias-reed",
+            "state": "In the radio workshop. He has spoken to Mara over the radio, asking her to describe the brass door."
+          }
+        ],
+        "requiresReview": true,
+        "majorChanges": [],
+        "reason": "Continuity check: The plan has Elias speaking to Mara over the radio from his workshop. Published events establish that Mara heard her name over the radio and Elias found the transmitter disconnected, but it is not confirmed that the radio link between them is functional or that Elias can transmit. The plan assumes a working two-way radio connection without prior establishment, which is an unmotivated but not strictly contradictory transition. Locations and character states are consistent. ",
+        "rejected": false
+      }
+    }
+  ],
+  "usage": [
+    {
+      "kind": "preview",
+      "provider_model": "deepseek-v4-flash",
+      "status": "completed",
+      "input_tokens": 1581,
+      "output_tokens": 427,
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "continuity-audit",
+      "provider_model": "deepseek-v4-flash",
+      "status": "completed",
+      "input_tokens": 1192,
+      "output_tokens": 92,
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "preview",
+      "provider_model": "deepseek-v4-flash",
+      "status": "completed",
+      "input_tokens": 1589,
+      "output_tokens": 506,
+      "cost_ceiling_cents": 25
+    },
+    {
+      "kind": "continuity-audit",
+      "provider_model": "deepseek-v4-flash",
+      "status": "completed",
+      "input_tokens": 1269,
+      "output_tokens": 106,
+      "cost_ceiling_cents": 25
+    }
+  ]
+}

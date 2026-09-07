@@ -16,6 +16,8 @@ Local fixture wallet values are simulated and labeled. They are not a real accou
 
 ## Reviewing a scene
 
+Live preparation first writes a structured proposal, then independently audits every non-rejected plan against current published facts. Contradictions block admission; ambiguous transitions require review. The audit can add owner-decision flags but cannot remove them or approve a rejected plan. Each stage retains its own 25-cent editor cost allowance; invalid output is not automatically retried. This checks proposed text, not the actual generated footage. New-character descriptions become explicit cast anchors, while model-supplied reference URLs are discarded.
+
 1. Open Studio → Review queue → Watch & review. Watch the entire stored clip.
 2. Verify English speech, narration/lyrics and readable text, character continuity, causal transition and content suitability.
 3. Write the actual scene summary and events. Do not copy proposed events when the footage did not show them.

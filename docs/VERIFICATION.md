@@ -1,12 +1,12 @@
 # Verification and release status
 
-Updated 2026-09-06. The local website remains in fixture mode. Four isolated real DeepSeek calls and four real fal videos (two reference, two text-only) plus two reference-clip speech checks have completed; no cloud deployment has been performed. See [the complete test scope and limitations](LIVE-PROVIDER-TESTS.md).
+Updated 2026-09-07. The empty staging website is deployed at `https://app.tailrelay.com`, with login, generation and payment still closed pending configuration. Local fixture tests and isolated real provider experiments remain separate from public canon. Later dated entries below supersede historical counts. See [provider experiments](LIVE-PROVIDER-TESTS.md) and [the latest editor acceptance](DIRECTOR-ACCEPTANCE.md).
 
 See the [prioritized product completion checklist](PRODUCT-STATUS.md) for implementation work and account/configuration dependencies.
 
 ## Verified locally
 
-- Current pass: 43 unit/database/HTTP contract tests, TypeScript and frontend build. The isolated Cloudflare integration suite also passed (16 reported tests including its parent).
+- Current pass: 63 unit/database/HTTP contract tests, TypeScript and frontend build. The isolated Cloudflare integration suite passed 17 API subtests (18 including its parent). The latest editor changes include six focused parser, cast, audit, accounting and stream tests.
 - Lost fal response recovery: admin-only verification/linking, exact input/model/time checks, immutable attempt evidence and unique provider IDs, terminal-runtime guard, competing-operator CAS, and persisted recovery dispatch through a simulated dispatcher failure. External calls in contract tests are mocked and assert no generation POST.
 - Read-only live verification against an already completed text-video request: fal history returned HTTP 200 with matching endpoint and input payload; queue status returned HTTP 200, matching ID and COMPLETED. No additional model generation was requested. Full deployed recovery remains unverified.
 - Turnstile: correct secret destination, exact hostname/action, token length, failed/expired responses, upstream errors and strict local-only fixture bypass. Real widget provisioning and browser challenge acceptance remain pending.
@@ -73,3 +73,11 @@ The account-export iteration was deployed to the existing staging Worker as vers
 - Remaining evidence: actual Google OAuth/Turnstile user interaction, a multi-scene cloud generation/recovery run, mobile/network playback, live alert delivery and independently retained media backups, finalized policies, and authenticated Paddle sandbox checkout/refund acceptance. Browser automation opened the deployed discovery page but timed out on inspection; that is not a passed browser test. GitHub CI status must be read separately after push.
 
 Public smoke checks passed for home/discover/share HTML, CSP/nosniff headers, health/bootstrap, private admin/transcript/export endpoints, unknown API routing, disabled developer sign-in and cross-origin rejection: **12 endpoint checks**. This remains a staging preview, with zero remote users/tasks and real login/creation/payment switches closed.
+
+## 2026-09-07 independent continuity audit
+
+The story editor/cast/response-reader fixes and independent continuity audit deployed as Worker version `54022ff2-3e95-4dbb-8e2d-6c25aaf10f85`: 2700.51 KiB upload, 474.72 KiB gzip, 76 ms startup. All 63 application tests, typecheck/build and staging preflight passed. The 17 API integration subtests passed during this iteration; later bounded response-buffer handling passed its focused and full unit suites. See [real editor acceptance and retained failures](DIRECTOR-ACCEPTANCE.md).
+
+Post-deploy checks passed for discovery HTML/current assets/CSP, health, anonymous bootstrap and admin rejection (four endpoints). Python's default user agent received Cloudflare error 1010; the explicitly identified `TaleRelay-Readiness/1.0` client passed without a security-rule change. [Cloudflare documents 1010 as a browser-signature block](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/). This does not prove interactive browser/mobile acceptance: the automated Edge preview tab remained blank/asleep during inspection.
+
+Google branding and the minimal Paddle Sandbox setup-key form are prepared, pending the requested policy/key approvals. No OAuth client or Paddle key/catalog was created, and no live purchase or new video was attempted. Staging still has no remote stories or users; production release gates remain closed.

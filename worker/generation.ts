@@ -29,7 +29,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
     try {
       const prepared = await step.do(
         "recheck latest canon",
-        { retries: { limit: 0, delay: "1 second" }, timeout: "1 minute" },
+        { retries: { limit: 0, delay: "1 second" }, timeout: "2 minutes" },
         async () => {
           const t = await getTask(this.env, taskId);
           if (

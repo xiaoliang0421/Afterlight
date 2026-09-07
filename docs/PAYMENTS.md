@@ -1,6 +1,6 @@
 # Paddle payments and generation modes
 
-Updated 2026-09-06. **The integration code is implemented; real checkout and paid reference generation are closed.** A live merchant account is accessible in the browser, but there is no authenticated Paddle API connection, real sandbox acceptance or merchant activation yet. No product prices have been chosen or created.
+Updated 2026-09-07. **The integration code is implemented; real checkout and paid reference generation are closed.** Live and Sandbox accounts are accessible in the browser, but there is no authenticated Paddle API connection, real sandbox acceptance or merchant activation yet. No product prices have been chosen or created.
 
 ## Product behavior
 
@@ -31,11 +31,11 @@ Payment refunds are distinct from returning generation points. Users can submit 
 
 The official `paddle@paddle-agent-skills` v0.1.0 plugin was installed from PaddleHQ/paddle-agent-skills (source commit `de7fcd3f6cc43bf87a65d6b2e65067611b47353c`). Installation supplies development guidance and potential MCP connections; it does not create a merchant or connect its credentials. The checkout, webhook, catalog and sandbox skills were read. Their Next.js examples are adapted to React/Vite and Hono/Workers using Paddle’s REST API and Web Crypto.
 
-The owner authorized use of the existing live dashboard on 2026-09-06. Its onboarding page explicitly displayed **You’re in Live** and all three tasks (live setup, account verification, test/go-live) as **Not started**. The existing merchant can be retained; a separate sandbox account is still needed for testing. Browser inspection succeeded, but subsequent interaction timed out, so no catalog, credential or activation change is confirmed.
+The owner authorized use of the existing live dashboard on 2026-09-06. Its onboarding page explicitly displayed **You’re in Live** and all three tasks (live setup, account verification, test/go-live) as **Not started**. The existing merchant can be retained. The owner subsequently registered a separate Sandbox account; browser inspection confirmed **Test mode / You’re in Sandbox**, with all four integration tasks not started. The Authentication page had no API keys. Opening the new-key form succeeded, but filling it timed out; Save was never invoked. No key, catalog, webhook or activation change is confirmed.
 
 The configuration check on 2026-09-06 found no callable Paddle MCP connection and no `PADDLE_*` secret names on the staging Worker. The installed skills provide instructions, not merchant access. Sandbox does not require domain approval, so its account/catalog setup can proceed while domain registration is pending. End-to-end webhooks still need a reachable HTTPS endpoint.
 
-Start with a separate [Paddle Sandbox account](https://sandbox-login.paddle.com/signup). The owner completes account creation and any agreement. After connection, the remaining setup can be operated with Paddle tools/API within the owner’s authorization:
+Sandbox registration is complete. The next dependency is an API credential, using the [secure local handoff](PADDLE-SANDBOX.md). After connection, the remaining setup can be operated with Paddle tools/API within the owner’s authorization:
 
 - Agree on the one-time point packages, USD base price, points per scene and refund/delivery terms. Create one-time catalog prices with no recurring cycle, no regional overrides/discounts and tax-exclusive USD amounts for this initial adapter. Insert matching package records in D1 only after verifying the catalog.
 - Supply server secrets `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, and the public `PADDLE_CLIENT_TOKEN` via the hosting secret/config mechanism. Never put keys in source, config files or Git. Sandbox and live use separate credentials, prices and databases.

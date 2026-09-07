@@ -22,7 +22,9 @@ Local fixture wallet values are simulated and labeled. They are not a real accou
 4. Provide reviewed WebVTT captions matching the actual audio, or confirm no dialogue. Confirm only candidates who actually appear; update character state only for events shown.
 5. Publish once. The database rejects stale parent versions and duplicate scene versions. On rejection, user credit returns while platform cost stays recorded.
 
-No automatic ASR/OCR or visual consistency pass exists yet. Manual review is mandatory in the current implementation. Real model quality testing is still outstanding.
+After a live original is archived, a single Scribe v2 speech check detects language without an English hint and prepares timed caption suggestions. Studio → Watch & review shows the transcript, language confidence, timing issues and a button to copy the draft into the editable caption field. No transcript result checks the publication boxes or publishes automatically. Listen to the whole clip, review every caption, and inspect readable text and visual continuity manually. OCR and automatic visual validation are not implemented.
+
+Speech checks retain a conservative US$0.10 charge against the platform lifetime/day/month ceiling and fal wallet before submission. A unique task attempt prevents duplicate POSTs. Known queue requests are refreshed with GETs; the five-minute cron resumes polling. An uncertain request keeps its cost allowance and can be closed only by a studio operator after verifying the provider has stopped. Closing never resubmits. Missing capacity, oversized/missing media or a provider outage leave the video available for manual review. Originals are streamed from private R2 as a bounded data URI, with no public download URL and no full-video memory buffer. Speech transcripts are included in account export and scrubbed on account erasure; active or uncertain speech checks block deletion.
 
 ## Character materials
 
@@ -47,7 +49,11 @@ Story reports appear in Studio → Reports. Hiding a scene leaves an explicit ti
 
 Account deletion requests appear in Studio → Account requests with private contact details. A request can be withdrawn by its owner. The UI does not claim an account is deleted when a request is submitted.
 
-The full deletion execution policy is a remaining launch item: verify identity, reconcile unfinished tasks, settle reservations, decide lawful retention, anonymize public bylines where required, remove private profile data and Better Auth sessions/accounts, and record the request outcome. No automatic destructive account purge is exposed by this build.
+Open **Review deletion** to inspect the exact account, current policy, published contribution count and blockers. Send a private response from that dialog when tasks, billing or reports need attention. Execution requires a distinct administrator, a content-retention review and typing `DELETE ACCOUNT`. Hosted execution remains blocked while policies are drafts.
+
+D1 rechecks active tasks (including other contributors in the person’s owned stories), previews, uncertain attempts, pending/held orders, purchased balances and open support cases within the deletion transaction. Successful execution revokes sign-in, removes private profile/activity and task inputs, pauses owned stories, anonymizes public bylines, redacts published original prompts and writes a single receipt/audit record. In-flight activity cannot recreate a deleted account’s drafts, orders or session. Terminal provider request IDs and minimal accounting/policy records remain; saved provider input can be erased only for a deleted account without altering those IDs.
+
+Unpublished original video/caption keys enter a durable R2 cleanup queue. Scheduled reconciliation removes only exact task objects that are not referenced by published scenes; failures remain pending for retry. Shared scenes, story/cast/archive text and approved reference materials require a separate content/privacy review before execution. This is not automatic removal of every identifying detail from a story, provider retention or backup propagation. Final retention periods, provider requests and backup restoration handling still require approval and verification. See [account deletion](ACCOUNT-DELETION.md).
 
 ## Recovery, backups and rollout
 

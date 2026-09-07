@@ -41,7 +41,7 @@ Authenticated success means `product.read` works; it does not prove all write pe
 
 The proposed test-only package is **100 creation points / USD 10 before tax / one-time**. Owner confirmation is pending; this is not a chosen commercial price and must not be created or enabled without that answer. After agreement and API access, use the Paddle catalog skill to create and verify IDs, configure a separate Sandbox client token and webhook secret, and map the verified package to the test database.
 
-Use mock video fulfillment for successful and declined checkout, duplicate events, lost responses, refunds and point ledger tests. Do not turn on paid provider generation to make payment tests pass. The staging webhook still requires a verified reachable HTTPS destination, and website browser acceptance needs the outstanding local-origin browser permission.
+Use mock video fulfillment for successful and declined checkout, duplicate events, lost responses, refunds and point ledger tests. Do not turn on paid provider generation to make payment tests pass. The intended staging webhook is now reachable at `https://app.tailrelay.com/api/billing/webhook`. API credentials, a Sandbox notification destination/secret and full authenticated checkout acceptance are still pending. Local browser access is unnecessary for testing the deployed custom domain.
 
 Credential helper regression tests (all storage and HTTP mocked):
 

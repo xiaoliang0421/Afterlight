@@ -1,5 +1,8 @@
-import { useResource } from "./api";
-import { Author, Empty, Loading, Notice } from "./components";
+import { useState } from "react";
+import { api, useResource } from "./api";
+import { Author, Button, Loading, Modal, Notice } from "./components";
+import type { deletionPreview } from "../worker/account-deletion";
+type DeletionPreview = Awaited<ReturnType<typeof deletionPreview>>;
 export function StudioRequests() {
   const resource = useResource<{
     requests: {
@@ -9,23 +12,33 @@ export function StudioRequests() {
       userId: string;
       nickname: string;
       email: string;
+      response: string;
     }[];
   }>("/admin/account-requests");
+  const [review, setReview] = useState<DeletionPreview | null>(null);
+  const [response, setResponse] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [receipt, setReceipt] = useState("");
   if (resource.loading) return <Loading />;
   if (!resource.data) return <Notice danger>{resource.error}</Notice>;
   return (
     <section>
       <p className="muted">
-        Private account requests. Check unfinished paid provider requests and
-        the shared story’s attribution before carrying out deletion. Record the
-        outcome through the documented account runbook.
+        Review private requests, send an in-account response and check the
+        deletion impact. Active tasks and unresolved payments block deletion.
       </p>
+      {error && <Notice danger>{error}</Notice>}
+      {receipt && <Notice>{receipt}</Notice>}
       <div className="studio-tasks">
         {resource.data.requests.map((r) => (
           <article className="studio-task" key={r.id}>
             <p className="eyebrow">ACCOUNT DELETION REQUEST</p>
             <Author id={r.userId} name={r.nickname || "Storyteller"} />
             <p>{r.reason || "No additional note."}</p>
+            {r.response && <p className="muted">Your response: {r.response}</p>}
             <p className="fine-print">
               Private contact: {r.email}
               <br />
@@ -33,11 +46,161 @@ export function StudioRequests() {
               <br />
               Request ID: {r.id}
             </p>
+            <Button
+              kind="secondary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                setReceipt("");
+                try {
+                  setReview(
+                    await api<DeletionPreview>(
+                      `/admin/account-requests/${r.id}/preview`,
+                    ),
+                  );
+                  setResponse(r.response);
+                  setConfirmed(false);
+                  setConfirmation("");
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Review request
+            </Button>
           </article>
         ))}
       </div>
       {!resource.data.requests.length && (
         <p className="muted">No account requests awaiting review.</p>
+      )}
+      {review && (
+        <Modal
+          title="Review account deletion"
+          onClose={() => {
+            if (!busy) setReview(null);
+          }}
+        >
+          <p>
+            <strong>{review.request.nickname || "Storyteller"}</strong>
+          </p>
+          <p className="muted">
+            Deletion removes sign-in credentials, email, nickname, saved
+            activity and submitted prompt text. Published scenes remain with
+            anonymous credit; this person's stories pause. Required accounting
+            and policy records remain. Other people's contributions are
+            preserved.
+          </p>
+          <p>
+            {review.counts?.publishedScenes ?? 0} published scenes ·{" "}
+            {review.counts?.ownedStories ?? 0} owned stories ·{" "}
+            {review.counts?.retainedOrders ?? 0} retained order records
+          </p>
+          {review.blockers.map((message) => (
+            <Notice key={message} danger>
+              {message}
+            </Notice>
+          ))}
+          <label className="field-label">
+            Response visible to the requester
+            <textarea
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              maxLength={1200}
+              disabled={busy}
+            />
+          </label>
+          <Button
+            kind="secondary"
+            disabled={busy || response.trim().length < 10}
+            onClick={async () => {
+              setBusy(true);
+              setError("");
+              try {
+                await api(
+                  `/admin/account-requests/${review.request.id}/respond`,
+                  "POST",
+                  { response },
+                );
+                await resource.reload();
+                setReceipt("Response saved to the person's account.");
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Save response
+          </Button>
+          <p className="fine-print">
+            Before executing, review identifying details in retained videos,
+            story text and references, and resolve any separate removal or legal
+            retention needs. Private unpublished video files are queued for
+            deletion; backup and provider copies follow the retention procedure.
+          </p>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              disabled={busy || !!review.blockers.length}
+              onChange={(e) => setConfirmed(e.target.checked)}
+            />
+            I reviewed the retained content and retention needs. I understand
+            that account deletion cannot be undone.
+          </label>
+          <label className="field-label">
+            Type DELETE ACCOUNT to confirm
+            <input
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+              disabled={busy || !!review.blockers.length}
+              autoComplete="off"
+            />
+          </label>
+          {error && <Notice danger>{error}</Notice>}
+          <Button
+            disabled={
+              busy ||
+              !!review.blockers.length ||
+              !confirmed ||
+              confirmation !== "DELETE ACCOUNT"
+            }
+            busy={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError("");
+              try {
+                const result = await api<{
+                  receipt: { requestId: string; completedAt: number };
+                }>(
+                  `/admin/account-requests/${review.request.id}/execute`,
+                  "POST",
+                  {
+                    userId: review.request.userId,
+                    policyVersion: review.policyVersion,
+                    reviewedContent: true,
+                    confirm: confirmation,
+                  },
+                );
+                setReceipt(
+                  `Account deletion completed. Receipt: ${result.receipt.requestId}. Retain this receipt for the verified support response.`,
+                );
+                setReview(null);
+                await resource.reload();
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Delete account
+          </Button>
+        </Modal>
       )}
     </section>
   );

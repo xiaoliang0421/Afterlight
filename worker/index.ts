@@ -58,6 +58,8 @@ import { creationAction } from "../shared/protection";
 import { verifyHuman } from "./turnstile";
 import { recordedReconciliation } from "./operations";
 import { accountExport } from "./account-export";
+import { cleanupDeletedAccountMedia } from "./account-deletion";
+import { reconcileSpeechChecks } from "./speech";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -401,7 +403,7 @@ app.get("/api/account/requests", async (c) => {
   return c.json({
     requests: (
       await c.env.DB.prepare(
-        "SELECT id,kind,reason,status,created_at AS createdAt FROM account_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 20",
+        "SELECT id,kind,reason,status,response,responded_at AS respondedAt,created_at AS createdAt FROM account_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 20",
       )
         .bind(user.id)
         .all()
@@ -1005,6 +1007,8 @@ app.notFound((c) =>
 
 async function reconcile(env: Cloudflare.Env) {
   await reconcilePayments(env);
+  await cleanupDeletedAccountMedia(env);
+  await reconcileSpeechChecks(env);
   if (String(env.PROVIDER_MODE) === "live") {
     try {
       await refreshBalance(env);

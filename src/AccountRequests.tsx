@@ -3,7 +3,12 @@ import { api, useResource } from "./api";
 import { Button, Modal, Notice } from "./components";
 export function AccountRequests() {
   const resource = useResource<{
-    requests: { id: string; status: string; createdAt: number }[];
+    requests: {
+      id: string;
+      status: string;
+      response: string;
+      createdAt: number;
+    }[];
   }>("/account/requests");
   const [open, setOpen] = useState(false),
     [reason, setReason] = useState(""),
@@ -25,6 +30,7 @@ export function AccountRequests() {
             {new Date(pending.createdAt).toLocaleDateString("en")}. It is
             awaiting review.
           </Notice>
+          {pending.response && <Notice>{pending.response}</Notice>}
           <Button
             kind="secondary"
             onClick={async () => {

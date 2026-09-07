@@ -44,3 +44,18 @@ Each text clip reserved US$0.50 against a regular-rate US$0.40 estimate. Combine
 The local `low-cost.json` journal and `text-clip-1.mp4` / `text-clip-2.mp4` remain under ignored `artifacts/fal-smoke/`. **Per the latest owner instruction, no further image/reference video tests may run until the owner funds and reauthorizes them.** Current testing stays on the text route.
 
 Model references: [Turbo text-only API](https://fal.ai/models/minimax/h3-max-turbo/text-to-video/api), [current pricing](https://fal.ai/models/minimax/h3-max-turbo/text-to-video).
+
+## Additional authorization — 2026-09-07
+
+The owner approved another US$5 for text-to-video and speech checks, bringing the cumulative experiment ceiling to US$10. The US$4.02 prior commitment remains counted, leaving at most US$5.98 for additional reserved tests. Paid image/reference generation remains paused. No new paid call is implied by this authorization record; record each attempt before submission and reconcile shared script/staging usage before further calls.
+
+## Worker speech integration — 2026-09-07
+
+Both saved Turbo text-to-video originals were sent through the actual Worker speech submission/polling/assessment implementation, with isolated durable SQLite/R2 adapters. No new video was generated and no public story was populated. MP4 data was streamed directly as base64 JSON; language was not forced and no premium keyterms were supplied.
+
+| Existing text clip | Detected speech | Language confidence | Review result |
+| --- | --- | --- | --- |
+| 1 | This letter arrived too late. | 0.724 | Low confidence; correctly held for human listening |
+| 2 | We have a visitor | 0.901 | English likely; manual publication review still required |
+
+Both queue requests completed and produced timestamped WebVTT drafts. This verifies real fal MP4 transcription and the shared implementation, not deployed Workflow execution, full visual/lip-sync acceptance or OCR. Each check retains a US$0.10 conservative cost allowance: cumulative commitment is now **US$4.22**, leaving at most **US$5.78** under the US$10 authorization. Final invoices for the text video/speech checks remain unreconciled. Journals preserve immutable request IDs; another invocation polls the same request or returns the saved result and cannot charge again.

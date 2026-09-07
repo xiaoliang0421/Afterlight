@@ -8,6 +8,8 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
+  account_deleted:
+    "This account has been deleted. Sign in again to start a new account.",
   owner_approval_required:
     "This plan needs the story creator’s approval before it can enter generation.",
   owner_review_changed:

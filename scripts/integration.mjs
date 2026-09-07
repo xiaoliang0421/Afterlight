@@ -17,6 +17,14 @@ try {
       "DB",
       "--local",
       "--file",
+      "tests/fixtures/account-deletion.sql",
+    ],
+    [
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--file",
       "tests/fixtures/account-export.sql",
     ],
   ]) {

@@ -13,6 +13,7 @@ import { api, useResource } from "./api";
 import { useApp } from "./context";
 import { MaterialsPanel } from "./MaterialsPanel";
 import { StudioRequests } from "./StudioRequests";
+import { SpeechReview } from "./SpeechReview";
 import { ArchiveReview } from "./ArchiveReview";
 import { StudioBilling } from "./StudioBilling";
 import {
@@ -518,6 +519,7 @@ function ModerationModal({
         The plan below is a starting point. Correct it to match the actual video
         before it becomes story history.
       </p>
+      <SpeechReview taskId={task.id} onCaptions={setCaptions} />
       <div className="review-checks">
         {[
           "The actual audio is English (or there is no speech).",

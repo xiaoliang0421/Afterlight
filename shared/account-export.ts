@@ -6,6 +6,7 @@ export const exportSections = [
   "stories",
   "ideas",
   "scenes",
+  "speechChecks",
   "freeCredits",
   "purchasedCredits",
   "creditHistory",

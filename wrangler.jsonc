@@ -13,6 +13,7 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
   },
   "vars": {
     "ENVIRONMENT": "development",
@@ -72,10 +73,19 @@
   "env": {
     "staging": {
       "name": "afterlight-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        {
+          "pattern": "app.tailrelay.com",
+          "custom_domain": true,
+          "zone_id": "94fecce6d5081b7aef0e0ecdc020abfc",
+        },
+      ],
       "vars": {
         "ENVIRONMENT": "staging",
         "PROVIDER_MODE": "disabled",
-        "PUBLIC_ORIGIN": "https://afterlight-staging.liushenliang1994.workers.dev",
+        "PUBLIC_ORIGIN": "https://app.tailrelay.com",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAEqTHX9P9ZiVO_fR",
         "ALLOW_DEV_LOGIN": "false",
         "PAYMENTS_ENABLED": "false",

@@ -4,6 +4,7 @@ import {
   unlinkSync,
   readFileSync,
   existsSync,
+  readdirSync,
 } from "node:fs";
 import { resolve } from "node:path";
 
@@ -54,15 +55,21 @@ export function audioReservations() {
 
 export function lowCostReservations() {
   const file = resolve("artifacts/fal-smoke/low-cost.json");
-  if (!existsSync(file)) return 0;
+  if (!existsSync(file)) return additionalSpeechReservations();
   const entries = JSON.parse(readFileSync(file, "utf8")).clips;
   if (!Array.isArray(entries))
     throw new Error("Inspect the low-cost experiment ledger.");
-  return entries.reduce((sum: number, entry: { reservedCents: number }) => {
-    if (!Number.isSafeInteger(entry.reservedCents) || entry.reservedCents < 25)
-      throw new Error("Inspect the low-cost experiment reservation.");
-    return sum + entry.reservedCents;
-  }, 0);
+  return (
+    additionalSpeechReservations() +
+    entries.reduce((sum: number, entry: { reservedCents: number }) => {
+      if (
+        !Number.isSafeInteger(entry.reservedCents) ||
+        entry.reservedCents < 25
+      )
+        throw new Error("Inspect the low-cost experiment reservation.");
+      return sum + entry.reservedCents;
+    }, 0)
+  );
 }
 
 export function videoReservations() {
@@ -109,4 +116,17 @@ export function originalExperimentCommitment() {
     if (!Number.isSafeInteger(cost) || cost < 0)
       throw new Error("Invalid confirmed cost.");
   return invoice.videoCents + invoice.speechCents;
+}
+
+export function additionalSpeechReservations() {
+  const dir = resolve("artifacts/fal-smoke");
+  if (!existsSync(dir)) return 0;
+  return readdirSync(dir)
+    .filter((name) => /^text-audio-[12]\.json$/.test(name))
+    .reduce((sum, name) => {
+      const entry = JSON.parse(readFileSync(resolve(dir, name), "utf8"));
+      if (entry.reservedCents !== 10)
+        throw new Error("Inspect the additional speech reservation ledger.");
+      return sum + entry.reservedCents;
+    }, 0);
 }

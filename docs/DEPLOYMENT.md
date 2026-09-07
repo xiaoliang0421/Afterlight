@@ -1,10 +1,12 @@
 # Cloudflare deployment
 
-TaleRelay staging was deployed on 2026-09-06 at `https://afterlight-staging.liushenliang1994.workers.dev`. Worker version `02a313c4-4cbc-4bba-8000-f6fa2e2e05d9` includes authenticated account-record export, the TaleRelay identity and a managed Turnstile widget restricted to that exact hostname. The public support contact is TaleRelay Support at `talerelay@proton.me`, reflected in policy draft `2026-09-06-draft5`. Session and Turnstile secrets are in the Worker secret store; the public site key is in `wrangler.jsonc`. Google client credentials, model keys and payment credentials have not been uploaded. Generation, checkout and development login remain disabled.
+TaleRelay is reachable at **https://app.tailrelay.com**, bound to the isolated `afterlight-staging` Worker. The owner confirmed `tailrelay.com` is the purchased domain; it is separate from the TaleRelay brand spelling and Proton mailbox. HTTPS and public health/bootstrap requests pass. Turnstile permits this exact hostname. The old workers.dev and preview endpoints are disabled. Generation, checkout and development login remain disabled pending account/configuration acceptance.
 
-Separate private R2 buckets (`afterlight-staging-media`, `afterlight-production-media`) and D1 databases exist for staging/production. All 17 schema migrations are applied with standard Wrangler tracking. Read-back confirmed zero users/stories/scenes. `StoryRoom`, both staging Workflows and the five-minute cron are deployed. The remote reconciliation health row recorded a successful completion with no failure. No fixture data was seeded remotely; `.assetsignore` also excludes local sample footage, fixture character/story artwork and client source maps from asset uploads.
+Separate private R2 buckets (`afterlight-staging-media`, `afterlight-production-media`) and D1 databases exist. `StoryRoom`, both staging Workflows and the five-minute cron are deployed. No local footage, fixture records, source maps, provider keys or personal context are published. Session, Turnstile, fal generation and DeepSeek director secrets are provisioned; Google OAuth credentials and a balance-capable fal credential are still needed. Production preflight still blocks a public service launch until policies and real acceptance are complete.
 
-Public HTTP acceptance is incomplete: the test machine resolved the workers.dev hostname to `31.13.81.4` and timed out; the public fetch tool also could not open it. A separate DNS query returned a different unexpected address. These results indicate a DNS/network path problem but do not establish end-to-end application health. Verify on a working network before hosted Google OAuth acceptance. A custom domain is not required for local Google testing; register the loopback callback on a dedicated development client, then add the owned domain to the hosted client when available. The production origin remains a placeholder and production preflight still blocks release.
+A separate Google Cloud project `talerelay` was created without changing ToolMoss. Branding setup currently requires the owner's choice about displaying the existing Gmail address on Google's authorization screen; the site support email remains `talerelay@proton.me`. No Google OAuth client has been created yet.
+
+On 2026-09-07 the remote staging D1 export (18 applied migrations) restored successfully into an isolated in-memory SQLite database: integrity check `ok`, zero foreign-key violations, 108 non-internal schema objects, and zero users/stories. The export was removed after verification. Time Travel returned a current bookmark. This tests snapshot readability and schema recovery, not a destructive rollback of the serving database or full live-media disaster recovery.
 
 ## GitHub
 
@@ -12,13 +14,13 @@ Use a dedicated private repository containing this product directory only. Do no
 
 Connect the repository to Cloudflare Workers Builds after selecting the actual account and worker. Keep staging and production as distinct workers and bindings. Preview builds must use staging resources. Production publication remains an explicit reviewed release, not an automatic consequence of opening a pull request.
 
-## Google setup while domain registration is pending
+## Google setup
 
 The application already uses Better Auth with Google. Client credentials are still required; deployment and a domain purchase do not create them automatically. Keep TaleRelay separate from the existing ToolMoss consent branding.
 
 For local development, create a **Web application** OAuth client and register the exact callback `http://127.0.0.1:5178/api/auth/callback/google`. Supply `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and a local `BETTER_AUTH_SECRET` through the approved secret mechanism, not tracked files. Keep PUBLIC_ORIGIN consistent with that origin. A local end-to-end test still contacts real Google and needs a reachable Google account; fixture login is not OAuth evidence.
 
-The hosted staging callback remains `https://afterlight-staging.liushenliang1994.workers.dev/api/auth/callback/google`; its network path must work before hosted acceptance. Once registration completes, add the exact custom-domain callback and align PUBLIC_ORIGIN, Google app links and Turnstile hostname settings. The login implementation does not need to be rebuilt.
+The hosted staging callback is `https://app.tailrelay.com/api/auth/callback/google`. If the domain changes later, add the new exact callback and align PUBLIC_ORIGIN, Google app links and Turnstile hostnames before switching traffic. Keeping the same database preserves account IDs and stories; cookies require a fresh sign-in on the new domain.
 
 [Google web-server OAuth documentation](https://developers.google.com/identity/protocols/oauth2/web-server) documents loopback callbacks for testing and exact redirect-URI matching. Domain registration, public consent/branding review and a tested login are separate steps.
 
@@ -73,3 +75,7 @@ Configure a separate managed Turnstile widget for each deployment hostname. Set 
 Keep R2 public domains off. Published MP4s are delivered by the Worker after checking scene visibility; unpublished originals require studio authentication. Cross-site browser video requests are rejected and R2 responses use `Cross-Origin-Resource-Policy: same-origin`. These are basic embedding/access controls, not DRM: someone allowed to watch a public clip can still copy or record it.
 
 The existing Cloudflare MCP connection provisions resources. Wrangler device login completed, and the selected account matches the resource account. Credentials are stored in an encrypted Wrangler configuration protected by macOS Keychain. The initial automated browser-opening action was denied; no browser-policy workaround was used. Never copy OAuth tokens into the repository.
+
+## Storage drill — 2026-09-07
+
+A disposable 58-byte object in a random staging `ops-drill/` prefix was uploaded, downloaded as a backup, restored to a second key and downloaded again. Both copies matched SHA-256 `0d772a6194f7151d0051c9044f6f22fc77082404cbd59410f3cabe8f7d1c0c21`; both remote objects and local temporary files were then removed. No user object was touched. This verifies the object transfer/recovery procedure; an independently retained media backup and deletion-replay process still need to be configured before production.

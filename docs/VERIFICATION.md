@@ -62,3 +62,14 @@ Support contact acceptance: the supplied Proton mailbox is present in all enviro
 See [account export](ACCOUNT-EXPORT.md) for included/excluded records and limits. Browser-rendered UI/download acceptance is still pending: automatic browser approval rejected access to the entire local origin. No alternate browser or indirect browser access was attempted. This does not constitute real Google login, live payment or completed account-deletion acceptance.
 
 The account-export iteration was deployed to the existing staging Worker as version `02a313c4-4cbc-4bba-8000-f6fa2e2e05d9`. Two updated static assets were uploaded; existing fixture exclusions remain in force. Generation, checkout and development login remain disabled. Public HTTP and browser UI acceptance remain outstanding as noted above.
+
+## 2026-09-07 deployment iteration
+
+- `npm run check`: typecheck/build and **57 tests passed**. Subsequent streaming cleanup/poll scheduling changes passed the focused speech suite.
+- `npm run test:integration`: **17 API subtests passed** (18 runner tests including the parent) in a disposable local Cloudflare runtime. Includes account deletion/private responses/session revocation. No remote fixture seeding.
+- Real speech integration: both existing Turbo text clips completed using the same Worker code with durable local test bindings; one low-confidence result correctly required manual review. See [provider results](LIVE-PROVIDER-TESTS.md).
+- Remote D1: 19 staging migrations applied; 18-migration snapshot restored offline with clean integrity and foreign keys. Time Travel bookmark read successfully. Remote R2 disposable backup/restore bytes matched and were removed.
+- HTTPS custom domain: `app.tailrelay.com` serves the staging Worker. fal/DeepSeek credentials were securely provisioned; no provider secrets or sample footage were uploaded as public assets. Static `_headers` now supplies CSP, framing, referrer and content-type protections plus immutable caching for hashed assets.
+- Remaining evidence: actual Google OAuth/Turnstile user interaction, a multi-scene cloud generation/recovery run, mobile/network playback, live alert delivery and independently retained media backups, finalized policies, and authenticated Paddle sandbox checkout/refund acceptance. Browser automation opened the deployed discovery page but timed out on inspection; that is not a passed browser test. GitHub CI status must be read separately after push.
+
+Public smoke checks passed for home/discover/share HTML, CSP/nosniff headers, health/bootstrap, private admin/transcript/export endpoints, unknown API routing, disabled developer sign-in and cross-origin rejection: **12 endpoint checks**. This remains a staging preview, with zero remote users/tasks and real login/creation/payment switches closed.

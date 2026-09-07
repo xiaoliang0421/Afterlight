@@ -933,4 +933,60 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       );
     },
   );
+  await t.test(
+    "account deletion responds privately, executes once and revokes the old session",
+    async () => {
+      const transport = client();
+      const deleting = (path: string, method = "GET", body?: unknown) =>
+        transport(path, method, body, {
+          Cookie: "afterlight-dev=deletion-integration-sentinel",
+        });
+      assert.equal(
+        (await ok(deleting("/api/bootstrap"))).user.id,
+        "delete-fixture",
+      );
+      await ok(
+        deleting("/api/account/requests", "POST", {
+          kind: "deletion",
+          reason: "Delete this isolated test account.",
+        }),
+      );
+      const request = (await ok(deleting("/api/account/requests"))).requests[0];
+      const path = `/api/admin/account-requests/${request.id}`;
+      assert.equal((await deleting(`${path}/preview`)).status, 403);
+      assert.equal((await guest(`${path}/preview`)).status, 401);
+      const response =
+        "Your request has been verified and is ready for processing.";
+      await ok(studio(`${path}/respond`, "POST", { response }));
+      assert.equal(
+        (await ok(deleting("/api/account/requests"))).requests[0].response,
+        response,
+      );
+      const preview = await ok(studio(`${path}/preview`));
+      assert.deepEqual(preview.blockers, []);
+      const input = {
+        userId: "delete-fixture",
+        policyVersion: policies.version,
+        reviewedContent: true,
+        confirm: "DELETE ACCOUNT",
+      };
+      const result = await ok(studio(`${path}/execute`, "POST", input));
+      assert.ok(result.receipt.completedAt > 0);
+      assert.equal((await ok(deleting("/api/bootstrap"))).user, null);
+      assert.equal((await deleting("/api/account/requests")).status, 401);
+      assert.equal(
+        (await deleting("/api/account/requests", "POST", { kind: "deletion" }))
+          .status,
+        401,
+      );
+      assert.equal(
+        (await ok(studio(`${path}/execute`, "POST", input))).alreadyCompleted,
+        true,
+      );
+      assert.equal(
+        (await ok(creator("/api/bootstrap"))).user.id,
+        "dev-creator",
+      );
+    },
+  );
 });

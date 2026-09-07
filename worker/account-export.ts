@@ -54,6 +54,12 @@ const queries: Record<
     fields:
       "t.id,t.story_id,t.episode_id,t.task_id,t.version,t.title,t.summary,t.duration_ms,t.start_ms,t.prompt_original,t.english_prompt,t.hidden,t.published_at",
   },
+  speechChecks: {
+    table: "speech_checks",
+    owner: "(SELECT user_id FROM tasks WHERE id=t.task_id)",
+    fields:
+      "t.task_id,t.status,t.result_json,t.failure_code,t.created_at,t.updated_at",
+  },
   freeCredits: {
     table: "credit_accounts",
     owner: "t.user_id",
@@ -109,7 +115,8 @@ const queries: Record<
   accountRequests: {
     table: "account_requests",
     owner: "t.user_id",
-    fields: "t.id,t.kind,t.reason,t.status,t.created_at,t.resolved_at",
+    fields:
+      "t.id,t.kind,t.reason,t.status,t.response,t.responded_at,t.created_at,t.resolved_at",
   },
   policyAcceptances: {
     table: "policy_acceptances",

@@ -22,6 +22,13 @@ import {
   scheduleRecovery,
 } from "./recovery";
 import { operationHealth } from "./operations";
+import { accountDeletion } from "./account-deletion";
+import {
+  speechDto,
+  refreshSpeechCheck,
+  startSpeechCheck,
+  speechRow,
+} from "./speech";
 
 export const admin = new Hono<AppEnv>();
 admin.use("*", async (c, next) => {
@@ -48,7 +55,7 @@ admin.get("/", async (c) => {
         "SELECT authorized_spend_cents AS cents FROM settings WHERE id=1",
       ).first<{ cents: number }>(),
       c.env.DB.prepare(
-        "SELECT COALESCE(SUM(cents),0) AS cents FROM ledger WHERE kind IN ('consume','release','director-cost-ceiling')",
+        "SELECT COALESCE(SUM(cents),0) AS cents FROM ledger WHERE kind IN ('consume','release','director-cost-ceiling','speech-cost-ceiling')",
       ).first<{ cents: number }>(),
       operationHealth(c.env),
     ]);
@@ -568,11 +575,12 @@ admin.get("/account-requests", async (c) =>
   c.json({
     requests: (
       await c.env.DB.prepare(
-        "SELECT r.id,r.kind,r.reason,r.status,r.created_at AS createdAt,u.id AS userId,u.display_name AS nickname,u.email FROM account_requests r JOIN users u ON u.id=r.user_id WHERE r.status='open' ORDER BY r.created_at",
+        "SELECT r.id,r.kind,r.reason,r.status,r.response,r.created_at AS createdAt,u.id AS userId,u.display_name AS nickname,u.email FROM account_requests r JOIN users u ON u.id=r.user_id WHERE r.status='open' ORDER BY r.created_at",
       ).all()
     ).results,
   }),
 );
+admin.route("/account-requests", accountDeletion);
 admin.put("/tasks/:taskId/materials/:id", async (c) => {
   const task = await getTask(c.env, c.req.param("taskId"));
   if (
@@ -663,3 +671,53 @@ export async function refreshBalance(env: Cloudflare.Env) {
     .bind(Math.floor(body.credits.current_balance * 100), Date.now())
     .run();
 }
+
+// These routes never silently retry a persisted paid speech attempt.
+admin.get("/tasks/:id/speech", async (c) =>
+  c.json({ check: await speechDto(c.env, c.req.param("id")) }),
+);
+admin.post("/tasks/:id/speech/start", async (c) => {
+  await startSpeechCheck(c.env, c.req.param("id"));
+  return c.json({ check: await speechDto(c.env, c.req.param("id")) });
+});
+admin.post("/tasks/:id/speech/refresh", async (c) => {
+  await refreshSpeechCheck(c.env, c.req.param("id"));
+  return c.json({ check: await speechDto(c.env, c.req.param("id")) });
+});
+admin.post("/tasks/:id/speech/close", async (c) => {
+  const user = requireAdmin(c);
+  const input = z
+    .object({
+      providerTerminalVerified: z.literal(true),
+      note: z.string().trim().min(20).max(1000),
+    })
+    .strict()
+    .parse(await c.req.json());
+  const id = c.req.param("id"),
+    row = await speechRow(c.env, id);
+  if (
+    !row ||
+    !["uncertain", "queued", "failed"].includes(row.status) ||
+    row.created_at > Date.now() - 120000
+  )
+    throw new AppError(
+      "speech_not_ready",
+      "Wait for the current attempt and verify its terminal provider state before closing.",
+      409,
+    );
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE speech_checks SET status='closed',failure_code='closed-after-provider-review',updated_at=? WHERE task_id=? AND status IN ('uncertain','queued','failed')",
+    ).bind(Date.now(), id),
+    c.env.DB.prepare(
+      "INSERT INTO audit_log(id,actor_id,action,target_id,detail,created_at) VALUES(?,?,'speech.closed',?,?,?)",
+    ).bind(
+      crypto.randomUUID(),
+      user.id,
+      id,
+      JSON.stringify({ note: input.note, costCeilingRetainedCents: 10 }),
+      Date.now(),
+    ),
+  ]);
+  return c.json({ check: await speechDto(c.env, id) });
+});

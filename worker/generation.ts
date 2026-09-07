@@ -6,6 +6,7 @@ import {
 import { getStory, getTask, transition, audit } from "./store";
 import { preparePlan } from "./director";
 import { AppError } from "./errors";
+import { startSpeechCheck, refreshSpeechCheck } from "./speech";
 import { pollVideo, submitVideo, prepareVideoRequest } from "./provider";
 import { probeStoredMedia, storeProviderMedia } from "./media";
 import type { ScenePlan } from "../shared/domain";
@@ -204,6 +205,34 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
           )
             .bind(key, duration, Date.now(), taskId)
             .run();
+        },
+      );
+      await step.do(
+        "start independent speech review once",
+        { retries: { limit: 0, delay: "1 second" }, timeout: "1 minute" },
+        async () => {
+          try {
+            await startSpeechCheck(this.env, taskId);
+          } catch {
+            await audit(
+              this.env,
+              null,
+              "speech.manual-review-required",
+              taskId,
+              {},
+            );
+          }
+        },
+      );
+      await step.do(
+        "check speech review result",
+        { retries: { limit: 0, delay: "1 second" }, timeout: "1 minute" },
+        async () => {
+          try {
+            await refreshSpeechCheck(this.env, taskId);
+          } catch {
+            /* Scheduled GET-only reconciliation continues. */
+          }
         },
       );
       return { status: "awaiting-content-review" };

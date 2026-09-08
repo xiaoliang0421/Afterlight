@@ -1054,7 +1054,7 @@ export function Composer({
       </div>
       <p className="fine-print">
         Ideas take turns. We check every scene against the latest story before
-        it’s made. Free text-to-video needs no card.{" "}
+        it’s made. Platform generation uses prepaid creation points.{" "}
         <Link to="/account#creation-points">About creation points</Link>
       </p>
     </div>

@@ -1,6 +1,6 @@
 # Character identity in text-to-video stories
 
-Updated 2026-09-06. The default free route is **pure text-to-video with H3 Max Turbo**. The retained H3 Max reference-to-video route is a separately priced feature, currently disabled pending merchant setup, input-cost verification and fulfillment acceptance. Images are optional character cards and story covers; they are not sent to this model route and are not a prerequisite for video creation. Free creation does not depend on an image-generation service.
+Updated 2026-09-08. The text route uses **pure text-to-video with H3 Max Turbo** and prepaid creation points for new tasks. The retained H3 Max reference-to-video route is separately priced, currently disabled pending merchant setup, input-cost verification and fulfillment acceptance. Images are optional character cards and story covers; they are not sent to the text route and are not a prerequisite for video creation. Text generation does not depend on an image-generation service. Existing free tasks retain their original contract.
 
 ## Contributor experience
 

@@ -20,16 +20,19 @@ export function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
         </Notice>
       )}
       <div className="legal-contact">
-        <strong>
-          Operator: {policies.operatorName || "To be confirmed before launch"}
-        </strong>
+        <strong>{policies.contactName}</strong>
+        <span>Intended service area: {policies.serviceArea}</span>
         {policies.contactEmail ? (
           <a href={`mailto:${policies.contactEmail}`}>
-            {policies.contactName} · {policies.contactEmail}
+            {policies.contactEmail}
           </a>
         ) : (
           <span>Contact email: being prepared</span>
         )}
+        <span className="fine-print">
+          Operator:{" "}
+          {policies.operatorName || "Identification pending in this draft"}
+        </span>
       </div>
       <nav className="legal-toc" aria-label="On this page">
         {sections.map((section, i) => (

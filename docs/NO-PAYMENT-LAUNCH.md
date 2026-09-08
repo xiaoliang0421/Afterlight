@@ -4,6 +4,8 @@ Updated 2026-09-08. This is the current release scope. Historical payment and AI
 
 The intended service area is **worldwide**, confirmed by the owner on 2026-09-08. The first release remains English-language, invitation-only for creation and without payments.
 
+Public contact is **TaleRelay Support** (`talerelay@proton.me`), and the existing author nickname is **Liang**. These display names are confirmed.
+
 ## Offered experience
 
 - Anyone can watch approved stories. Google sign-in creates an account with watching access; it does not grant creation or Studio access.
@@ -37,4 +39,4 @@ Independent backups are deferred by the operator. This release does not provisio
 
 ## Remaining production decisions
 
-Worldwide audience is confirmed. The operator's public identity, age eligibility, final regional policy provisions and production origin remain to be established. Obtain these facts before representing the service as a finalized public launch. Keep the pilot small while actual hosted upload/review and operational acceptance are completed. No payment-account onboarding is needed for this release.
+Worldwide audience, public contact name and existing author nickname are confirmed. Responsible-operator identification, age eligibility, final regional policy provisions and production origin remain part of final release preparation. Obtain these facts before representing the service as a finalized public launch. Keep the pilot small while actual hosted upload/review and operational acceptance are completed. No payment-account onboarding is needed for this release.

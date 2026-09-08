@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-08-draft7",
+  "version": "2026-09-08-draft8",
   "status": "draft",
   "updatedAt": "2026-09-08",
   "effectiveAt": null,
@@ -12,7 +12,8 @@
       "title": "Who we are and what this notice covers",
       "paragraphs": [
         "TaleRelay is a shared storytelling service. This notice explains the information used when you watch stories, sign in, submit creative ideas, generate scenes, or contact the studio. It applies to TaleRelay; services you visit through an external link have their own policies.",
-        "This is a development draft. Operator identification, the final retention schedule and regional arrangements must be completed before public launch. TaleRelay Support is the customer-support display name, not a separate legal entity. Local preview acknowledgments are test records, not acceptance of a finalized public service policy."
+        "This is a development draft. Operator identification, the final retention schedule and regional arrangements must be completed before public launch. TaleRelay Support is the customer-support display name, not a separate legal entity. Local preview acknowledgments are test records, not acceptance of a finalized public service policy.",
+        "The intended service area is worldwide. This edition uses English and creation is invitation-only. Availability can vary with local networks and external sign-in services."
       ]
     },
     {
@@ -95,7 +96,8 @@
       "paragraphs": [
         "TaleRelay lets people watch and contribute to AI-assisted serialized stories. Each story has its own world, characters and creation queue. Watching does not require buying credits. Creation is subject to account eligibility, available capacity, content review and the terms in effect when you submit.",
         "This is a development draft for review. The operator’s identity, contact channel, effective date, age eligibility and regional contract provisions must be finalized before public launch. Local demonstration footage and test accounts do not represent real creator activity or validated model quality.",
-        "Creation is invitation-only during early access. An invitation permits the stated participation or hosting functions; it does not grant studio authority or permission to publish without review. The studio reviews public story introductions, public nicknames and every scene before publication."
+        "Creation is invitation-only during early access. An invitation permits the stated participation or hosting functions; it does not grant studio authority or permission to publish without review. The studio reviews public story introductions, public nicknames and every scene before publication.",
+        "The intended service area is worldwide. This edition uses English and creation is invitation-only. Availability can vary with local networks and external sign-in services."
       ]
     },
     {
@@ -158,5 +160,6 @@
         "Terms updates show a new version and effective date. Material changes require an appropriate notice and, where needed, renewed acceptance. Previously submitted free tasks are not retroactively charged. Contact the operator through the published support channel for account, rights or service concerns."
       ]
     }
-  ]
+  ],
+  "serviceArea": "Worldwide"
 }

@@ -4087,3 +4087,14 @@ html[lang="zh-CN"] h1,
 html[lang="zh-CN"] h2 {
   line-height: 1.35;
 }
+
+/* The control lives in small footer text; its dialog must remain comfortably readable. */
+.language-preferences {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.language-preferences ~ .fine-print {
+  font-size: 13px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+}

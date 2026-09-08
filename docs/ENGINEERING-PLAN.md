@@ -1,6 +1,6 @@
 # TaleRelay 剩余工程计划
 
-Current product direction (2026-09-08): [free audience proposals, prepaid platform generation and optional host uploads](PRODUCT-DIRECTION.md). References below to the old free-generation launch describe the earlier contract; only existing tasks retain that allowance. Commercial checkout remains gated.
+Current release (2026-09-08): [worldwide, invited early access without payments](NO-PAYMENT-LAUNCH.md). Hosts upload finished videos for manual review; new platform generation is disabled. The [production direction](PRODUCT-DIRECTION.md) describes later prepaid capabilities. Historical tasks retain their original contract. Dated entries below are implementation history; current release gates are in the launch runbook.
 
 更新：2026-09-07。下次继续时从本文件恢复；任务完成后勾选，并把实测证据记入 [VERIFICATION.md](VERIFICATION.md)。功能现状见 [PRODUCT-STATUS.md](PRODUCT-STATUS.md)，不要把“代码已实现”当作“线上验收已通过”。
 

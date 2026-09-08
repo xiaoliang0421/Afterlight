@@ -1,6 +1,6 @@
 # Product status
 
-Updated 2026-09-08. The current release is **invitation-only, with no payments**. See [the launch runbook](NO-PAYMENT-LAUNCH.md) for the offered experience, review procedures and remaining production decisions.
+Updated 2026-09-08. The current release is **invitation-only, with no payments**, intended for a worldwide audience with an English interface. See [the launch runbook](NO-PAYMENT-LAUNCH.md) for the offered experience, review procedures and remaining production decisions.
 
 ## Implemented
 
@@ -21,7 +21,7 @@ Content moderation is manual. File/codec validation and AI speech checks are not
 
 ## Still required before production
 
-- Confirm the public operator identity, audience/region, age eligibility, support process and final retention/deletion terms. Policies remain a versioned draft until those decisions are complete.
+- Confirm the public operator identity, age eligibility, support process, regional provisions for worldwide service and final retention/deletion terms. Policies remain a versioned draft until those decisions are complete.
 - Configure the separate production origin, Google callback, Turnstile and environment-specific secrets. Preserve staging/production database and media isolation.
 - Complete the applicable dated hosted acceptance record, including the no-payment host-upload/review flow, privacy requests, access gates, playback and report/takedown. Production preflight must pass without invented evidence.
 - Select and test an alert destination before claiming unattended incident notification. Independent backups are currently deferred by the operator and are not provisioned by this release.

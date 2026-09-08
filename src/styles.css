@@ -3822,3 +3822,25 @@ video {
   outline: 2px solid #a7bc90;
   outline-offset: 3px;
 }
+.operation-checks {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+.operation-checks table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.operation-checks th,
+.operation-checks td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.operation-checks th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.operation-checks .danger-text {
+  color: var(--danger);
+}

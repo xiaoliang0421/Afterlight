@@ -22,7 +22,7 @@ Seven tests cover permissions, validation, rejection settlement, retries, confli
 
 ## Verification and delivery
 
-- TypeScript, frontend build and 85 application/database/runtime tests passed.
+- TypeScript, frontend build and 89 application/database/runtime tests passed.
 - Isolated Worker/D1 integration passed 19 API subtests (20 runner tests).
 - Eight credential-helper tests passed, including separate ADMIN storage, safe child environment and redacted error output.
 - Worker dry-run bundling and staging preflight passed.
@@ -39,3 +39,11 @@ Six native Workers/R2 scenarios cover full reads and HEAD, bounded/open/suffix r
 ## Phone layout and interrupted playback
 
 Browser checks identified overlapping phone captions, loading without a retry when media bytes stop arriving, and fullscreen rejection incorrectly treated as media failure. Controls now sit below the footage, long loading offers a retry at the retained position, and fullscreen rejection leaves ordinary playback available. A loopback-only lab exercises the real Player with incomplete responses, HTTP 503 and paced media bytes. See the [observed results and reproducible acceptance steps](PLAYBACK-ACCEPTANCE.md). Physical devices and throttled real media remain separate release evidence.
+
+## Scheduled recovery and fault visibility
+
+Previously, caught balance and queue errors could leave the scheduled pass marked complete, while an uncaught early-stage failure prevented later recovery work. The reconciler now records separate component results, continues independent work, preserves unsent update records and marks partial failures incomplete. Overlapping passes use both component and parent run IDs to preserve the newest result.
+
+Database-backed failure injection covers unavailable balance reads, one broken story queue, selective update-delivery failure, later cleanup execution, retry after recovery, and older passes finishing after a newer failure in the same millisecond. A separate native Miniflare test runs the actual GenerationWorkflow, StoryRoom, D1 and R2: it records a recovery dispatch but omits its wake-up, then lets scheduled reconciliation resume that exact workflow. The saved original matches the synthetic sample bytes, the original provider/attempt IDs and reservation remain unchanged, and the result stays private awaiting moderation. Repeated reconciliation sends no additional provider requests. All outbound calls are intercepted; exactly three GETs and no paid POST are observed.
+
+This is native local runtime acceptance with synthetic provider responses. It does not claim a real fal outage was induced or a held paid task was recovered on the deployed service. Live outbound alert delivery and actual multi-scene generated continuity remain separate evidence.

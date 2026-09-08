@@ -50,16 +50,15 @@ import {
   reconcilePayments,
 } from "./billing";
 import { sharePage } from "./share";
-import { admin, refreshBalance } from "./admin";
+import { admin } from "./admin";
 import policies from "../shared/policies.json";
-import { publicArchive, dispatchArchives } from "./archives";
+import { publicArchive } from "./archives";
 import { governance, assertOwnerApproval } from "./governance";
 import { creationAction } from "../shared/protection";
 import { verifyHuman } from "./turnstile";
 import { recordedReconciliation } from "./operations";
 import { accountExport } from "./account-export";
-import { cleanupDeletedAccountMedia } from "./account-deletion";
-import { reconcileSpeechChecks } from "./speech";
+import { reconcile } from "./reconciliation";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -1012,55 +1011,6 @@ app.notFound((c) =>
   ),
 );
 
-async function reconcile(env: Cloudflare.Env) {
-  await reconcilePayments(env);
-  await cleanupDeletedAccountMedia(env);
-  await reconcileSpeechChecks(env);
-  if (String(env.PROVIDER_MODE) === "live") {
-    try {
-      await refreshBalance(env);
-    } catch {
-      console.error(JSON.stringify({ event: "provider.balance-check-failed" }));
-    }
-  }
-  const stories = (
-    await env.DB.prepare(
-      "SELECT id FROM stories WHERE active_task_id IS NOT NULL OR (status='open' AND EXISTS(SELECT 1 FROM tasks WHERE story_id=stories.id AND status='Queued')) LIMIT 100",
-    ).all<{ id: string }>()
-  ).results;
-  for (const s of stories) {
-    try {
-      await env.STORY_ROOMS.getByName(s.id).kick(s.id);
-    } catch {
-      console.error(
-        JSON.stringify({ event: "queue.recovery-failed", storyId: s.id }),
-      );
-    }
-  }
-  await dispatchArchives(env);
-  const outbox = (
-    await env.DB.prepare(
-      "SELECT id,story_id FROM outbox WHERE sent_at IS NULL ORDER BY created_at LIMIT 100",
-    ).all<{ id: string; story_id: string }>()
-  ).results;
-  for (const event of outbox) {
-    await env.STORY_ROOMS.getByName(event.story_id).broadcast({
-      type: "story.updated",
-      storyId: event.story_id,
-    });
-    await env.DB.prepare(
-      "UPDATE outbox SET sent_at=? WHERE id=? AND sent_at IS NULL",
-    )
-      .bind(Date.now(), event.id)
-      .run();
-  }
-  await env.DB.batch([
-    env.DB.prepare("DELETE FROM rate_limits WHERE expires_at<?").bind(
-      Date.now(),
-    ),
-    env.DB.prepare("DELETE FROM sessions WHERE expires_at<?").bind(Date.now()),
-  ]);
-}
 export default {
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
     if (new URL(request.url).pathname.startsWith("/api/"))
@@ -1070,7 +1020,7 @@ export default {
     return env.ASSETS.fetch(request);
   },
   async scheduled(_controller: ScheduledController, env: Cloudflare.Env) {
-    await recordedReconciliation(env, () => reconcile(env));
+    await recordedReconciliation(env, (runId) => reconcile(env, runId));
   },
 } satisfies ExportedHandler<Cloudflare.Env>;
 

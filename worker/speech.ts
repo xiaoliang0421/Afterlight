@@ -258,12 +258,15 @@ export async function reconcileSpeechChecks(env: Cloudflare.Env) {
   const rows = await env.DB.prepare(
     "SELECT task_id FROM speech_checks WHERE status='queued' ORDER BY updated_at LIMIT 5",
   ).all<{ task_id: string }>();
+  let failures = 0;
   for (const row of rows.results)
     try {
       await refreshSpeechCheck(env, row.task_id);
     } catch {
+      failures++;
       console.error(
         JSON.stringify({ event: "speech.check-deferred", taskId: row.task_id }),
       );
     }
+  if (failures) throw new Error("Speech result checks are incomplete.");
 }

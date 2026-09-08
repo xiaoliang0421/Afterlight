@@ -564,6 +564,7 @@ export async function receivePaddleWebhook(
 }
 export async function reconcilePayments(env: Cloudflare.Env) {
   if (!env.PADDLE_API_KEY) return;
+  let failures = 0;
   const events = await env.DB.prepare(
     "SELECT id,transaction_id,attempts FROM payment_events WHERE processed_at IS NULL AND environment=? AND next_attempt_at<=? ORDER BY created_at LIMIT 20",
   )
@@ -608,6 +609,7 @@ export async function reconcilePayments(env: Cloudflare.Env) {
         .bind(Date.now(), event.id)
         .run();
     } catch (error) {
+      failures++;
       await env.DB.prepare(
         "UPDATE payment_events SET attempts=attempts+1,next_attempt_at=?,last_error=? WHERE id=?",
       )
@@ -630,6 +632,7 @@ export async function reconcilePayments(env: Cloudflare.Env) {
     try {
       await syncPaymentOrder(env, order.id);
     } catch {
+      failures++;
       console.error(
         JSON.stringify({
           event: "payment.reconcile-deferred",
@@ -638,4 +641,5 @@ export async function reconcilePayments(env: Cloudflare.Env) {
       );
     }
   }
+  if (failures) throw new Error("Payment reconciliation is incomplete.");
 }

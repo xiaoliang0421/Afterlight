@@ -9,6 +9,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Settings, Task } from "../shared/domain";
+import {
+  operationLabels,
+  type OperationName,
+  type OperationResult,
+} from "../shared/operations";
 import { api, useResource } from "./api";
 import { useApp } from "./context";
 import { MaterialsPanel } from "./MaterialsPanel";
@@ -57,11 +62,8 @@ interface StudioData {
   recordedSpendCents: number;
   readiness: Record<string, boolean>;
   operations: {
-    runtime: {
-      startedAt: number;
-      completedAt: number;
-      failureAt: number;
-    } | null;
+    runtime: OperationResult | null;
+    components: OperationResult[];
     queue: {
       held: number;
       missingRequestIds: number;
@@ -177,7 +179,7 @@ export function StudioPage() {
         <section className="panel">
           <h2>Recovery & protection</h2>
           <p>
-            Last completed scheduled check:{" "}
+            Last successful scheduled check:{" "}
             {d.operations.runtime?.completedAt
               ? new Date(d.operations.runtime.completedAt).toLocaleString()
               : "No scheduled checks recorded yet."}
@@ -188,14 +190,55 @@ export function StudioPage() {
               Check Cloudflare Worker logs and cron triggers.
             </Notice>
           )}
-          {!!d.operations.runtime?.failureAt &&
-            d.operations.runtime.failureAt >
-              d.operations.runtime.completedAt && (
-              <Notice danger>
-                The latest scheduled check failed. Inspect the
-                reconciliation.failed event in Cloudflare logs.
-              </Notice>
-            )}
+          {d.operations.runtime?.status === "failed" && (
+            <Notice danger>
+              The latest scheduled check was incomplete. Review the failed
+              checks below. Other recovery work continues independently.
+            </Notice>
+          )}
+          {!!d.operations.components?.length && (
+            <div className="operation-checks">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Scheduled check</th>
+                    <th>Latest result</th>
+                    <th>Last success</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.operations.components.map((operation) => (
+                    <tr key={operation.name}>
+                      <td>
+                        {operationLabels[operation.name as OperationName] ??
+                          operation.name}
+                      </td>
+                      <td>
+                        {operation.status === "failed" ? (
+                          <strong className="danger-text">
+                            Needs attention
+                          </strong>
+                        ) : operation.status === "succeeded" ? (
+                          "Passed"
+                        ) : operation.status === "skipped" ? (
+                          "Not enabled"
+                        ) : operation.status === "running" ? (
+                          "Running"
+                        ) : (
+                          "Not checked"
+                        )}
+                      </td>
+                      <td>
+                        {operation.completedAt
+                          ? new Date(operation.completedAt).toLocaleString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <p>
             {d.operations.queue?.held ?? 0} attempts on hold ·{" "}
             {d.operations.queue?.missingRequestIds ?? 0} missing provider IDs ·{" "}

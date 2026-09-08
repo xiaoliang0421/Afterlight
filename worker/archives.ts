@@ -130,6 +130,7 @@ export async function buildArchive(env: Cloudflare.Env, id: string) {
   }
 }
 export async function dispatchArchives(env: Cloudflare.Env) {
+  let failures = 0;
   const pending = (
     await env.DB.prepare(
       "SELECT id,task_id FROM story_archives WHERE status='queued' ORDER BY created_at LIMIT 10",
@@ -152,6 +153,7 @@ export async function dispatchArchives(env: Cloudflare.Env) {
             .bind(job.id)
             .run();
       } catch {
+        failures++;
         console.error(
           JSON.stringify({ event: "archive.dispatch-failed", id: job.id }),
         );
@@ -164,6 +166,7 @@ export async function dispatchArchives(env: Cloudflare.Env) {
   )
     .bind(Date.now() - 600_000)
     .run();
+  if (failures) throw new Error("Story archive recovery is incomplete.");
 }
 export async function publicArchive(
   env: Cloudflare.Env,

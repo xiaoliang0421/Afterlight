@@ -1,3 +1,4 @@
+-- Parenthesize CASE expressions: the remote D1 splitter can mistake their END for the trigger END.
 -- Production source and customer billing are independent. Existing tasks retain their original contract.
 ALTER TABLE settings ADD COLUMN text_points INTEGER NOT NULL DEFAULT 0 CHECK(text_points BETWEEN 0 AND 100000);
 ALTER TABLE settings ADD COLUMN uploads_enabled INTEGER NOT NULL DEFAULT 0 CHECK(uploads_enabled IN (0,1));
@@ -20,8 +21,8 @@ CREATE TRIGGER production_contract_immutable BEFORE UPDATE ON tasks WHEN
  OR NEW.story_id!=OLD.story_id OR NEW.proposal_ids_json!=OLD.proposal_ids_json
 BEGIN SELECT RAISE(ABORT,'production_contract_immutable'); END;
 CREATE TRIGGER production_source_guard BEFORE INSERT ON tasks BEGIN
- SELECT CASE WHEN NEW.source_kind='upload' AND (NEW.billing_kind!='upload' OR NEW.quoted_points!=0 OR NEW.quoted_reserve_cents!=0 OR NEW.user_id!=(SELECT owner_id FROM stories WHERE id=NEW.story_id)) THEN RAISE(ABORT,'upload_owner_required') END;
- SELECT CASE WHEN NEW.source_kind='generated' AND NEW.billing_kind='upload' THEN RAISE(ABORT,'generation_price_unavailable') END;
+ SELECT (CASE WHEN NEW.source_kind='upload' AND (NEW.billing_kind!='upload' OR NEW.quoted_points!=0 OR NEW.quoted_reserve_cents!=0 OR NEW.user_id!=(SELECT owner_id FROM stories WHERE id=NEW.story_id)) THEN RAISE(ABORT,'upload_owner_required') END);
+ SELECT (CASE WHEN NEW.source_kind='generated' AND NEW.billing_kind='upload' THEN RAISE(ABORT,'generation_price_unavailable') END);
 END;
 CREATE TABLE story_proposals (
  id TEXT PRIMARY KEY, story_id TEXT NOT NULL REFERENCES stories(id), author_id TEXT NOT NULL REFERENCES users(id),
@@ -33,19 +34,19 @@ CREATE TABLE story_proposals (
 );
 CREATE INDEX proposals_story ON story_proposals(story_id,status,created_at);
 CREATE TRIGGER proposal_author_guard BEFORE INSERT ON story_proposals BEGIN
- SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM users WHERE id=NEW.author_id AND deleted_at IS NULL) THEN RAISE(ABORT,'account_deleted') END;
+ SELECT (CASE WHEN NOT EXISTS(SELECT 1 FROM users WHERE id=NEW.author_id AND deleted_at IS NULL) THEN RAISE(ABORT,'account_deleted') END);
 END;
 CREATE TRIGGER proposal_content_immutable BEFORE UPDATE ON story_proposals WHEN
  NEW.id!=OLD.id OR NEW.story_id!=OLD.story_id OR NEW.author_id!=OLD.author_id OR (NEW.prompt!=OLD.prompt AND NOT ((SELECT deleted_at FROM users WHERE id=NEW.author_id) IS NOT NULL AND NEW.prompt='Removed at the author’s request.'))
  OR NEW.terms_version!=OLD.terms_version OR NEW.attribution_accepted_at!=OLD.attribution_accepted_at
 BEGIN SELECT RAISE(ABORT,'proposal_content_immutable'); END;
 CREATE TRIGGER production_proposals_guard BEFORE INSERT ON tasks WHEN json_array_length(NEW.proposal_ids_json)>0 BEGIN
- SELECT CASE WHEN NEW.user_id!=(SELECT owner_id FROM stories WHERE id=NEW.story_id)
+ SELECT (CASE WHEN NEW.user_id!=(SELECT owner_id FROM stories WHERE id=NEW.story_id)
  OR json_array_length(NEW.proposal_ids_json)>5
  OR (SELECT COUNT(DISTINCT value) FROM json_each(NEW.proposal_ids_json))!=json_array_length(NEW.proposal_ids_json)
  OR EXISTS(SELECT 1 FROM json_each(NEW.proposal_ids_json) j WHERE NOT EXISTS(
  SELECT 1 FROM story_proposals p JOIN users u ON u.id=p.author_id WHERE p.id=j.value AND p.story_id=NEW.story_id AND p.status='pending' AND u.deleted_at IS NULL))
- THEN RAISE(ABORT,'proposal_changed') END;
+ THEN RAISE(ABORT,'proposal_changed') END);
 END;
 CREATE TRIGGER production_proposals_selected AFTER INSERT ON tasks BEGIN
  UPDATE story_proposals SET status='selected',selected_task_id=NEW.id,updated_at=NEW.updated_at WHERE id IN (SELECT value FROM json_each(NEW.proposal_ids_json));
@@ -66,15 +67,15 @@ DROP TRIGGER generation_access_task;
 CREATE TRIGGER generation_access_task BEFORE UPDATE OF status,provider_attempt_id ON tasks
  WHEN NEW.source_kind='generated' AND ((NEW.status IN ('Queued','Generating') AND NEW.status!=OLD.status)
  OR (NEW.provider_attempt_id IS NOT NULL AND OLD.provider_attempt_id IS NULL)) BEGIN
- SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM generation_allowed_users WHERE id=NEW.user_id) THEN RAISE(ABORT,'generation_restricted') END;
+ SELECT (CASE WHEN NOT EXISTS(SELECT 1 FROM generation_allowed_users WHERE id=NEW.user_id) THEN RAISE(ABORT,'generation_restricted') END);
 END;
 DROP TRIGGER lifetime_task_budget;
 CREATE TRIGGER lifetime_task_budget BEFORE UPDATE OF status ON tasks WHEN NEW.source_kind='generated' AND NEW.status='Queued' AND OLD.status IN ('Draft','NeedsReview') BEGIN
- SELECT CASE WHEN COALESCE((SELECT SUM(cents) FROM ledger WHERE kind IN ('consume','release','director-cost-ceiling','speech-cost-ceiling')),0)+COALESCE((SELECT SUM(reserved_cents) FROM tasks WHERE reservation_active=1),0)+NEW.reserved_cents>(SELECT authorized_spend_cents FROM settings WHERE id=1) THEN RAISE(ABORT,'capacity_full') END;
+ SELECT (CASE WHEN COALESCE((SELECT SUM(cents) FROM ledger WHERE kind IN ('consume','release','director-cost-ceiling','speech-cost-ceiling')),0)+COALESCE((SELECT SUM(reserved_cents) FROM tasks WHERE reservation_active=1),0)+NEW.reserved_cents>(SELECT authorized_spend_cents FROM settings WHERE id=1) THEN RAISE(ABORT,'capacity_full') END);
 END;
 CREATE TRIGGER purchased_attempt_guard BEFORE UPDATE OF provider_attempt_id ON tasks WHEN NEW.billing_kind='points' AND NEW.provider_attempt_id IS NOT NULL AND OLD.provider_attempt_id IS NULL BEGIN
- SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM paid_credit_accounts WHERE user_id=NEW.user_id AND balance>=reserved AND reserved>=NEW.quoted_points)
- OR EXISTS(SELECT 1 FROM payment_orders WHERE user_id=NEW.user_id AND billing_hold=1) THEN RAISE(ABORT,'paid_credits_unavailable') END;
+ SELECT (CASE WHEN NOT EXISTS(SELECT 1 FROM paid_credit_accounts WHERE user_id=NEW.user_id AND balance>=reserved AND reserved>=NEW.quoted_points)
+ OR EXISTS(SELECT 1 FROM payment_orders WHERE user_id=NEW.user_id AND billing_hold=1) THEN RAISE(ABORT,'paid_credits_unavailable') END);
 END;
 DROP TRIGGER task_admission;
 DROP TRIGGER task_reserve;

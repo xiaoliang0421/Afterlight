@@ -12,9 +12,17 @@ A real staging clip showed daylight and photorealistic rendering despite the sav
 
 Text-video preparation now reads these two fields from the story, prepends them to the final prompt and records them in the material snapshot. The regression uses a plan that omits both fields, fails before the fix and passes afterwards. Prompt inclusion does not guarantee model compliance; the next clip still needs visual and complete audio/text review.
 
+## Completed-video cost review
+
+Studio provides a separate **Check video cost** action for a completed real video awaiting moderation. An administrator verifies the exact provider request, enters the video-only USD charge (fractional cents rounded up), records billing evidence and explicitly confirms the review. Planning and speech charges remain separate.
+
+The cost and its audit receipt are written in one D1 transaction. The full reservation remains held until normal moderation settles the task. Identical retries preserve one receipt, conflicting reviews fail, and moderation that wins the race prevents a late cost adjustment. Fixture footage, unknown requests, inactive reservations and charges above the reservation cannot use this action. Investigate overruns separately; this action does not rewrite already settled ledgers.
+
+Seven tests cover permissions, validation, rejection settlement, retries, conflicting reviews, moderation races and transaction rollback. An isolated browser check submitted a synthetic verified charge through the actual Studio form and confirmed the updated amount and removal of the review action. Hosted deployment of this new action still needs verification.
+
 ## Verification and delivery
 
-- TypeScript, frontend build and 71 application/database/runtime tests passed.
+- TypeScript, frontend build and 78 application/database/runtime tests passed.
 - Isolated Worker/D1 integration passed 19 API subtests (20 runner tests).
 - Eight credential-helper tests passed, including separate ADMIN storage, safe child environment and redacted error output.
 - Worker dry-run bundling and staging preflight passed.

@@ -23,6 +23,7 @@ import {
 } from "./recovery";
 import { operationHealth } from "./operations";
 import { accountDeletion } from "./account-deletion";
+import { reconcileVideoCost, videoCostInput } from "./video-cost";
 import {
   speechDto,
   refreshSpeechCheck,
@@ -67,6 +68,9 @@ admin.get("/", async (c) => {
       videoUrl: t.media_ready ? `/api/admin/tasks/${t.id}/video` : null,
       recordedCostCents: t.recorded_cost_cents,
       providerRequestId: t.provider_request_id,
+      costStatus: t.cost_status,
+      reservedCents: t.reserved_cents,
+      reservationActive: !!t.reservation_active,
     })),
     budgets: budgets.results,
     reports: reports.results,
@@ -136,6 +140,17 @@ admin.patch("/settings", async (c) => {
 admin.post("/balance/refresh", async (c) => {
   await refreshBalance(c.env);
   return c.json({ settings: await getSettings(c.env) });
+});
+admin.post("/tasks/:id/cost", async (c) => {
+  const input = videoCostInput.parse(await c.req.json());
+  return c.json(
+    await reconcileVideoCost(
+      c.env,
+      c.req.param("id"),
+      requireAdmin(c).id,
+      input,
+    ),
+  );
 });
 admin.get("/tasks/:id/runtime", async (c) => {
   const task = await getTask(c.env, c.req.param("id"));

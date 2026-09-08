@@ -16,6 +16,7 @@ import { StudioRequests } from "./StudioRequests";
 import { SpeechReview } from "./SpeechReview";
 import { ArchiveReview } from "./ArchiveReview";
 import { StudioBilling } from "./StudioBilling";
+import { VideoCostReview } from "./VideoCostReview";
 import {
   Author,
   Button,
@@ -30,6 +31,9 @@ type StudioTask = Task & {
   videoUrl: string | null;
   recordedCostCents: number;
   providerRequestId: string | null;
+  costStatus: string;
+  reservedCents: number;
+  reservationActive: boolean;
 };
 interface StudioData {
   settings: Settings;
@@ -74,6 +78,7 @@ export function StudioPage() {
     );
   const [review, setReview] = useState<StudioTask | null>(null),
     [resolve, setResolve] = useState<StudioTask | null>(null),
+    [costReview, setCostReview] = useState<StudioTask | null>(null),
     [tab, setTab] = useState("Review queue"),
     [busy, setBusy] = useState(false);
   const reload = async () => {
@@ -229,6 +234,14 @@ export function StudioPage() {
                 <p>{t.plan?.summary || t.prompt}</p>
                 <Author id={t.userId} name={t.author} compact />
                 {t.reason && <p className="fine-print">{t.reason}</p>}
+                {t.providerRequestId && (
+                  <p className="fine-print">
+                    Video cost: {dollars(t.recordedCostCents)} ·{" "}
+                    {t.costStatus === "reconciled"
+                      ? "Verified"
+                      : "Estimated ceiling"}
+                  </p>
+                )}
                 {t.status === "NeedsModeration" && (
                   <Button kind="secondary" onClick={() => setReview(t)}>
                     Watch & review <ArrowRight size={15} />
@@ -239,6 +252,16 @@ export function StudioPage() {
                     Reconcile request
                   </Button>
                 )}
+                {t.status === "NeedsModeration" &&
+                  t.reservationActive &&
+                  t.costStatus === "estimated-ceiling" &&
+                  t.providerRequestId &&
+                  t.videoUrl &&
+                  !boot.stories.find((s) => s.id === t.storyId)?.fixture && (
+                    <Button kind="secondary" onClick={() => setCostReview(t)}>
+                      Check video cost
+                    </Button>
+                  )}
               </article>
             ))
           ) : (
@@ -362,6 +385,13 @@ export function StudioPage() {
         <ResolveModal
           task={resolve}
           close={() => setResolve(null)}
+          done={reload}
+        />
+      )}
+      {costReview && (
+        <VideoCostReview
+          task={costReview}
+          close={() => setCostReview(null)}
           done={reload}
         />
       )}

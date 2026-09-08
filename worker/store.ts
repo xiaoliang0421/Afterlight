@@ -51,6 +51,7 @@ export interface TaskRow {
   reservation_active: number;
   reserved_cents: number;
   recorded_cost_cents: number;
+  cost_status: string;
   workflow_id: string | null;
   created_at: number;
   updated_at: number;

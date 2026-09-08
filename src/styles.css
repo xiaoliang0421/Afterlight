@@ -731,16 +731,42 @@ video {
 }
 .video-frame {
   position: relative;
-  aspect-ratio: 16/9;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
   overflow: hidden;
   background: #0c110f;
   border-radius: 10px 10px 0 0;
 }
 .video-frame video {
+  grid-area: 1 / 1 / 2 / 2;
+  aspect-ratio: 16/9;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
   display: block;
+}
+.video-frame video::cue {
+  font-size: clamp(14px, 1.5vw, 24px);
+  color: #fff;
+  background-color: #000c;
+}
+.video-top,
+.big-play,
+.playback-error,
+.buffering-indicator,
+.connection-indicator {
+  grid-area: 1 / 1 / 2 / 2;
+}
+.video-frame:fullscreen {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  width: 100%;
+  height: 100%;
+}
+.video-frame:fullscreen video {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
 }
 .video-top {
   position: absolute;
@@ -799,11 +825,30 @@ video {
   background: #ffffff30;
 }
 .video-bottom {
-  position: absolute;
-  inset: auto 0 0;
-  background: linear-gradient(transparent, #070c09cf);
-  padding: 35px 14px 10px;
+  grid-area: 2 / 1 / 3 / 2;
+  background: #101813;
+  padding: 12px 14px 10px;
   pointer-events: none;
+}
+.playback-recovery {
+  grid-area: 3 / 1 / 4 / 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+.playback-recovery p {
+  flex: 1;
+  min-width: 160px;
+  margin: 0;
+  font-size: 13px;
+}
+.playback-notice {
+  margin: 8px 7px 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 .video-caption {
   padding-left: 7px;
@@ -2906,22 +2951,23 @@ video {
     margin: 5px 0;
   }
   .video-bottom {
-    padding: 25px 8px 4px;
+    padding: 10px 8px 4px;
   }
   .video-controls {
     gap: 0;
   }
   .video-controls .icon-button {
-    min-width: 28px;
-    min-height: 28px;
+    min-width: 32px;
+    min-height: 44px;
   }
   .video-controls .icon-button > svg {
     width: 15px;
     height: 15px;
   }
   .player-time {
-    font-size: 8px;
-    padding-left: 5px;
+    font-size: 10px;
+    padding-left: 3px;
+    white-space: nowrap;
   }
   .timeline-area {
     padding-inline: 12px;

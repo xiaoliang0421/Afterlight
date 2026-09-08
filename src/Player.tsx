@@ -46,9 +46,11 @@ export function Player({
     [muted, setMuted] = useState(false),
     [captions, setCaptions] = useState(false),
     [error, setError] = useState(""),
+    [fullscreenNotice, setFullscreenNotice] = useState(""),
     [hover, setHover] = useState<string | null>(null),
     [original, setOriginal] = useState(false),
     [loading, setLoading] = useState(false),
+    [slowLoading, setSlowLoading] = useState(false),
     [retry, setRetry] = useState(0),
     [offline, setOffline] = useState(!navigator.onLine);
   const scene = scenes[index];
@@ -158,6 +160,14 @@ export function Player({
       cleanup?.();
     };
   }, [scene?.id, scene?.mediaUrl, scene?.hidden, retry]);
+  useEffect(() => {
+    setSlowLoading(false);
+    if (!loading || error || offline || scene?.hidden) return;
+    // A connected socket can stop delivering bytes without a media error.
+    // Keep the current load alive, but offer an explicit retry after 15 seconds.
+    const timer = window.setTimeout(() => setSlowLoading(true), 15000);
+    return () => window.clearTimeout(timer);
+  }, [loading, error, offline, scene?.id, scene?.hidden, retry]);
   useEffect(() => {
     const update = () => setOffline(!navigator.onLine);
     window.addEventListener("online", update);
@@ -424,20 +434,41 @@ export function Player({
             <button
               className="icon-button"
               aria-label="Fullscreen"
-              onClick={() => {
-                if (document.fullscreenElement) void document.exitFullscreen();
-                else
-                  void frame.current
-                    ?.requestFullscreen()
-                    .catch(() =>
-                      setError("Fullscreen is unavailable in this browser."),
-                    );
+              onClick={async () => {
+                setFullscreenNotice("");
+                try {
+                  if (document.fullscreenElement)
+                    await document.exitFullscreen();
+                  else if (frame.current?.requestFullscreen)
+                    await frame.current.requestFullscreen();
+                  else throw new Error("Fullscreen is not supported.");
+                } catch {
+                  setFullscreenNotice(
+                    "Fullscreen is unavailable. You can keep watching here.",
+                  );
+                }
               }}
             >
               <Maximize size={17} />
             </button>
           </div>
+          {fullscreenNotice && (
+            <p className="playback-notice" role="status">
+              {fullscreenNotice}
+            </p>
+          )}
         </div>
+        {slowLoading && loading && !error && !offline && !scene.hidden && (
+          <div className="playback-recovery" role="status">
+            <p>
+              Loading is taking longer than usual. You can retry from{" "}
+              {formatTime(time)}.
+            </p>
+            <Button kind="secondary" onClick={retryPlayback}>
+              Retry playback
+            </Button>
+          </div>
+        )}
       </div>
       <div
         className="timeline-area"

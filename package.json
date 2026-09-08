@@ -15,6 +15,7 @@
     "test:api": "node --import tsx --test tests/integration/*.test.ts",
     "test:integration": "node scripts/integration.mjs",
     "test:e2e": "playwright test",
+    "test:playback:manual": "node scripts/playback-lab.mjs",
     "check": "npm run typecheck && npm test && npm run build",
     "deploy:check": "node scripts/preflight.mjs",
     "deploy:staging": "npm run deploy:check -- staging && npm run build && wrangler deploy --env staging",

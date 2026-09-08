@@ -32,7 +32,70 @@ test("preflight rejects development, missing remote resources and unaccepted pro
     /spending authorization/,
   );
   const production = inspect(config, "production", null, policies).join("\n");
-  assert.match(production, /actualEnglishVideo/);
+  assert.doesNotMatch(production, /actualEnglishVideo/);
+  assert.match(production, /contentPublicationReview/);
+  const generation = structuredClone(config);
+  generation.env.production.vars.PROVIDER_MODE = "live";
+  assert.match(
+    inspect(generation, "production", null, policies).join("\n"),
+    /actualEnglishVideo/,
+  );
   assert.match(production, /Finalize versioned policies/);
   assert.match(production, /legalPolicies/);
+});
+
+test("upload-only launch passes only with all applicable evidence and final policy details", () => {
+  const config = parse(readFileSync("wrangler.jsonc", "utf8"));
+  const vars = config.env.production.vars;
+  vars.PUBLIC_ORIGIN = "https://launch.fixture.invalid";
+  vars.TURNSTILE_SITE_KEY = "fixture-site-key-for-static-test";
+  const finalPolicies = {
+    ...policies,
+    status: "final",
+    operatorName: "Synthetic operator",
+    effectiveAt: "2026-09-08",
+  };
+  const checks = Object.fromEntries(
+    [
+      "googleLogin",
+      "mediaRecovery",
+      "legalPolicies",
+      "mobilePlayback",
+      "accountRequests",
+      "abuseProtection",
+      "cloudResourceSmokeTest",
+      "hostUploadFulfillment",
+      "invitationAccess",
+      "publicMetadataReview",
+      "contentPublicationReview",
+      "reportTakedown",
+    ].map((name) => [name, true]),
+  );
+  const release = {
+    checks,
+    evidence: "Synthetic unit-test evidence only",
+    reviewedAt: "2026-09-08",
+  };
+  assert.deepEqual(inspect(config, "production", release, finalPolicies), []);
+  for (const key of [
+    "invitationAccess",
+    "publicMetadataReview",
+    "contentPublicationReview",
+    "reportTakedown",
+  ]) {
+    assert.match(
+      inspect(
+        config,
+        "production",
+        { ...release, checks: { ...checks, [key]: false } },
+        finalPolicies,
+      ).join("\n"),
+      new RegExp(key),
+    );
+  }
+  vars.PROVIDER_MODE = "live";
+  assert.match(
+    inspect(config, "production", release, finalPolicies).join("\n"),
+    /actualEnglishVideo/,
+  );
 });

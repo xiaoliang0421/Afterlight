@@ -322,7 +322,9 @@ export async function serveR2(
     "Accept-Ranges": "bytes",
     "Content-Length": String(range ? end - start + 1 : object.size),
     ETag: object.httpEtag,
-    "Cache-Control": publicMedia ? "public, max-age=60" : "private, no-store",
+    "Cache-Control": publicMedia
+      ? "public, no-cache, must-revalidate"
+      : "private, no-store",
     "X-Content-Type-Options": "nosniff",
     "Cross-Origin-Resource-Policy": "same-origin",
   });

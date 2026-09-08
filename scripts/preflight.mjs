@@ -123,31 +123,41 @@ export function inspect(config, environment, release, policies) {
       failures.push("Configure a working support contact.");
     const checks = [
       "googleLogin",
-      "actualEnglishVideo",
-      "characterContinuity",
-      "newCharacterEntrance",
-      "crossSceneTransition",
+
       "mediaRecovery",
-      "budgetCutoff",
-      "providerCostCeiling",
+
       "legalPolicies",
       "mobilePlayback",
       "accountRequests",
       "abuseProtection",
       "cloudResourceSmokeTest",
       "hostUploadFulfillment",
+      "invitationAccess",
+      "publicMetadataReview",
+      "contentPublicationReview",
+      "reportTakedown",
     ];
+    if (vars.PROVIDER_MODE === "live")
+      checks.push(
+        "actualEnglishVideo",
+        "characterContinuity",
+        "newCharacterEntrance",
+        "crossSceneTransition",
+        "budgetCutoff",
+        "providerCostCeiling",
+      );
     for (const key of checks)
       if (!release?.checks?.[key])
         failures.push(`Release evidence is missing: ${key}.`);
-    if (!release?.approvedBudgetCents || release.approvedBudgetCents <= 0)
+    if (
+      vars.PROVIDER_MODE === "live" &&
+      (!release?.approvedBudgetCents || release.approvedBudgetCents <= 0)
+    )
       failures.push(
         "Record the explicitly authorized test/launch spending ceiling.",
       );
     if (!release?.evidence || !release?.reviewedAt)
-      failures.push(
-        "Record dated acceptance evidence before opening live generation.",
-      );
+      failures.push("Record dated acceptance evidence before public launch.");
   }
   return failures;
 }

@@ -4,6 +4,17 @@ Updated 2026-09-07. The empty staging website is deployed at `https://app.tailre
 
 See the [prioritized product completion checklist](PRODUCT-STATUS.md) for implementation work and account/configuration dependencies.
 
+## 2026-09-08 no-payment release candidate
+
+The current scope is [invited upload-and-review early access](NO-PAYMENT-LAUNCH.md). The chronological entries below are retained as historical evidence and do not define today's payment or generation launch requirements.
+
+- 102 application/database tests, TypeScript and the frontend build passed. New cases cover invitation/suspension gates, private story introductions, exact review snapshots, blocked publication, separately reviewed nicknames, account erasure of the new fields and disabled provider offers/archive dispatch.
+- All 21 native Worker integration tests passed, including actual isolated R2 upload/retry, adoption/publication, public-name approval and blocked story/video/caption/archive/event/profile access. These are synthetic local fixtures, not real user policy acceptance or hosted uploads.
+- Six desktop Chrome and emulated-phone browser cases passed. Actual local MP4 upload survives an injected connection reset without changing the wallet; the Studio review action is disabled until its required confirmation and reason are filled. No-payment accounts hide checkout prompts. Upload-only rendering is exercised with a deliberately substituted provider-disabled bootstrap, while backend offer gating is tested against D1.
+- Reviewed desktop/mobile screenshots; community cards and upload forms fit the viewport. Emulation is not physical-device acceptance.
+- Staging static preflight passes. Production preflight correctly rejects the placeholder origin, missing production Turnstile configuration, draft policies and incomplete dated hosted evidence. No failing production gate was marked as passed.
+- No new paid provider calls, new budget, payment setup or independent backup was created in this iteration. Policies are draft7 and are not silently accepted for real accounts.
+
 ## Verified locally
 
 - Current pass: 63 unit/database/HTTP contract tests, TypeScript and frontend build. The isolated Cloudflare integration suite passed 17 API subtests (18 including its parent). The latest editor changes include six focused parser, cast, audit, accounting and stream tests.
@@ -49,11 +60,9 @@ Staging static preflight and deployment passed. The latest deployed Worker bundl
 
 Remote D1 acceptance: schema initialization initially failed with `incomplete input`; the server-side splitter interpreted unparenthesized CASE/END inside triggers incorrectly. Parenthesizing those expressions without changing their meaning resolved the failure ([Cloudflare issue](https://github.com/cloudflare/workers-sdk/issues/4727)). Local migration/ledger tests still passed. Both remote environments then applied 17 migrations successfully; read-back confirmed zero users/stories/scenes, generation disabled and authorization ceiling zero. Earlier local databases do not need their applied history rewritten: the parentheses change preserves the SQL behavior. No existing remote application data was present or deleted.
 
-
 TaleRelay identity acceptance: 43 application/DB/contract tests and 16 reported isolated Worker integration tests passed after the rename and policy version bump. Type checks passed after adding the real staging Turnstile site key. Browser inspection confirmed the TaleRelay title, navigation and footer; no draft terms were accepted. Earlier accepted policy text remains immutable in D1.
 
 Support contact acceptance: the supplied Proton mailbox is present in all environment configurations, the legal contact section and site footer. Browser inspection verified the exact mailto address and TaleRelay Support label. The privacy test now distinguishes the intentionally public support email from private account emails; all 43 application checks and 16 reported isolated integration tests passed. The staging update deployed successfully. No test email was sent, and inbox delivery has not been independently verified. Operator identity disclosure remains pending.
-
 
 ## Account-record export (2026-09-06)
 

@@ -1,22 +1,20 @@
 # Cloudflare deployment
 
-TaleRelay is reachable at **https://app.tailrelay.com**, bound to the isolated `afterlight-staging` Worker. The owner confirmed `tailrelay.com` is the purchased domain; it is separate from the TaleRelay brand spelling and Proton mailbox. HTTPS and public health/bootstrap requests pass. Turnstile permits this exact hostname. The old workers.dev and preview endpoints are disabled. Generation, checkout and development login remain disabled pending account/configuration acceptance.
+Updated 2026-09-08. The active scope is [no-payment invited early access](NO-PAYMENT-LAUNCH.md). `https://app.tailrelay.com` is bound to the isolated `afterlight-staging` Worker. The purchased domain is `tailrelay.com`; the brand is TaleRelay. Staging Google OAuth, Turnstile, provider secrets and the verified first administrator were configured during earlier controlled testing. Old workers.dev and preview URLs are disabled.
 
-Separate private R2 buckets (`afterlight-staging-media`, `afterlight-production-media`) and D1 databases exist. `StoryRoom`, both staging Workflows and the five-minute cron are deployed. No local footage, fixture records, source maps, provider keys or personal context are published. Session, Turnstile, fal generation and DeepSeek director secrets are provisioned; Google OAuth credentials and a balance-capable fal credential are still needed. Production preflight still blocks a public service launch until policies and real acceptance are complete.
+Separate private R2 buckets and D1 databases exist for staging and production. Production still needs its real origin, matching OAuth/Turnstile setup and finalized policy/acceptance evidence. No local fixtures or private parent-repository context may be deployed.
 
-A separate Google Cloud project `talerelay` was created without changing ToolMoss. The branding form has the application name, existing Gmail support address, external testing audience and Proton notification address filled in; it is waiting at the Google API user-data-policy acceptance step. The site support email remains `talerelay@proton.me`. No Google OAuth client has been created yet. Resume using the [engineering plan](ENGINEERING-PLAN.md), after rechecking the form and pending confirmation.
-
-On 2026-09-07 the remote staging D1 export (18 applied migrations) restored successfully into an isolated in-memory SQLite database: integrity check `ok`, zero foreign-key violations, 108 non-internal schema objects, and zero users/stories. The export was removed after verification. Time Travel returned a current bookmark. This tests snapshot readability and schema recovery, not a destructive rollback of the serving database or full live-media disaster recovery.
+The no-payment release uses `PROVIDER_MODE=disabled`, `PAYMENTS_ENABLED=false` and invitation-only creation. Uploads are reviewed manually before publication. No payment merchant onboarding or new paid provider run is part of this release.
 
 ## GitHub
 
-Use a dedicated private repository containing this product directory only. Do not publish the surrounding personal context repository. Push the `codex/initial-product` branch for review. `.github/workflows/check.yml` runs type checks, application tests, build and isolated Cloudflare integration tests without cloud secrets or paid model calls.
+The existing dedicated public repository contains this product directory only. Do not publish the surrounding personal context repository. Push the `codex/initial-product` branch for review. `.github/workflows/check.yml` runs type checks, application tests, build and isolated Cloudflare integration tests without cloud secrets or paid model calls.
 
 Connect the repository to Cloudflare Workers Builds after selecting the actual account and worker. Keep staging and production as distinct workers and bindings. Preview builds must use staging resources. Production publication remains an explicit reviewed release, not an automatic consequence of opening a pull request.
 
 ## Google setup
 
-The application already uses Better Auth with Google. Client credentials are still required; deployment and a domain purchase do not create them automatically. Keep TaleRelay separate from the existing ToolMoss consent branding.
+The application already uses Better Auth with Google. Staging credentials are provisioned; production still requires credentials valid for its exact callback. Keep TaleRelay separate from the existing ToolMoss consent branding.
 
 For local development, create a **Web application** OAuth client and register the exact callback `http://127.0.0.1:5178/api/auth/callback/google`. Supply `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and a local `BETTER_AUTH_SECRET` through the approved secret mechanism, not tracked files. Keep PUBLIC_ORIGIN consistent with that origin. A local end-to-end test still contacts real Google and needs a reachable Google account; fixture login is not OAuth evidence.
 
@@ -78,9 +76,11 @@ The existing Cloudflare MCP connection provisions resources. Wrangler device log
 
 ## Storage drill — 2026-09-07
 
-A disposable 58-byte object in a random staging `ops-drill/` prefix was uploaded, downloaded as a backup, restored to a second key and downloaded again. Both copies matched SHA-256 `0d772a6194f7151d0051c9044f6f22fc77082404cbd59410f3cabe8f7d1c0c21`; both remote objects and local temporary files were then removed. No user object was touched. This verifies the object transfer/recovery procedure; an independently retained media backup and deletion-replay process still need to be configured before production.
+A disposable 58-byte object in a random staging `ops-drill/` prefix was uploaded, downloaded as a backup, restored to a second key and downloaded again. Both copies matched SHA-256 `0d772a6194f7151d0051c9044f6f22fc77082404cbd59410f3cabe8f7d1c0c21`; both remote objects and local temporary files were then removed. No user object was touched. This verifies the object transfer/recovery procedure; independent retained backups remain deferred by the operator. This release does not configure or schedule them.
 
 ## Controlled staging and source delivery
+
+For the current launch also apply `0023_launch_moderation.sql` and follow the [no-payment runbook](NO-PAYMENT-LAUNCH.md). Do not restore a historical live-provider override when deploying this edition.
 
 Apply migration `0020_generation_access.sql` before deploying the dependent Worker. New environments restrict all model calls to explicitly admitted testers; an administrator role alone is insufficient. Local fixtures explicitly opt out of the restriction. Apply environment-specific budgets and tester admission through authorized operations, not a committed live-account SQL seed.
 

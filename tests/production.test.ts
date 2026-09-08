@@ -381,7 +381,7 @@ test("migration keeps historical free text and paid reference contracts, and pre
         readFileSync(`migrations/${file}`, "utf8"),
       ))
         db.exec(sql);
-    db.exec(readFileSync("fixtures/seed.sql", "utf8"));
+    db.exec(readFileSync("tests/fixtures/pre-production.sql", "utf8"));
     db.exec(
       "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES('old-free','last-light','dev-creator','An existing free draft.',3,'old-free',1,1)",
     );
@@ -417,4 +417,21 @@ test("migration keeps historical free text and paid reference contracts, and pre
   } finally {
     db.close();
   }
+});
+
+test("provider-disabled launch hides all new generation offers even with historical prices", async () => {
+  const s = setup();
+  s.db.exec(
+    "UPDATE settings SET reference_generation_enabled=1,reference_points=8,reference_reserve_cents=80 WHERE id=1",
+  );
+  s.env.REFERENCE_GENERATION_ENABLED = "true";
+  const active = await generationOffer(s.env);
+  assert.equal(active.textEnabled, true);
+  assert.equal(active.referenceEnabled, true);
+  s.env.PROVIDER_MODE = "disabled";
+  const disabled = await generationOffer(s.env);
+  assert.equal(disabled.textEnabled, false);
+  assert.equal(disabled.referenceEnabled, false);
+  assert.equal(disabled.uploadsEnabled, true);
+  s.db.close();
 });

@@ -8,6 +8,13 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
+  invitation_required: "Creating is by invitation during early access.",
+  host_invitation_required:
+    "Story hosting is by invitation. Contact the studio to join.",
+  story_review_required:
+    "The studio must review this story before it can open.",
+  contributor_suspended:
+    "An adopted contributor is restricted. The studio must resolve this before publication.",
   deletion_active_proposals:
     "A selected audience proposal is still in production. Resolve it before deleting this account.",
   proposal_changed:

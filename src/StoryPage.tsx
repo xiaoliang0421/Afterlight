@@ -314,21 +314,9 @@ export function StoryPage({ slug }: { slug: string }) {
                 The world and its characters are ready. Give them a beginning.
               </p>
               {owner && story.status === "draft" && (
-                <Button
-                  onClick={async () => {
-                    try {
-                      await api(`/stories/${story.id}`, "PATCH", {
-                        status: "open",
-                      });
-                      await detail.reload();
-                      await refresh();
-                    } catch (e) {
-                      toast((e as Error).message);
-                    }
-                  }}
-                >
-                  Open this story for its first scene <ArrowRight size={16} />
-                </Button>
+                <p>
+                  The introduction is private until Studio completes its review.
+                </p>
               )}
             </div>
           )}
@@ -531,26 +519,30 @@ export function StoryPage({ slug }: { slug: string }) {
             <OwnerReviews storyId={story.id} />
           )}
           <div className="story-bottom-actions">
-            {owner && story.status !== "draft" && (
-              <button
-                className="text-button"
-                onClick={async () => {
-                  try {
-                    await api(`/stories/${story.id}`, "PATCH", {
-                      status: story.status === "open" ? "paused" : "open",
-                    });
-                    await detail.reload();
-                    await refresh();
-                  } catch (e) {
-                    toast((e as Error).message);
-                  }
-                }}
-              >
-                {story.status === "open"
-                  ? "Pause new scenes"
-                  : "Reopen the story"}
-              </button>
-            )}
+            {owner &&
+              boot.config.canHost &&
+              story.reviewStatus === "approved" &&
+              !story.publicationHold &&
+              story.status !== "draft" && (
+                <button
+                  className="text-button"
+                  onClick={async () => {
+                    try {
+                      await api(`/stories/${story.id}`, "PATCH", {
+                        status: story.status === "open" ? "paused" : "open",
+                      });
+                      await detail.reload();
+                      await refresh();
+                    } catch (e) {
+                      toast((e as Error).message);
+                    }
+                  }}
+                >
+                  {story.status === "open"
+                    ? "Pause new scenes"
+                    : "Reopen the story"}
+                </button>
+              )}
             <button
               className="text-button"
               onClick={() => {
@@ -563,6 +555,14 @@ export function StoryPage({ slug }: { slug: string }) {
           </div>
         </section>
         <aside className="creation-column">
+          {owner &&
+            (story.reviewStatus !== "approved" || !!story.publicationHold) && (
+              <Notice>
+                This story is awaiting studio review or has a publication
+                restriction. It cannot open until the studio clears it.{" "}
+                {story.reviewNote}
+              </Notice>
+            )}
           <ProductionPanel
             story={story}
             characters={data.characters}
@@ -1012,9 +1012,11 @@ export function Composer({
               : "Save your idea"}
             <ArrowRight size={16} />
           </Button>
-          <Link to="/account#creation-points" className="text-button">
-            Top up creation points
-          </Link>
+          {boot.config.paymentsEnabled && (
+            <Link to="/account#creation-points" className="text-button">
+              Top up creation points
+            </Link>
+          )}
           {boot.config.generationEnabled && (
             <button
               className="text-button save-idea"
@@ -1050,12 +1052,16 @@ export function Composer({
             ? `${boot.wallet?.available ?? 0} creation points available`
             : "Sign in to make a scene"}
         </span>
-        <Link to="/account#creation-points">Top up</Link>
+        {boot.config.paymentsEnabled && (
+          <Link to="/account#creation-points">Top up</Link>
+        )}
       </div>
       <p className="fine-print">
         Ideas take turns. We check every scene against the latest story before
         it’s made. Platform generation uses prepaid creation points.{" "}
-        <Link to="/account#creation-points">About creation points</Link>
+        {boot.config.billingVisible && (
+          <Link to="/account#creation-points">About creation points</Link>
+        )}
       </p>
     </div>
   );

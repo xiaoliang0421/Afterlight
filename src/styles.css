@@ -3995,3 +3995,46 @@ video {
   border-radius: 10px;
   min-width: 0;
 }
+
+.community-panel {
+  padding: 24px 0;
+}
+.community-panel > p {
+  color: var(--muted);
+  max-width: 760px;
+}
+.community-list {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 32px;
+}
+.community-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.community-list article > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.community-list p {
+  margin: 8px 0;
+}
+.community-cover {
+  max-width: 200px;
+  max-height: 140px;
+  object-fit: contain;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+}
+@media (max-width: 600px) {
+  .community-list article {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { moderation } from "./moderation";
 import { z } from "zod";
 import { isDevelopment, requireAdmin, type AppEnv } from "./auth";
 import { AppError } from "./errors";
@@ -32,6 +33,7 @@ import {
 } from "./speech";
 
 export const admin = new Hono<AppEnv>();
+admin.route("/", moderation);
 admin.use("*", async (c, next) => {
   requireAdmin(c);
   await next();
@@ -198,6 +200,7 @@ admin.post("/tasks/:id/approve", async (c) => {
       englishText: z.literal(true),
       continuity: z.literal(true),
       contentSafe: z.literal(true),
+      publicTextReviewed: z.literal(true),
       captions: z.string().max(12000),
       characterUpdates: z
         .array(z.object({ id: z.string(), state: z.string().min(1).max(1200) }))
@@ -488,7 +491,9 @@ admin.post("/scenes/:id/hide", async (c) => {
     .bind(c.req.param("id"))
     .first<{ story_id: string }>();
   if (!row) throw new AppError("not_found", "Scene not found.", 404);
-  await c.env.DB.prepare("UPDATE stories SET status='paused' WHERE id=?")
+  await c.env.DB.prepare(
+    "UPDATE stories SET status='paused',publication_hold=1 WHERE id=?",
+  )
     .bind(row.story_id)
     .run();
   await audit(c.env, requireAdmin(c).id, "scene.hidden", c.req.param("id"), {

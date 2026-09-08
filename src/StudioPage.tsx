@@ -16,6 +16,7 @@ import {
 } from "../shared/operations";
 import { api, useResource } from "./api";
 import { useApp } from "./context";
+import { CommunityPanel } from "./CommunityPanel";
 import { MaterialsPanel } from "./MaterialsPanel";
 import { StudioRequests } from "./StudioRequests";
 import { SpeechReview } from "./SpeechReview";
@@ -155,6 +156,7 @@ export function StudioPage() {
       <div className="content-tabs" role="tablist" aria-label="Studio sections">
         {[
           "Review queue",
+          "Stories & community",
           "Character materials",
           "Story guides",
           "Account requests",
@@ -163,18 +165,21 @@ export function StudioPage() {
           "Reports",
           "Activity log",
           "Operations",
-        ].map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            className={tab === t ? "active" : ""}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
-        ))}
+        ]
+          .filter((t) => t !== "Payments" || boot.config.billingVisible)
+          .map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={tab === t}
+              className={tab === t ? "active" : ""}
+              onClick={() => setTab(t)}
+            >
+              {t}
+            </button>
+          ))}
       </div>
+      {tab === "Stories & community" && <CommunityPanel />}
       {tab === "Operations" && (
         <section className="panel">
           <h2>Recovery & protection</h2>
@@ -534,7 +539,7 @@ function ModerationModal({
     [events, setEvents] = useState(task.plan?.proposedEvents.join("\n") ?? ""),
     [captions, setCaptions] = useState("WEBVTT\n\n"),
     [noDialogue, setNoDialogue] = useState(false),
-    [checks, setChecks] = useState([false, false, false, false]),
+    [checks, setChecks] = useState([false, false, false, false, false]),
     [updates, setUpdates] = useState(
       JSON.stringify(task.plan?.characterUpdates ?? [], null, 2),
     ),
@@ -542,6 +547,14 @@ function ModerationModal({
     [rejectReason, setRejectReason] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const ideas = useResource<{
+    ideas: {
+      id: string;
+      prompt: string;
+      nickname: string;
+      publicName: string;
+    }[];
+  }>(`/admin/community/tasks/${task.id}/ideas`);
   const act = async (approve: boolean) => {
     setBusy(true);
     setError("");
@@ -557,6 +570,7 @@ function ModerationModal({
           englishText: checks[1],
           continuity: checks[2],
           contentSafe: checks[3],
+          publicTextReviewed: checks[4],
           captions,
           noDialogue,
           characterUpdates: JSON.parse(updates),
@@ -595,12 +609,25 @@ function ModerationModal({
       {task.sourceKind !== "upload" && (
         <SpeechReview taskId={task.id} onCaptions={setCaptions} />
       )}
+      <h4>Original submitted text</h4>
+      <p className="preserve-lines">{task.prompt}</p>
+      <h4>Adopted audience ideas and public credits</h4>
+      {ideas.error && <Notice danger>{ideas.error}</Notice>}
+      {ideas.loading && <Loading />}
+      {ideas.data?.ideas.map((p) => (
+        <article key={p.id}>
+          <strong>{p.publicName || "Storyteller"}</strong>
+          <p className="preserve-lines">{p.prompt}</p>
+        </article>
+      ))}
+      {ideas.data?.ideas.length === 0 && <p>No adopted audience ideas.</p>}
       <div className="review-checks">
         {[
           "The actual audio is English (or there is no speech).",
           "Readable text is English and appropriate.",
           "Characters, props and events continue the latest story.",
           "The content and references are safe to publish.",
+          "The original text, adopted ideas, credits, title and summary are safe to publish and contain no private information.",
         ].map((label, i) => (
           <label className="checkbox-label" key={label}>
             <input
@@ -685,7 +712,7 @@ function ModerationModal({
       <Button
         className="full-width"
         busy={busy}
-        disabled={!checks.every(Boolean)}
+        disabled={!checks.every(Boolean) || !ideas.data || !!ideas.error}
         onClick={() => void act(true)}
       >
         Approve & publish with author credit <Check size={16} />

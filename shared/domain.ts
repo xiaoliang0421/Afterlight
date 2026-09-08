@@ -98,6 +98,7 @@ export interface User {
   role: "user" | "admin";
   email?: string;
   policyAccepted: boolean;
+  publicDisplayName?: string;
 }
 export interface Character {
   id: string;
@@ -118,6 +119,9 @@ export interface Story {
   worldRules: string;
   visualStyle: string;
   status: "draft" | "open" | "paused";
+  reviewStatus?: "pending" | "approved" | "rejected" | "blocked";
+  reviewNote?: string;
+  publicationHold?: boolean;
   version: number;
   coverUrl: string;
   fixture: boolean;
@@ -199,6 +203,9 @@ export interface Settings {
   policyVersion: string;
 }
 export interface AppConfig {
+  canContribute: boolean;
+  canHost: boolean;
+  billingVisible: boolean;
   environment: string;
   providerMode: string;
   development: boolean;

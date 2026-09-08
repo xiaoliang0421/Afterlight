@@ -18,7 +18,8 @@ const queries: Record<
   profile: {
     table: "users",
     owner: "t.id",
-    fields: "t.id,t.email,t.display_name,t.created_at",
+    fields:
+      "t.id,t.email,t.display_name,t.public_name,t.name_review_note,t.contribution_access,t.created_at",
   },
   signInProfile: {
     table: '"user"',

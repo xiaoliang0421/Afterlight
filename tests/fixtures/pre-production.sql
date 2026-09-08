@@ -1,5 +1,5 @@
 -- Development-only illustrative fixtures. Never run against a remote database.
-UPDATE settings SET invitation_only=0,generation_restricted=0 WHERE id=1;
+UPDATE settings SET generation_restricted=0 WHERE id=1;
 INSERT OR IGNORE INTO users(id,email,display_name,role,created_at,nickname_key) VALUES('dev-studio','studio@example.invalid','Afterlight Studio','admin',1788667200000,'afterlight studio');
 INSERT OR IGNORE INTO users(id,email,display_name,role,created_at,nickname_key) VALUES('dev-creator','creator@example.invalid','You','user',1788667200000,'you');
 UPDATE settings SET generation_enabled=1,daily_budget_cents=3000,monthly_budget_cents=10000,task_reserve_cents=150,authorized_spend_cents=10000 WHERE id=1;
@@ -21,6 +21,3 @@ INSERT INTO canon_events(story_id,scene_id,version,description) SELECT 'last-lig
 INSERT INTO canon_events(story_id,scene_id,version,description) SELECT 'last-light','sample-light-2',2,'A voice spoke Mara’s name over the radio; Elias found the old transmitter disconnected.' WHERE NOT EXISTS(SELECT 1 FROM canon_events WHERE scene_id='sample-light-2');
 INSERT INTO canon_events(story_id,scene_id,version,description) SELECT 'last-light','sample-light-3',3,'Mara found a locked brass door at the entrance. The key remains with Mara.' WHERE NOT EXISTS(SELECT 1 FROM canon_events WHERE scene_id='sample-light-3');
 INSERT INTO canon_events(story_id,scene_id,version,description) SELECT 'quiet-orbit','sample-orbit-1',1,'Inez entered the greenhouse. Theo remained in the docking bay.' WHERE NOT EXISTS(SELECT 1 FROM canon_events WHERE scene_id='sample-orbit-1');
-
-UPDATE stories SET review_status='approved' WHERE fixture=1;
-UPDATE users SET public_name=display_name WHERE id IN ('dev-studio','dev-creator');

@@ -220,7 +220,13 @@ export function App() {
                 <span>
                   <strong>{boot.user.displayName || "Choose your name"}</strong>
                   <small>
-                    {boot.wallet?.available ?? 0} creation points available
+                    {boot.config.billingVisible
+                      ? `${boot.wallet?.available ?? 0} creation points available`
+                      : boot.config.canHost
+                        ? "Invited story host"
+                        : boot.config.canContribute
+                          ? "Invited participant"
+                          : "Watching account"}
                   </small>
                 </span>
                 <ChevronDown size={14} />
@@ -230,7 +236,7 @@ export function App() {
                 <Avatar name="?" />
                 <span>
                   <strong>Join the story</strong>
-                  <small>Watch and propose for free.</small>
+                  <small>Watch stories. Join by invitation.</small>
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -276,10 +282,12 @@ export function App() {
               </span>
               {boot.user ? (
                 <>
-                  <span className="credit-pill">
-                    <Sparkles size={13} />
-                    {boot.wallet?.available ?? 0} points
-                  </span>
+                  {boot.config.billingVisible && (
+                    <span className="credit-pill">
+                      <Sparkles size={13} />
+                      {boot.wallet?.available ?? 0} points
+                    </span>
+                  )}
                   <div className="notification-wrap">
                     <button
                       className="icon-button"

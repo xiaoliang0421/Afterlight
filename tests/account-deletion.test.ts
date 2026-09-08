@@ -133,6 +133,23 @@ test("deletion erases sign-in and private inputs, retains shared playback and is
     },
     { email: null, display_name: "Deleted storyteller", nickname_key: "" },
   );
+  assert.deepEqual(
+    {
+      ...db
+        .prepare(
+          "SELECT public_name,name_review_note,contribution_access FROM users WHERE id='dev-creator'",
+        )
+        .get(),
+    },
+    { public_name: "", name_review_note: "", contribution_access: "suspended" },
+  );
+  assert.throws(
+    () =>
+      db.exec(
+        "UPDATE users SET public_name='Resurrected public name' WHERE id='dev-creator'",
+      ),
+    /account_deleted/,
+  );
   for (const table of ["user", "session", "account", "sessions", "favorites"])
     assert.equal(
       db.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).get()!.n,

@@ -130,6 +130,7 @@ export async function buildArchive(env: Cloudflare.Env, id: string) {
   }
 }
 export async function dispatchArchives(env: Cloudflare.Env) {
+  if (String(env.PROVIDER_MODE) === "disabled") return;
   let failures = 0;
   const pending = (
     await env.DB.prepare(

@@ -273,6 +273,18 @@ export function CreateStoryPage() {
       setBusy(false);
     }
   };
+  if (boot.user && !boot.config.canHost)
+    return (
+      <div className="page">
+        <Empty
+          icon={<Globe2 size={32} />}
+          title="Story hosting is by invitation."
+        >
+          You can watch published stories. Contact the studio from Help to
+          request a host invitation.
+        </Empty>
+      </div>
+    );
   return (
     <div className="page create-page">
       <div className="page-heading">
@@ -473,8 +485,9 @@ export function CreateStoryPage() {
                   </Button>
                 )}
                 <p className="fine-print">
-                  Your world starts as a draft. Open it when ready; video
-                  generation starts only after a scene is reviewed and queued.
+                  Your story introduction stays private until the studio reviews
+                  it. Every finished video also needs approval before
+                  publication.
                 </p>
               </>
             )}
@@ -493,7 +506,7 @@ export function CreateStoryPage() {
                 {step < 3
                   ? "Continue"
                   : boot.user
-                    ? "Create this world"
+                    ? "Send this world for review"
                     : "Sign in to create"}
                 <ArrowRight size={16} />
               </Button>
@@ -856,7 +869,7 @@ export function AccountPage() {
                 await api("/account/profile", "PUT", { nickname });
                 await refresh();
                 toast(
-                  "Your public nickname has been updated across your scene credits.",
+                  "Your nickname was submitted for review. Your approved public name stays unchanged until the studio reviews it.",
                 );
               } catch (e) {
                 setError((e as Error).message);
@@ -877,8 +890,8 @@ export function AccountPage() {
               required
             />
             <p className="field-help">
-              You can change this name. Your permanent author ID keeps every
-              contribution connected to you.
+              Changes need studio review before appearing publicly. Your
+              permanent author ID keeps every contribution connected to you.
             </p>
             <label className="field-label" htmlFor="email">
               Account email · only visible to you
@@ -894,28 +907,56 @@ export function AccountPage() {
             </Button>
           </form>
         </section>
-        <section className="credit-panel">
-          <span className="eyebrow">YOUR CREATION BALANCE</span>
-          <strong>
-            {boot.wallet?.available ?? 0}
-            <small>points available</small>
-          </strong>
-          <p>
-            Watch and share ideas for free. Top up points when you choose
-            platform generation.
-          </p>
-          <a href="#creation-points" className="button secondary">
-            Top up creation points
-          </a>
-          {!!boot.credits?.reserved && (
-            <p className="fine-print">
-              {boot.credits.reserved} legacy free credits remain reserved for
-              earlier tasks.
+        {boot.config.billingVisible ? (
+          <section className="credit-panel">
+            <span className="eyebrow">YOUR CREATION BALANCE</span>
+            <strong>
+              {boot.wallet?.available ?? 0}
+              <small>points available</small>
+            </strong>
+            <p>
+              {boot.config.paymentsEnabled
+                ? "Watch and share ideas for free. Top up points when you choose platform generation."
+                : "Purchases are closed. Your existing balance and order records remain available."}
             </p>
-          )}
-        </section>
+            {boot.config.paymentsEnabled && (
+              <a href="#creation-points" className="button secondary">
+                Top up creation points
+              </a>
+            )}
+            {!!boot.credits?.reserved && (
+              <p className="fine-print">
+                {boot.credits.reserved} legacy free credits remain reserved for
+                earlier tasks.
+              </p>
+            )}
+          </section>
+        ) : (
+          <section className="credit-panel">
+            <span className="eyebrow">EARLY ACCESS</span>
+            <h2>
+              {boot.config.canHost
+                ? "Your host invitation is active."
+                : boot.config.canContribute
+                  ? "Your participant invitation is active."
+                  : "Enjoy the stories."}
+            </h2>
+            <p>
+              Watching is free. Invited participants share ideas, and invited
+              hosts upload finished scenes for studio review. Purchases are not
+              offered in this release.
+            </p>
+            <p>
+              Public name:{" "}
+              {boot.user.publicDisplayName || "Storyteller · awaiting review"}
+            </p>
+            <Link to="/about" className="button secondary">
+              How to take part
+            </Link>
+          </section>
+        )}
       </div>
-      <BillingPanel />
+      {boot.config.billingVisible && <BillingPanel />}
       <AccountExport key={boot.user.id} />
       <AccountRequests />
       <div className="account-bottom">
@@ -1031,21 +1072,20 @@ export function AboutPage() {
             at the beginning.
           </li>
           <li>
-            Write an idea in any language. The story editor turns it into an
-            English scene plan.
+            Invited participants share an idea privately with the host. Watching
+            requires no purchase.
           </li>
           <li>
-            The host chooses ideas, then uploads a finished video or reserves
-            creation points to generate a scene. Scenes take turns within their
-            own story.
+            The host chooses ideas, then uploads a finished video. Scenes take
+            turns within their own story.
           </li>
           <li>
-            Before generation, we check the latest story again. Major changes
-            return to you for review.
+            The host checks how the footage continues the latest scene. If the
+            story changes, the continuation needs another review.
           </li>
           <li>
-            The finished video is checked and published with your nickname and
-            creative prompt. Failed delivery returns your credit.
+            The studio reviews the video, audio, public text and credits.
+            Approved scenes are published with the producer and adopted ideas.
           </li>
         </ol>
       </section>
@@ -1094,9 +1134,9 @@ export function AboutPage() {
           paused and content removed after review.
         </p>
         <p>
-          Platform generation uses prepaid creation points. There is no
-          automatic purchase, subscription or charge to a user account. Paid
-          features, if introduced later, require a separate choice.
+          This release offers no purchases or subscriptions. Invited hosts bring
+          their own videos. Paid generation is reserved for a later release and
+          is not required to participate.
         </p>
       </section>
       <section>

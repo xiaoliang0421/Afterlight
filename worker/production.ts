@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { requireContributor } from "./community";
 import { z } from "zod";
 import { requireUser, rateLimit, isDevelopment, type AppEnv } from "./auth";
 import { AppError } from "./errors";
@@ -274,7 +275,7 @@ async function ownUpload(
   c: Parameters<typeof requireUser>[0],
   creating = true,
 ) {
-  const user = requireUser(c, creating),
+  const user = creating ? await requireContributor(c, true) : requireUser(c),
     task = await getTask(c.env, c.req.param("id")!);
   if (task.user_id !== user.id || task.source_kind !== "upload")
     throw new AppError("not_found", "Upload not found.", 404);

@@ -57,6 +57,17 @@ async function ok(promise: Promise<Result>) {
   );
   return r.data;
 }
+async function approveStory(id: string) {
+  const review = await ok(studio(`/api/admin/community/stories/${id}`));
+  return ok(
+    studio(`/api/admin/community/stories/${id}`, "POST", {
+      action: "approve",
+      token: review.token,
+      reviewed: true,
+      reason: "Reviewed the original story introduction and character details.",
+    }),
+  );
+}
 async function waitTask(
   call: ReturnType<typeof client>,
   id: string,
@@ -223,6 +234,14 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       const me = await ok(newcomer("/api/bootstrap"));
       assert.equal(me.user.displayName, "New storyteller");
       assert.ok(me.user.email);
+      assert.equal((await guest(`/api/people/${me.user.id}`)).status, 404);
+      await ok(
+        studio(`/api/admin/community/users/${me.user.id}/name`, "POST", {
+          nickname: "New storyteller",
+          approved: true,
+          reason: "Reviewed this synthetic public nickname for publication.",
+        }),
+      );
       const publicProfile = await ok(guest(`/api/people/${me.user.id}`));
       assert.ok(!JSON.stringify(publicProfile).includes("@"));
     },
@@ -434,6 +453,7 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
         englishText: true,
         continuity: true,
         contentSafe: true,
+        publicTextReviewed: true,
         captions: "",
         noDialogue: true,
         characterUpdates: [],
@@ -452,6 +472,18 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       assert.equal(credits.spent, 5);
       assert.equal(credits.reserved, 5);
       await ok(creator("/api/account/profile", "PUT", { nickname: "River" }));
+      const pendingName = await ok(guest("/api/stories/last-light"));
+      assert.equal(
+        pendingName.scenes.find((s: any) => s.id === a.id).author,
+        "You",
+      );
+      await ok(
+        studio("/api/admin/community/users/dev-creator/name", "POST", {
+          nickname: "River",
+          approved: true,
+          reason: "Reviewed the changed public nickname before publication.",
+        }),
+      );
       const renamed = await ok(guest("/api/stories/last-light"));
       assert.equal(
         renamed.scenes.find((s: any) => s.id === a.id).author,
@@ -693,7 +725,7 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
     },
   );
   await t.test(
-    "new worlds stay private until the owner opens them; characters and progress stay scoped",
+    "new worlds stay private until studio approval; owners cannot bypass review",
     async () => {
       const input = {
         title: "The Paper Moon",
@@ -722,9 +754,15 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
           .status,
         403,
       );
-      await ok(
-        newcomer(`/api/stories/${story.id}`, "PATCH", { status: "open" }),
+      assert.equal(
+        (
+          await newcomer(`/api/stories/${story.id}`, "PATCH", {
+            status: "open",
+          })
+        ).status,
+        409,
       );
+      await approveStory(story.id);
       const world = await ok(guest(`/api/stories/${story.id}`));
       assert.equal(world.scenes.length, 0);
       assert.equal(world.queue.length, 0);
@@ -1102,7 +1140,7 @@ test("native Workers upload: private MP4, retry, free review, publication and pr
       }),
     )
   ).story;
-  await ok(studio(`/api/stories/${story.id}`, "PATCH", { status: "open" }));
+  await approveStory(story.id);
   const beforeHost = (await ok(studio("/api/bootstrap"))).wallet;
   const beforeAuthor = (await ok(creator("/api/bootstrap"))).wallet;
   const proposal = await ok(
@@ -1216,6 +1254,7 @@ test("native Workers upload: private MP4, retry, free review, publication and pr
     englishText: true,
     continuity: true,
     contentSafe: true,
+    publicTextReviewed: true,
     captions: "",
     noDialogue: true,
     characterUpdates: [],
@@ -1234,6 +1273,10 @@ test("native Workers upload: private MP4, retry, free review, publication and pr
     Range: "bytes=0-31",
   });
   assert.equal(media.status, 206);
+  assert.match(
+    media.response.headers.get("cache-control") ?? "",
+    /no-cache|no-store/,
+  );
   assert.equal(media.response.headers.get("content-length"), "32");
   assert.deepEqual((await ok(studio("/api/bootstrap"))).wallet, beforeHost);
   assert.deepEqual((await ok(creator("/api/bootstrap"))).wallet, beforeAuthor);
@@ -1262,4 +1305,33 @@ test("native Workers upload: private MP4, retry, free review, publication and pr
     assert.ok([200, 201].includes(draft.status), JSON.stringify(draft.data));
   assert.equal(drafts[0].data.task.id, drafts[1].data.task.id);
   await ok(studio(`/api/tasks/${drafts[0].data.task.id}/cancel`, "POST", {}));
+  const currentReview = await ok(
+    studio(`/api/admin/community/stories/${story.id}`),
+  );
+  await ok(
+    studio(`/api/admin/community/stories/${story.id}`, "POST", {
+      action: "block",
+      token: currentReview.token,
+      reviewed: true,
+      reason:
+        "Synthetic report requires removing this story from public access.",
+    }),
+  );
+  for (const path of [
+    `/api/stories/${story.id}`,
+    `/api/stories/${story.id}/archive?through=1`,
+    `/api/scenes/${scene.id}/video`,
+    `/api/scenes/${scene.id}/captions`,
+    `/api/stories/${story.id}/events`,
+  ])
+    assert.equal((await guest(path)).status, 404, path);
+  assert.equal(
+    (await studio(`/api/stories/${story.id}`, "PATCH", { status: "open" }))
+      .status,
+    409,
+  );
+  const hiddenProfile = await ok(guest("/api/people/dev-studio"));
+  assert.ok(
+    !hiddenProfile.contributions.some((item: any) => item.id === scene.id),
+  );
 });

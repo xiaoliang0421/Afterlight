@@ -33,12 +33,14 @@ export async function generationOffer(env: Cloudflare.Env) {
   }>();
   return {
     textEnabled:
+      env.PROVIDER_MODE !== "disabled" &&
       (settings?.text_points ?? 0) > 0 &&
       (settings?.task_reserve_cents ?? 0) >= 40,
     textPoints: settings?.text_points ?? 0,
     textReserveCents: settings?.task_reserve_cents ?? 0,
     uploadsEnabled: !!settings?.uploads_enabled,
     referenceEnabled:
+      env.PROVIDER_MODE !== "disabled" &&
       env.REFERENCE_GENERATION_ENABLED === "true" &&
       !!settings?.reference_generation_enabled &&
       settings.reference_points > 0 &&

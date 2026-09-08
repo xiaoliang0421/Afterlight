@@ -25,6 +25,10 @@
     "paidTextFulfillment": false,
     "paidReferenceFulfillment": false,
     "hostUploadFulfillment": false,
-    "purchaseTerms": false
+    "purchaseTerms": false,
+    "invitationAccess": false,
+    "publicMetadataReview": false,
+    "contentPublicationReview": false,
+    "reportTakedown": false
   }
 }

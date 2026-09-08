@@ -27,7 +27,9 @@ export function ProductionPanel({
   onChanged: () => Promise<void>;
 }) {
   const { boot } = useApp(),
-    host = boot.user?.id === story.ownerId;
+    host = boot.user?.id === story.ownerId && boot.config.canHost,
+    generationAvailable =
+      boot.config.textEnabled || boot.config.referenceEnabled;
   const [tab, setTab] = useState<"ideas" | "make">("ideas"),
     [method, setMethod] = useState<"generate" | "upload">("generate"),
     [selected, setSelected] = useState<string[]>([]);
@@ -65,8 +67,9 @@ export function ProductionPanel({
             <div className="proposal-inbox">
               <h3>Choose what happens next.</h3>
               <p className="fine-print">
-                Select up to five ideas to credit. Your account pays if you
-                choose platform generation.
+                Select up to five ideas to credit in your next scene.
+                {generationAvailable &&
+                  " Your account pays if you choose platform generation."}
               </p>
               {proposals.error && <Notice danger>{proposals.error}</Notice>}
               {proposals.data?.proposals
@@ -133,24 +136,26 @@ export function ProductionPanel({
               </small>
             </div>
           )}
-          <div
-            className="production-methods"
-            aria-label="Video production method"
-          >
-            <button
-              className={method === "generate" ? "selected" : ""}
-              onClick={() => setMethod("generate")}
+          {generationAvailable && (
+            <div
+              className="production-methods"
+              aria-label="Video production method"
             >
-              <Sparkles size={16} /> Generate with points
-            </button>
-            <button
-              className={method === "upload" ? "selected" : ""}
-              onClick={() => setMethod("upload")}
-            >
-              <Upload size={16} /> Upload a finished video
-            </button>
-          </div>
-          {method === "generate" ? (
+              <button
+                className={method === "generate" ? "selected" : ""}
+                onClick={() => setMethod("generate")}
+              >
+                <Sparkles size={16} /> Generate with points
+              </button>
+              <button
+                className={method === "upload" ? "selected" : ""}
+                onClick={() => setMethod("upload")}
+              >
+                <Upload size={16} /> Upload a finished video
+              </button>
+            </div>
+          )}
+          {generationAvailable && method === "generate" ? (
             renderGeneration(
               selected,
               picked
@@ -180,7 +185,7 @@ function ProposalForm({
   story: Story;
   onSaved: () => Promise<void>;
 }) {
-  const { requireLogin } = useApp();
+  const { boot, requireLogin } = useApp();
   const [text, setText] = useState(""),
     [consent, setConsent] = useState(false),
     [busy, setBusy] = useState(false),
@@ -211,6 +216,13 @@ function ProposalForm({
       setBusy(false);
     }
   };
+  if (boot.user && !boot.config.canContribute)
+    return (
+      <Notice>
+        Watching is open. Sharing ideas and hosting stories are by invitation
+        during early access. Contact the studio from Help to request access.
+      </Notice>
+    );
   return (
     <div className="proposal-form">
       <span className="eyebrow">HELP SHAPE THE NEXT SCENE</span>
@@ -761,7 +773,7 @@ export function UploadedScene({
             }
             onClick={() => void accept()}
           >
-            Submit for story review · 0 generation points
+            Submit for story review
           </Button>
         </>
       )}

@@ -96,13 +96,14 @@ export async function currentUser(c: Context<AppEnv>): Promise<User | null> {
   }
   if (!id) return null;
   const row = await c.env.DB.prepare(
-    "SELECT id,email,display_name,role,EXISTS(SELECT 1 FROM policy_acceptances p JOIN policy_documents d ON d.version=p.version WHERE p.user_id=users.id AND p.version=? AND d.document_json=?) AS policy_accepted FROM users WHERE id=? AND deleted_at IS NULL",
+    "SELECT id,email,display_name,public_name,role,EXISTS(SELECT 1 FROM policy_acceptances p JOIN policy_documents d ON d.version=p.version WHERE p.user_id=users.id AND p.version=? AND d.document_json=?) AS policy_accepted FROM users WHERE id=? AND deleted_at IS NULL",
   )
     .bind(policies.version, JSON.stringify(policies), id)
     .first<{
       id: string;
       email: string;
       display_name: string;
+      public_name: string;
       role: User["role"];
       policy_accepted: number;
     }>();
@@ -111,6 +112,7 @@ export async function currentUser(c: Context<AppEnv>): Promise<User | null> {
         id: row.id,
         email: row.email,
         displayName: row.display_name,
+        publicDisplayName: row.public_name,
         role: row.role,
         policyAccepted: !!row.policy_accepted,
       }

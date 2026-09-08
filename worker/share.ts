@@ -11,13 +11,15 @@ function escape(value: string) {
   );
 }
 export async function sharePage(request: Request, env: Cloudflare.Env) {
-  const asset = await env.ASSETS.fetch(request);
-  if (!asset.headers.get("content-type")?.includes("text/html")) return asset;
+  const source = await env.ASSETS.fetch(request);
+  if (!source.headers.get("content-type")?.includes("text/html")) return source;
+  const asset = new Response(source.body, source);
+  asset.headers.set("Cache-Control", "no-cache, must-revalidate");
   const url = new URL(request.url),
     slug = decodeURIComponent(url.pathname.split("/")[2] ?? "");
   try {
     const story = await getStory(env, slug);
-    if (story.status === "draft")
+    if (story.status === "draft" || story.reviewStatus !== "approved")
       return new HTMLRewriter()
         .on("head", {
           element(el) {

@@ -62,7 +62,7 @@ export interface TaskRow {
   created_at: number;
   updated_at: number;
 }
-const storySelect = `SELECT s.id,s.slug,s.owner_id AS ownerId,s.title,s.logline,s.genre,s.world_rules AS worldRules,s.visual_style AS visualStyle,s.status,s.version,s.cover_url AS coverUrl,s.fixture,s.created_at AS createdAt,s.updated_at AS updatedAt,
+const storySelect = `SELECT s.id,s.slug,s.owner_id AS ownerId,s.title,s.logline,s.genre,s.world_rules AS worldRules,s.visual_style AS visualStyle,s.status,s.review_status AS reviewStatus,s.review_note AS reviewNote,s.publication_hold AS publicationHold,s.version,s.cover_url AS coverUrl,s.fixture,s.created_at AS createdAt,s.updated_at AS updatedAt,
  (SELECT COUNT(*) FROM scenes WHERE story_id=s.id AND hidden=0) AS sceneCount,
  (SELECT COUNT(*) FROM episodes WHERE story_id=s.id) AS episodeCount,
  COALESCE((SELECT SUM(duration_ms) FROM scenes WHERE story_id=s.id),0) AS durationMs,
@@ -71,14 +71,19 @@ export async function listStories(env: Cloudflare.Env, owner?: string) {
   const result = owner
     ? await env.DB.prepare(
         storySelect +
-          " WHERE s.status!='draft' OR s.owner_id=? ORDER BY s.updated_at DESC",
+          " WHERE (s.status!='draft' AND s.review_status='approved') OR s.owner_id=? ORDER BY s.updated_at DESC",
       )
         .bind(owner)
         .all<Story>()
     : await env.DB.prepare(
-        storySelect + " WHERE s.status!='draft' ORDER BY s.updated_at DESC",
+        storySelect +
+          " WHERE s.status!='draft' AND s.review_status='approved' ORDER BY s.updated_at DESC",
       ).all<Story>();
-  return result.results.map((s) => ({ ...s, fixture: !!s.fixture }));
+  return result.results.map((s) => ({
+    ...s,
+    reviewNote: s.ownerId === owner ? s.reviewNote : "",
+    fixture: !!s.fixture,
+  }));
 }
 export async function getStory(
   env: Cloudflare.Env,
@@ -122,14 +127,14 @@ export async function getScenes(
 ): Promise<Scene[]> {
   const rows = (
     await env.DB.prepare(
-      `SELECT s.id,s.story_id AS storyId,s.episode_id AS episodeId,s.version,s.title,s.summary,s.media_key AS mediaKey,s.stream_id AS streamId,s.thumbnail_url AS thumbnailUrl,s.duration_ms AS durationMs,s.start_ms AS startMs,s.prompt_original AS prompt,s.english_prompt AS englishPrompt,u.display_name AS author,s.author_id AS authorId,s.source,COALESCE(t.source_kind,'generated') AS productionSource,s.fixture,s.published_at AS publishedAt,s.hidden FROM scenes s JOIN users u ON u.id=s.author_id LEFT JOIN tasks t ON t.id=s.task_id WHERE s.story_id=? ORDER BY s.version`,
+      `SELECT s.id,s.story_id AS storyId,s.episode_id AS episodeId,s.version,s.title,s.summary,s.media_key AS mediaKey,s.stream_id AS streamId,s.thumbnail_url AS thumbnailUrl,s.duration_ms AS durationMs,s.start_ms AS startMs,s.prompt_original AS prompt,s.english_prompt AS englishPrompt,COALESCE(NULLIF(u.public_name,''),'Storyteller') AS author,s.author_id AS authorId,s.source,COALESCE(t.source_kind,'generated') AS productionSource,s.fixture,s.published_at AS publishedAt,s.hidden FROM scenes s JOIN users u ON u.id=s.author_id LEFT JOIN tasks t ON t.id=s.task_id WHERE s.story_id=? ORDER BY s.version`,
     )
       .bind(storyId)
       .all<Scene & { mediaKey: string; streamId: string | null }>()
   ).results;
   const contributions = (
     await env.DB.prepare(
-      `SELECT p.selected_task_id AS taskId,p.author_id AS id,u.display_name AS name,p.prompt FROM story_proposals p JOIN users u ON u.id=p.author_id WHERE p.story_id=? AND p.status='published'`,
+      `SELECT p.selected_task_id AS taskId,p.author_id AS id,COALESCE(NULLIF(u.public_name,''),'Storyteller') AS name,p.prompt FROM story_proposals p JOIN users u ON u.id=p.author_id WHERE p.story_id=? AND p.status='published'`,
     )
       .bind(storyId)
       .all<{ taskId: string; id: string; name: string; prompt: string }>()
@@ -230,7 +235,7 @@ export async function getQueue(
 ): Promise<Task[]> {
   const rows = (
     await env.DB.prepare(
-      "SELECT t.*,u.display_name AS author FROM tasks t JOIN users u ON u.id=t.user_id WHERE t.story_id=? AND t.reservation_active=1 ORDER BY t.queue_sequence",
+      "SELECT t.*,COALESCE(NULLIF(u.public_name,''),'Storyteller') AS author FROM tasks t JOIN users u ON u.id=t.user_id WHERE t.story_id=? AND t.reservation_active=1 ORDER BY t.queue_sequence",
     )
       .bind(storyId)
       .all<TaskRow>()

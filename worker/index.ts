@@ -61,6 +61,7 @@ import { recordedReconciliation } from "./operations";
 import { accountExport } from "./account-export";
 import { reconcile } from "./reconciliation";
 import { production } from "./production";
+import { communityAccess, requireContributor, visibleStory } from "./community";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -124,7 +125,10 @@ app.use("/api/*", async (c, next) => {
   if (!c.req.path.startsWith("/api/auth/")) c.set("user", await currentUser(c));
   const action = creationAction(c.req.path.slice(4), c.req.method);
   if (action) {
-    const user = requireUser(c, true);
+    const user = await requireContributor(
+      c,
+      action === "create_story" || action === "upload_scene",
+    );
     await rateLimit(c.env, `creation:${user.id}`, 30);
     const ip = c.req.header("CF-Connecting-IP");
     if (ip)
@@ -199,6 +203,17 @@ app.get("/api/bootstrap", async (c) => {
   return c.json({
     wallet: user ? await paidWallet(c.env, user.id) : null,
     config: {
+      ...(await communityAccess(c.env, user)),
+      billingVisible:
+        checkoutConfigured(c.env) ||
+        !!(
+          user &&
+          (await c.env.DB.prepare(
+            "SELECT id FROM payment_orders WHERE user_id=? LIMIT 1",
+          )
+            .bind(user.id)
+            .first())
+        ),
       environment: c.env.ENVIRONMENT,
       providerMode: c.env.PROVIDER_MODE,
       development: isDevelopment(c.env),
@@ -461,7 +476,7 @@ app.post("/api/account/requests/:id/cancel", async (c) => {
 });
 app.get("/api/people/:id", async (c) => {
   const person = await c.env.DB.prepare(
-    "SELECT id,display_name AS displayName,created_at AS joinedAt FROM users WHERE id=? AND display_name!=''",
+    "SELECT id,public_name AS displayName,created_at AS joinedAt FROM users WHERE id=? AND public_name!='' AND deleted_at IS NULL",
   )
     .bind(c.req.param("id"))
     .first();
@@ -472,7 +487,7 @@ app.get("/api/people/:id", async (c) => {
       404,
     );
   const contributions = await c.env.DB.prepare(
-    "SELECT s.id,s.title,s.story_id AS storyId,s.episode_id AS episodeId,s.start_ms AS startMs,s.duration_ms AS durationMs,st.slug AS storySlug,st.title AS storyTitle,s.thumbnail_url AS thumbnailUrl FROM scenes s JOIN stories st ON st.id=s.story_id WHERE (s.author_id=? OR EXISTS(SELECT 1 FROM story_proposals p WHERE p.selected_task_id=s.task_id AND p.author_id=? AND p.status='published')) AND s.hidden=0 ORDER BY s.published_at DESC LIMIT 100",
+    "SELECT s.id,s.title,s.story_id AS storyId,s.episode_id AS episodeId,s.start_ms AS startMs,s.duration_ms AS durationMs,st.slug AS storySlug,st.title AS storyTitle,s.thumbnail_url AS thumbnailUrl FROM scenes s JOIN stories st ON st.id=s.story_id WHERE (s.author_id=? OR EXISTS(SELECT 1 FROM story_proposals p WHERE p.selected_task_id=s.task_id AND p.author_id=? AND p.status='published')) AND s.hidden=0 AND st.review_status='approved' AND st.status!='draft' ORDER BY s.published_at DESC LIMIT 100",
   )
     .bind(c.req.param("id"), c.req.param("id"))
     .all();
@@ -490,6 +505,7 @@ app.get("/api/stories/:id", async (c) => {
     user?.role !== "admin"
   )
     throw new AppError("not_found", "This story is not open yet.", 404);
+  visibleStory(story, user);
   const [characters, episodes, scenes, queue, progress] = await Promise.all([
     getCharacters(c.env, story.id),
     getEpisodes(c.env, story.id),
@@ -503,7 +519,20 @@ app.get("/api/stories/:id", async (c) => {
           .first()
       : null,
   ]);
-  return c.json({ story, characters, episodes, scenes, queue, progress });
+  return c.json({
+    story: {
+      ...story,
+      reviewNote:
+        story.ownerId === user?.id || user?.role === "admin"
+          ? story.reviewNote
+          : "",
+    },
+    characters,
+    episodes,
+    scenes,
+    queue,
+    progress,
+  });
 });
 app.get("/api/stories/:id/archive", async (c) => {
   const story = await getStory(c.env, c.req.param("id")),
@@ -520,6 +549,7 @@ app.get("/api/stories/:id/archive", async (c) => {
     .min(0)
     .max(story.version)
     .parse(c.req.query("through") ?? story.version);
+  visibleStory(story, user);
   return c.json(await publicArchive(c.env, story.id, version));
 });
 app.post("/api/stories", async (c) => {
@@ -574,7 +604,7 @@ app.post("/api/stories", async (c) => {
   return c.json({ story: await getStory(c.env, id) }, 201);
 });
 app.patch("/api/stories/:id", async (c) => {
-  const user = requireUser(c, true),
+  const user = await requireContributor(c, true),
     story = await getStory(c.env, c.req.param("id"));
   if (user.id !== story.ownerId && user.role !== "admin")
     throw new AppError(
@@ -585,6 +615,15 @@ app.patch("/api/stories/:id", async (c) => {
   const { status } = z
     .object({ status: z.enum(["open", "paused"]) })
     .parse(await c.req.json());
+  if (
+    status === "open" &&
+    (story.reviewStatus !== "approved" || story.publicationHold)
+  )
+    throw new AppError(
+      "story_review_required",
+      "The studio must review this story before it can open.",
+      409,
+    );
   await c.env.DB.prepare("UPDATE stories SET status=?,updated_at=? WHERE id=?")
     .bind(status, Date.now(), story.id)
     .run();
@@ -640,6 +679,7 @@ app.get("/api/stories/:id/events", async (c) => {
     c.get("user")?.role !== "admin"
   )
     throw new AppError("not_found", "Story not found.", 404);
+  visibleStory(story, c.get("user"));
   if (c.req.header("Upgrade")?.toLowerCase() !== "websocket")
     return c.json(
       { error: { message: "A WebSocket connection is required." } },
@@ -961,7 +1001,7 @@ app.on(["GET", "HEAD"], "/api/scenes/:id/video", async (c) => {
       403,
     );
   const row = await c.env.DB.prepare(
-    "SELECT s.media_key,s.hidden,s.story_id,st.fixture FROM scenes s JOIN stories st ON s.story_id=st.id WHERE s.id=?",
+    "SELECT s.media_key,s.hidden,s.story_id,st.fixture FROM scenes s JOIN stories st ON s.story_id=st.id WHERE s.id=? AND st.review_status='approved' AND st.status!='draft'",
   )
     .bind(c.req.param("id"))
     .first<{
@@ -994,7 +1034,7 @@ app.on(["GET", "HEAD"], "/api/scenes/:id/video", async (c) => {
 });
 app.get("/api/scenes/:id/captions", async (c) => {
   const row = await c.env.DB.prepare(
-    "SELECT captions_key,hidden,fixture FROM scenes WHERE id=?",
+    "SELECT sc.captions_key,sc.hidden,sc.fixture FROM scenes sc JOIN stories st ON st.id=sc.story_id WHERE sc.id=? AND st.review_status='approved' AND st.status!='draft'",
   )
     .bind(c.req.param("id"))
     .first<{ captions_key: string; hidden: number; fixture: number }>();

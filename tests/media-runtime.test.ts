@@ -67,7 +67,7 @@ test("Workers serves resumable media from a consistent R2 object", async (t) => 
         assert.equal(response.headers.get("Accept-Ranges"), "bytes");
         assert.equal(
           response.headers.get("Cache-Control"),
-          "public, max-age=60",
+          "public, no-cache, must-revalidate",
         );
         assert.equal(
           response.headers.get("Cross-Origin-Resource-Policy"),

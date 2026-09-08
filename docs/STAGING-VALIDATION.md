@@ -22,10 +22,16 @@ Seven tests cover permissions, validation, rejection settlement, retries, confli
 
 ## Verification and delivery
 
-- TypeScript, frontend build and 78 application/database/runtime tests passed.
+- TypeScript, frontend build and 85 application/database/runtime tests passed.
 - Isolated Worker/D1 integration passed 19 API subtests (20 runner tests).
 - Eight credential-helper tests passed, including separate ADMIN storage, safe child environment and redacted error output.
 - Worker dry-run bundling and staging preflight passed.
 - Hosted login, story/draft creation, preview, admission, video/R2 ingestion, speech check and rejection/credit return were exercised. Accepted publication, public byte-range video delivery, English captions and full desktop playback were also verified. Longer-story consistency, mobile and failure recovery acceptance, and production release remain pending.
 
 Actual account details, provider request IDs, authorization, billing and operational SQL stay in private operator records. The public repository keeps implementation, synthetic tests and this technical summary. GitHub CI verifies the pushed source; dashboard code patches do not by themselves prove that every source change is deployed.
+
+## Resumable media delivery
+
+An anonymous staging probe reproduced a partial response despite a mismatched `If-Range` validator. The Worker now sends the complete current file when a strong ETag does not match, ignores Range for HEAD and unsupported range units, and binds a partial R2 read to the inspected object's ETag. If the object changes during that read, it returns a complete current object with matching metadata. Date validators conservatively receive a full response because this endpoint does not expose a strong Last-Modified validator. This follows [HTTP range semantics](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.5) using [R2 conditional reads](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/#conditional-operations).
+
+Six native Workers/R2 scenarios cover full reads and HEAD, bounded/open/suffix ranges, stale or weak validators, invalid ranges and empty files, replacement races, and deletion races. Three scenarios failed against the prior implementation before the fix. These tests use a local R2 bucket and synthetic bytes; they do not prove mobile browser or throttled-network playback acceptance.

@@ -142,11 +142,16 @@ export async function serveR2(
 ): Promise<Response> {
   const head = await env.MEDIA.head(key);
   if (!head) return new Response("Media is unavailable.", { status: 404 });
-  const range = request.headers.get("range");
+  // RFC 9110: Range applies only to GET. We expose a strong ETag, but no
+  // Last-Modified validator; dates and weak/mismatched tags require a full read.
+  let range = request.method === "GET" ? request.headers.get("range") : null;
+  const ifRange = request.headers.get("if-range");
+  if (ifRange !== null && ifRange !== head.httpEtag) range = null;
+  if (range && !/^bytes=/i.test(range)) range = null;
   let start = 0,
     end = head.size - 1;
   if (range) {
-    const m = /^bytes=(\d*)-(\d*)$/.exec(range);
+    const m = /^bytes=(\d*)-(\d*)$/i.exec(range);
     if (!m || (!m[1] && !m[2]))
       return new Response(null, {
         status: 416,
@@ -163,24 +168,38 @@ export async function serveR2(
         headers: { "Content-Range": `bytes */${head.size}` },
       });
   }
+  let object: R2Object | R2ObjectBody = head;
+  if (request.method !== "HEAD") {
+    let result = await env.MEDIA.get(
+      key,
+      range
+        ? {
+            range: { offset: start, length: end - start + 1 },
+            onlyIf: { etagMatches: head.etag },
+          }
+        : undefined,
+    );
+    // R2 returns metadata without a body when the conditional read loses a
+    // replacement race. Restart with a full current object, never mixed bytes.
+    if (result && !("body" in result)) {
+      range = null;
+      result = await env.MEDIA.get(key);
+    }
+    if (!result) return new Response("Media is unavailable.", { status: 404 });
+    object = result;
+  }
   const headers = new Headers({
     "Content-Type": contentType,
     "Accept-Ranges": "bytes",
-    "Content-Length": String(end - start + 1),
-    ETag: head.httpEtag,
+    "Content-Length": String(range ? end - start + 1 : object.size),
+    ETag: object.httpEtag,
     "Cache-Control": publicMedia ? "public, max-age=60" : "private, no-store",
     "X-Content-Type-Options": "nosniff",
     "Cross-Origin-Resource-Policy": "same-origin",
   });
-  if (range) headers.set("Content-Range", `bytes ${start}-${end}/${head.size}`);
-  if (request.method === "HEAD")
-    return new Response(null, { status: range ? 206 : 200, headers });
-  const object = await env.MEDIA.get(
-    key,
-    range ? { range: { offset: start, length: end - start + 1 } } : undefined,
-  );
-  if (!object) return new Response("Media not found", { status: 404 });
-  return new Response(object.body, {
+  if (range)
+    headers.set("Content-Range", `bytes ${start}-${end}/${object.size}`);
+  return new Response("body" in object ? object.body : null, {
     status: range ? 206 : 200,
     headers,
   });

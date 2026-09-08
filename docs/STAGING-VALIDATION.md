@@ -10,7 +10,7 @@ Migration 0020 restricts preview, video, speech and archive calls to admitted te
 
 A real staging clip showed daylight and photorealistic rendering despite the saved night setting and hand-painted style. It was rejected and its creation credit returned; it did not become published story history. The request used only the director shot, cast and bridge, omitting the fixed world rules and style.
 
-Text-video preparation now reads these two fields from the story, prepends them to the final prompt and records them in the material snapshot. The regression uses a plan that omits both fields, fails before the fix and passes afterwards. Prompt inclusion does not guarantee model compliance; the next clip still needs visual and complete audio/text review.
+Text-video preparation now reads these two fields from the story, prepends them to the final prompt and records them in the material snapshot. The regression uses a plan that omits both fields, fails before the fix and passes afterwards. A subsequent real clip included both fields in the provider input and material snapshot, rendered the night setting and 2D style, and passed visual review plus operator-confirmed full audio review. It was published with reviewed English captions and author attribution. Longer-story continuity still needs separate validation.
 
 ## Completed-video cost review
 
@@ -18,7 +18,7 @@ Studio provides a separate **Check video cost** action for a completed real vide
 
 The cost and its audit receipt are written in one D1 transaction. The full reservation remains held until normal moderation settles the task. Identical retries preserve one receipt, conflicting reviews fail, and moderation that wins the race prevents a late cost adjustment. Fixture footage, unknown requests, inactive reservations and charges above the reservation cannot use this action. Investigate overruns separately; this action does not rewrite already settled ledgers.
 
-Seven tests cover permissions, validation, rejection settlement, retries, conflicting reviews, moderation races and transaction rollback. An isolated browser check submitted a synthetic verified charge through the actual Studio form and confirmed the updated amount and removal of the review action. Hosted deployment of this new action still needs verification.
+Seven tests cover permissions, validation, rejection settlement, retries, conflicting reviews, moderation races and transaction rollback. An isolated browser check submitted a synthetic verified charge through the actual Studio form and confirmed the updated amount and removal of the review action. The same action was then deployed to staging and used on a real completed request. Readback confirmed one audit receipt, one publication settlement, the verified cost and no remaining reservation.
 
 ## Verification and delivery
 
@@ -26,6 +26,6 @@ Seven tests cover permissions, validation, rejection settlement, retries, confli
 - Isolated Worker/D1 integration passed 19 API subtests (20 runner tests).
 - Eight credential-helper tests passed, including separate ADMIN storage, safe child environment and redacted error output.
 - Worker dry-run bundling and staging preflight passed.
-- Hosted login, story/draft creation, preview, admission, video/R2 ingestion, speech check and rejection/credit return were exercised. Successful accepted publication, longer-story consistency and production release are still pending.
+- Hosted login, story/draft creation, preview, admission, video/R2 ingestion, speech check and rejection/credit return were exercised. Accepted publication, public byte-range video delivery, English captions and full desktop playback were also verified. Longer-story consistency, mobile and failure recovery acceptance, and production release remain pending.
 
 Actual account details, provider request IDs, authorization, billing and operational SQL stay in private operator records. The public repository keeps implementation, synthetic tests and this technical summary. GitHub CI verifies the pushed source; dashboard code patches do not by themselves prove that every source change is deployed.

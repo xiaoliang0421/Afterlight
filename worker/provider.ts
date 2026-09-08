@@ -58,6 +58,12 @@ export async function prepareVideoRequest(
       "Video generation is not configured yet.",
       503,
     );
+  if (task.source_kind === "upload")
+    throw new AppError(
+      "upload_cannot_generate",
+      "An uploaded video cannot call the generation provider.",
+      409,
+    );
   const settings = await getSettings(env);
   if (
     !settings.generationEnabled ||
@@ -71,10 +77,11 @@ export async function prepareVideoRequest(
       503,
     );
   const model = task.provider_model;
-  if (task.generation_mode === "reference") {
+  if (task.billing_kind === "points" || task.generation_mode === "reference") {
     const wallet = await paidWallet(env, task.user_id);
     if (
-      !(await generationOffer(env)).referenceEnabled ||
+      (task.generation_mode === "reference" &&
+        !(await generationOffer(env)).referenceEnabled) ||
       wallet.held ||
       !wallet.covered ||
       wallet.reserved < task.quoted_points

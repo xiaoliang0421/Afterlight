@@ -22,7 +22,9 @@
     "paddleDuplicateEvents": false,
     "paddleOrderRecovery": false,
     "paddleCatalogVerified": false,
+    "paidTextFulfillment": false,
     "paidReferenceFulfillment": false,
+    "hostUploadFulfillment": false,
     "purchaseTerms": false
   }
 }

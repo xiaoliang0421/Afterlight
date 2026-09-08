@@ -32,6 +32,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
         { retries: { limit: 0, delay: "1 second" }, timeout: "2 minutes" },
         async () => {
           const t = await getTask(this.env, taskId);
+          if (t.source_kind === "upload") return null;
           if (
             event.payload.resumeKnown &&
             t.story_id === storyId &&
@@ -106,6 +107,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
           "prepare visibly labeled fixture for review",
           async () => {
             const t = await getTask(this.env, taskId);
+            if (t.source_kind === "upload") return null;
             if (t.status !== "Generating") return;
             await this.env.DB.prepare(
               "UPDATE tasks SET status='NeedsModeration',media_key='fixture:sample',captions_key='fixture:captions',media_duration_ms=10000,media_ready=1,cost_status='fixture',reason='Development playback fixture. This is not an AI-generated fulfillment of the submitted idea.',updated_at=? WHERE id=? AND status='Generating'",
@@ -121,6 +123,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<
         { retries: { limit: 0, delay: "1 second" }, timeout: "1 minute" },
         async () => {
           const t = await getTask(this.env, taskId);
+          if (t.source_kind === "upload") return null;
           if (t.provider_request_id) return;
           if (t.provider_attempt_id)
             throw new AppError(

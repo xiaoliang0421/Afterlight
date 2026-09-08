@@ -36,11 +36,11 @@ export async function sharePage(request: Request, env: Cloudflare.Env) {
         );
     const title =
       scene && !scene.hidden
-        ? `${scene.title} · Imagined by ${scene.author} — ${story.title}`
+        ? `${scene.title} · Produced by ${scene.author} — ${story.title}`
         : `${story.title} — ${brand.name}`;
     const description =
       scene && !scene.hidden
-        ? `A scene imagined by ${scene.author}. ${scene.englishPrompt}`
+        ? `A scene produced by ${scene.author}. ${scene.englishPrompt}`
         : story.logline;
     const canonical = new URL(`/story/${story.slug}`, env.PUBLIC_ORIGIN);
     if (scene && !scene.hidden) canonical.searchParams.set("scene", scene.id);

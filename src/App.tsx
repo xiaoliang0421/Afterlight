@@ -220,7 +220,7 @@ export function App() {
                 <span>
                   <strong>{boot.user.displayName || "Choose your name"}</strong>
                   <small>
-                    {boot.credits?.available ?? 0} free credits available
+                    {boot.wallet?.available ?? 0} creation points available
                   </small>
                 </span>
                 <ChevronDown size={14} />
@@ -230,7 +230,7 @@ export function App() {
                 <Avatar name="?" />
                 <span>
                   <strong>Join the story</strong>
-                  <small>Free to watch. Free to begin.</small>
+                  <small>Watch and propose for free.</small>
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -278,7 +278,7 @@ export function App() {
                 <>
                   <span className="credit-pill">
                     <Sparkles size={13} />
-                    {boot.credits?.available ?? 0} credits
+                    {boot.wallet?.available ?? 0} points
                   </span>
                   <div className="notification-wrap">
                     <button

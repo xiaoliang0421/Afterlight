@@ -587,12 +587,14 @@ function ModerationModal({
         controls
         playsInline
       />
-      <Author id={task.userId} name={task.author} label="IDEA CONTRIBUTED BY" />
+      <Author id={task.userId} name={task.author} label="PRODUCED BY" />
       <p className="modal-copy">
         The plan below is a starting point. Correct it to match the actual video
         before it becomes story history.
       </p>
-      <SpeechReview taskId={task.id} onCaptions={setCaptions} />
+      {task.sourceKind !== "upload" && (
+        <SpeechReview taskId={task.id} onCaptions={setCaptions} />
+      )}
       <div className="review-checks">
         {[
           "The actual audio is English (or there is no speech).",

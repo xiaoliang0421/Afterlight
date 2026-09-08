@@ -1,3 +1,4 @@
+import { MyProposals, UploadReviewModal } from "./ProductionPanel";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -570,6 +571,7 @@ export function ContributionsPage() {
         <Loading />
       ) : (
         <>
+          <MyProposals />
           <div className="filter-pills contribution-filters">
             {[
               "All contributions",
@@ -637,9 +639,11 @@ export function ContributionsPage() {
                       <div className="contribution-actions">
                         {["Draft", "NeedsReview"].includes(t.status) && (
                           <Button kind="secondary" onClick={() => setReview(t)}>
-                            {t.status === "Draft"
-                              ? "Preview & continue"
-                              : "Review new plan"}
+                            {t.sourceKind === "upload"
+                              ? "Review uploaded scene"
+                              : t.status === "Draft"
+                                ? "Preview & continue"
+                                : "Review new plan"}
                           </Button>
                         )}
                         {["Draft", "NeedsReview", "Queued"].includes(
@@ -691,12 +695,20 @@ export function ContributionsPage() {
           )}
         </>
       )}
-      {review && (
-        <ReviewModal
-          initial={review}
+      {review?.sourceKind === "upload" ? (
+        <UploadReviewModal
+          task={review}
           close={() => setReview(null)}
-          done={reload}
+          onChanged={reload}
         />
+      ) : (
+        review && (
+          <ReviewModal
+            initial={review}
+            close={() => setReview(null)}
+            done={reload}
+          />
+        )
       )}
     </div>
   );
@@ -728,7 +740,7 @@ function ReviewModal({
         </div>
       )}
       {task.reason && <Notice>{task.reason}</Notice>}
-      {task.generationMode === "reference" && (
+      {task.billingKind === "points" && (
         <Notice>
           {task.quotedPoints} purchased points will be reserved and used on
           publication. Failed or rejected scenes return the reservation.
@@ -790,7 +802,7 @@ function ReviewModal({
           }}
         >
           {task.plan
-            ? `Join the queue · ${task.generationMode === "reference" ? `${task.quotedPoints} points` : "1 free credit"}`
+            ? `Join the queue · ${task.billingKind === "points" ? `${task.quotedPoints} points` : "1 existing free credit"}`
             : "Prepare my scene plan"}
           <ArrowRight size={16} />
         </Button>
@@ -883,38 +895,24 @@ export function AccountPage() {
           </form>
         </section>
         <section className="credit-panel">
-          <span className="eyebrow">YOUR DAILY IMAGINATION ALLOWANCE</span>
+          <span className="eyebrow">YOUR CREATION BALANCE</span>
           <strong>
-            {boot.credits?.available ?? 0}
-            <small>free credits available</small>
+            {boot.wallet?.available ?? 0}
+            <small>points available</small>
           </strong>
-          <div className="credit-details">
-            <span>
-              Reserved for scenes in progress{" "}
-              <b>{boot.credits?.reserved ?? 0}</b>
-            </span>
-            <span>
-              Used on delivered scenes <b>{boot.credits?.spent ?? 0}</b>
-            </span>
-          </div>
           <p>
-            Resets{" "}
-            {new Date(boot.credits?.resetsAt ?? Date.now()).toLocaleString(
-              "en",
-              {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                timeZoneName: "short",
-              },
-            )}
-            .
+            Watch and share ideas for free. Top up points when you choose
+            platform generation.
           </p>
-          <Notice>
-            Daily free credits are for text-to-video. They are separate from
-            purchased creation points and are never charged automatically.
-          </Notice>
+          <a href="#creation-points" className="button secondary">
+            Top up creation points
+          </a>
+          {!!boot.credits?.reserved && (
+            <p className="fine-print">
+              {boot.credits.reserved} legacy free credits remain reserved for
+              earlier tasks.
+            </p>
+          )}
         </section>
       </div>
       <BillingPanel />
@@ -974,8 +972,8 @@ export function PersonPage({ id }: { id: string }) {
         <h1>{person.displayName}</h1>
         <p>
           {contributions.length}{" "}
-          {contributions.length === 1 ? "scene" : "scenes"} imagined. Part of
-          something bigger.
+          {contributions.length === 1 ? "scene" : "scenes"} contributed to. Part
+          of something bigger.
         </p>
       </div>
       <div className="page-heading">
@@ -1000,7 +998,8 @@ export function PersonPage({ id }: { id: string }) {
               <span className="eyebrow">{c.storyTitle}</span>
               <h3>{c.title}</h3>
               <p>
-                Imagined by {person.displayName} · {formatTime(c.durationMs)}
+                Contribution by {person.displayName} ·{" "}
+                {formatTime(c.durationMs)}
               </p>
             </div>
           </Link>
@@ -1036,8 +1035,9 @@ export function AboutPage() {
             English scene plan.
           </li>
           <li>
-            Approve the plan and reserve one free credit. Ideas take turns
-            within their own story.
+            The host chooses ideas, then uploads a finished video or reserves
+            creation points to generate a scene. Scenes take turns within their
+            own story.
           </li>
           <li>
             Before generation, we check the latest story again. Major changes
@@ -1094,9 +1094,9 @@ export function AboutPage() {
           paused and content removed after review.
         </p>
         <p>
-          Free credits have limits. There is no automatic purchase, subscription
-          or charge to a user account. Paid features, if introduced later,
-          require a separate choice.
+          Platform generation uses prepaid creation points. There is no
+          automatic purchase, subscription or charge to a user account. Paid
+          features, if introduced later, require a separate choice.
         </p>
       </section>
       <section>

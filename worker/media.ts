@@ -2,9 +2,15 @@ import { AppError } from "./errors";
 
 type ReadRange = (offset: number, length: number) => Promise<ArrayBuffer>;
 // Read only MP4 box headers and the bounded movie metadata, never the complete video in memory.
-export async function probeMp4(read: ReadRange, size: number): Promise<number> {
+export async function probeMp4(
+  read: ReadRange,
+  size: number,
+  maxDurationMs = 20000,
+): Promise<number> {
   let offset = 0;
+  let boxes = 0;
   while (offset + 8 <= size) {
+    if (++boxes > 512) break;
     const head = new DataView(await read(offset, Math.min(16, size - offset)));
     if (head.byteLength < 8) break;
     let length = head.getUint32(0),
@@ -54,10 +60,15 @@ export async function probeMp4(read: ReadRange, size: number): Promise<number> {
             ? Number(box.getBigUint64(pos + 24))
             : box.getUint32(pos + 16);
           const ms = Math.round((duration / scale) * 1000);
-          if (!scale || !Number.isSafeInteger(ms) || ms <= 0 || ms > 20000)
+          if (
+            !scale ||
+            !Number.isSafeInteger(ms) ||
+            ms < 1000 ||
+            ms > maxDurationMs
+          )
             throw new AppError(
               "invalid_duration",
-              "The generated clip has an unexpected duration.",
+              `The video must be between 1 and ${maxDurationMs / 1000} seconds.`,
               409,
             );
           return ms;
@@ -72,6 +83,124 @@ export async function probeMp4(read: ReadRange, size: number): Promise<number> {
     "The generated video needs media inspection before publication.",
     409,
   );
+}
+// Finished uploads use a separate duration and codec contract from generated clips.
+export async function probeUploadedMedia(
+  env: Cloudflare.Env,
+  key: string,
+  expectedBytes: number,
+) {
+  const head = await env.MEDIA.head(key);
+  if (!head || head.size !== expectedBytes || head.size > 64 * 1024 * 1024)
+    throw new AppError(
+      "invalid_upload",
+      "The uploaded file is incomplete or too large.",
+      409,
+    );
+  const read: ReadRange = async (offset, length) => {
+    const part = await env.MEDIA.get(key, {
+      range: { offset, length },
+      onlyIf: { etagMatches: head.etag },
+    });
+    if (!part || !("body" in part))
+      throw new AppError(
+        "upload_changed",
+        "The uploaded file changed during inspection.",
+        409,
+      );
+    return part.arrayBuffer();
+  };
+  const duration = await probeMp4(read, head.size, 60000);
+  let offset = 0,
+    count = 0,
+    video = false,
+    data = false,
+    brand = false;
+  const typeAt = (v: DataView, n: number) =>
+    String.fromCharCode(...new Uint8Array(v.buffer, v.byteOffset + n, 4));
+  const inspect = (v: DataView, depth = 0) => {
+    if (depth > 8)
+      throw new AppError("invalid_upload", "Invalid MP4 structure.", 409);
+    let pos = 0;
+    while (pos + 8 <= v.byteLength) {
+      const size = v.getUint32(pos),
+        kind = typeAt(v, pos + 4);
+      if (size < 8 || pos + size > v.byteLength)
+        throw new AppError("invalid_upload", "Invalid MP4 metadata.", 409);
+      if (["trak", "mdia", "minf", "stbl"].includes(kind))
+        inspect(
+          new DataView(v.buffer, v.byteOffset + pos + 8, size - 8),
+          depth + 1,
+        );
+      if (kind === "stsd") {
+        if (size < 16)
+          throw new AppError(
+            "invalid_upload",
+            "Missing MP4 codec information.",
+            409,
+          );
+        let entry = pos + 16;
+        for (let i = 0; i < v.getUint32(pos + 12); i++) {
+          if (entry + 8 > pos + size)
+            throw new AppError(
+              "invalid_upload",
+              "Invalid MP4 codec information.",
+              409,
+            );
+          const length = v.getUint32(entry),
+            codec = typeAt(v, entry + 4);
+          if (
+            length < 8 ||
+            entry + length > pos + size ||
+            !["avc1", "avc3", "mp4a"].includes(codec)
+          )
+            throw new AppError(
+              "upload_codec",
+              "Export an MP4 with H.264 video and AAC audio (or no audio).",
+              409,
+            );
+          if (codec === "avc1" || codec === "avc3") video = true;
+          entry += length;
+        }
+      }
+      pos += size;
+    }
+  };
+  while (offset + 8 <= head.size && ++count <= 512) {
+    const v = new DataView(
+      await read(offset, Math.min(16, head.size - offset)),
+    );
+    let length = v.getUint32(0),
+      header = 8;
+    const kind = typeAt(v, 4);
+    if (length === 1) {
+      if (v.byteLength < 16) break;
+      length = Number(v.getBigUint64(8));
+      header = 16;
+    }
+    if (length === 0) length = head.size - offset;
+    if (
+      !Number.isSafeInteger(length) ||
+      length < header ||
+      offset + length > head.size
+    )
+      break;
+    if (kind === "ftyp") brand = true;
+    if (kind === "mdat" && length > header) data = true;
+    if (kind === "moov") {
+      if (length > 2 * 1024 * 1024)
+        throw new AppError("invalid_upload", "MP4 metadata is too large.", 409);
+      inspect(new DataView(await read(offset + header, length - header)));
+    }
+    offset += length;
+  }
+  if (!brand || !video || !data || offset !== head.size)
+    throw new AppError(
+      "invalid_upload",
+      "Upload a complete playable MP4 video.",
+      409,
+    );
+  return duration;
 }
 export async function probeStoredMedia(env: Cloudflare.Env, key: string) {
   const head = await env.MEDIA.head(key);

@@ -29,6 +29,8 @@ const scenes: Scene[] = [0, 1, 2].map((i) => ({
   author: `Test author ${i + 1}`,
   authorId: `local-author-${i}`,
   source: "studio",
+  productionSource: "generated",
+  contributors: [],
   fixture: true,
   publishedAt: 0,
   hidden: false,

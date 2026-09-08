@@ -22,13 +22,22 @@ interface OrderRow extends OrderExpectation {
 }
 export async function generationOffer(env: Cloudflare.Env) {
   const settings = await env.DB.prepare(
-    "SELECT reference_generation_enabled,reference_points,reference_reserve_cents FROM settings WHERE id=1",
+    "SELECT text_points,task_reserve_cents,uploads_enabled,reference_generation_enabled,reference_points,reference_reserve_cents FROM settings WHERE id=1",
   ).first<{
+    text_points: number;
+    task_reserve_cents: number;
+    uploads_enabled: number;
     reference_generation_enabled: number;
     reference_points: number;
     reference_reserve_cents: number;
   }>();
   return {
+    textEnabled:
+      (settings?.text_points ?? 0) > 0 &&
+      (settings?.task_reserve_cents ?? 0) >= 40,
+    textPoints: settings?.text_points ?? 0,
+    textReserveCents: settings?.task_reserve_cents ?? 0,
+    uploadsEnabled: !!settings?.uploads_enabled,
     referenceEnabled:
       env.REFERENCE_GENERATION_ENABLED === "true" &&
       !!settings?.reference_generation_enabled &&
@@ -147,7 +156,9 @@ billing.get("/", async (c) => {
       .all<BillingOverview["requests"][number]>(),
   ]);
   return c.json({
-    enabled: checkoutConfigured(c.env) && offer.referenceEnabled,
+    enabled:
+      checkoutConfigured(c.env) &&
+      (offer.textEnabled || offer.referenceEnabled),
     environment,
     ...offer,
     wallet,
@@ -218,9 +229,10 @@ billing.post("/admin/requests/:id/respond", async (c) => {
   return c.json({ ok: true });
 });
 billing.post("/checkout", async (c) => {
+  const offer = await generationOffer(c.env);
   if (
     !checkoutConfigured(c.env) ||
-    !(await generationOffer(c.env)).referenceEnabled
+    !(offer.textEnabled || offer.referenceEnabled)
   )
     throw new AppError(
       "payment_disabled",
@@ -268,7 +280,10 @@ billing.post("/checkout", async (c) => {
       capacity.balance_cents -
         capacity.debited_cents -
         capacity.reserved_cents <
-        (await generationOffer(c.env)).referenceReserveCents
+        Math.min(
+          offer.textEnabled ? offer.textReserveCents : Infinity,
+          offer.referenceEnabled ? offer.referenceReserveCents : Infinity,
+        )
     )
       throw new AppError(
         "capacity_full",
@@ -448,10 +463,11 @@ billing.post("/orders/:id/sync", async (c) => {
   return c.json({ ok: true });
 });
 billing.post("/orders/:id/checkout", async (c) => {
+  const offer = await generationOffer(c.env);
   const user = requireUser(c, true);
   if (
     !checkoutConfigured(c.env) ||
-    !(await generationOffer(c.env)).referenceEnabled
+    !(offer.textEnabled || offer.referenceEnabled)
   )
     throw new AppError("payment_disabled", "Purchases are paused.", 403);
   const order = await c.env.DB.prepare(

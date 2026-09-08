@@ -20,7 +20,8 @@ test("watch, identify a scene author and switch independent worlds", async ({
     .getByRole("button", { name: "The Last Light", exact: true })
     .click();
   await page
-    .getByRole("link", { name: "The Quiet Orbit", exact: true })
+    .getByRole("banner")
+    .getByRole("link", { name: "The Quiet Orbit Science fiction", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "The Quiet Orbit", exact: true }),
@@ -29,6 +30,6 @@ test("watch, identify a scene author and switch independent worlds", async ({
     page.getByRole("slider", { name: "Playback position" }),
   ).toHaveAttribute("max", "10000");
   await expect(
-    page.getByRole("textbox", { name: "Your idea for The Quiet Orbit" }),
+    page.getByRole("textbox", { name: "Your proposal" }),
   ).toBeVisible();
 });

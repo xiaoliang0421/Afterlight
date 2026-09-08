@@ -46,6 +46,7 @@ import {
   billing,
   generationOffer,
   checkoutConfigured,
+  paidWallet,
   receivePaddleWebhook,
   reconcilePayments,
 } from "./billing";
@@ -59,6 +60,7 @@ import { verifyHuman } from "./turnstile";
 import { recordedReconciliation } from "./operations";
 import { accountExport } from "./account-export";
 import { reconcile } from "./reconciliation";
+import { production } from "./production";
 export { ArchiveWorkflow } from "./archive-workflow";
 export { StoryRoom } from "./story-room";
 export { GenerationWorkflow } from "./generation";
@@ -74,9 +76,13 @@ app.post("/api/billing/webhook", bodyLimit({ maxSize: 262144 }), async (c) => {
   );
   return c.json({ received: true });
 });
-app.use(
-  "/api/*",
-  bodyLimit({
+app.use("/api/*", async (c, next) => {
+  if (
+    c.req.method === "PUT" &&
+    /^\/api\/production\/[^/]+\/file$/.test(c.req.path)
+  )
+    return next();
+  return bodyLimit({
     maxSize: 32768,
     onError: (c) =>
       c.json(
@@ -88,8 +94,8 @@ app.use(
         },
         413,
       ),
-  }),
-);
+  })(c, next);
+});
 app.use("/api/*", async (c, next) => {
   const requestId = crypto.randomUUID();
   c.set("requestId", requestId);
@@ -106,7 +112,13 @@ app.use("/api/*", async (c, next) => {
         "This request did not come from this website.",
         403,
       );
-    if (!c.req.header("content-type")?.startsWith("application/json"))
+    if (
+      !(
+        c.req.method === "PUT" &&
+        /^\/api\/production\/[^/]+\/file$/.test(c.req.path)
+      ) &&
+      !c.req.header("content-type")?.startsWith("application/json")
+    )
       throw new AppError("json_required", "Send this request as JSON.", 400);
   }
   if (!c.req.path.startsWith("/api/auth/")) c.set("user", await currentUser(c));
@@ -185,6 +197,7 @@ app.get("/api/bootstrap", async (c) => {
     ],
   );
   return c.json({
+    wallet: user ? await paidWallet(c.env, user.id) : null,
     config: {
       environment: c.env.ENVIRONMENT,
       providerMode: c.env.PROVIDER_MODE,
@@ -200,7 +213,12 @@ app.get("/api/bootstrap", async (c) => {
         )
           .bind(user.id)
           .first()),
-      paymentsEnabled: checkoutConfigured(c.env) && offer.referenceEnabled,
+      paymentsEnabled:
+        checkoutConfigured(c.env) &&
+        (offer.textEnabled || offer.referenceEnabled),
+      textEnabled: offer.textEnabled,
+      textPoints: offer.textPoints,
+      uploadsEnabled: offer.uploadsEnabled,
       referenceEnabled: offer.referenceEnabled,
       referencePoints: offer.referencePoints,
       supportEmail: c.env.SUPPORT_EMAIL,
@@ -454,9 +472,9 @@ app.get("/api/people/:id", async (c) => {
       404,
     );
   const contributions = await c.env.DB.prepare(
-    "SELECT s.id,s.title,s.story_id AS storyId,s.episode_id AS episodeId,s.start_ms AS startMs,s.duration_ms AS durationMs,st.slug AS storySlug,st.title AS storyTitle,s.thumbnail_url AS thumbnailUrl FROM scenes s JOIN stories st ON st.id=s.story_id WHERE s.author_id=? AND s.hidden=0 ORDER BY s.published_at DESC LIMIT 100",
+    "SELECT s.id,s.title,s.story_id AS storyId,s.episode_id AS episodeId,s.start_ms AS startMs,s.duration_ms AS durationMs,st.slug AS storySlug,st.title AS storyTitle,s.thumbnail_url AS thumbnailUrl FROM scenes s JOIN stories st ON st.id=s.story_id WHERE (s.author_id=? OR EXISTS(SELECT 1 FROM story_proposals p WHERE p.selected_task_id=s.task_id AND p.author_id=? AND p.status='published')) AND s.hidden=0 ORDER BY s.published_at DESC LIMIT 100",
   )
-    .bind(c.req.param("id"))
+    .bind(c.req.param("id"), c.req.param("id"))
     .all();
   return c.json({ person, contributions: contributions.results });
 });
@@ -651,8 +669,9 @@ app.post("/api/stories/:id/tasks", async (c) => {
   await rateLimit(c.env, `draft:${user.id}`, 10);
   const input = promptInputSchema.parse(await c.req.json());
   const requestedCast = JSON.stringify([...input.characterIds].sort());
+  const proposals = JSON.stringify([...input.proposalIds].sort());
   const prior = await c.env.DB.prepare(
-    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode FROM tasks WHERE user_id=? AND idempotency_key=?",
+    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode,source_kind,proposal_ids_json FROM tasks WHERE user_id=? AND idempotency_key=?",
   )
     .bind(user.id, input.idempotencyKey)
     .first<{
@@ -661,13 +680,17 @@ app.post("/api/stories/:id/tasks", async (c) => {
       prompt_original: string;
       requested_character_ids_json: string;
       generation_mode: string;
+      source_kind: string;
+      proposal_ids_json: string;
     }>();
   if (prior) {
     if (
       prior.story_id !== story.id ||
       prior.prompt_original !== input.prompt ||
       prior.requested_character_ids_json !== requestedCast ||
-      prior.generation_mode !== input.generationMode
+      prior.generation_mode !== input.generationMode ||
+      prior.source_kind !== "generated" ||
+      prior.proposal_ids_json !== proposals
     )
       throw new AppError(
         "idempotency_conflict",
@@ -677,10 +700,16 @@ app.post("/api/stories/:id/tasks", async (c) => {
     return c.json({ task: taskDto(await getTask(c.env, prior.id)) });
   }
   const offer = await generationOffer(c.env);
+  if (input.generationMode === "text" && !offer.textEnabled)
+    throw new AppError(
+      "generation_price_unavailable",
+      "Platform generation pricing is being prepared. You can submit a proposal to the host.",
+      409,
+    );
   if (input.generationMode === "reference" && !offer.referenceEnabled)
     throw new AppError(
       "reference_unavailable",
-      "Reference-guided creation is being prepared. You can use free text-to-video today.",
+      "Reference-guided creation is being prepared. Select an available generation method.",
       409,
     );
   const availableCharacters = await getCharacters(
@@ -700,27 +729,38 @@ app.post("/api/stories/:id/tasks", async (c) => {
     );
   const id = crypto.randomUUID(),
     now = Date.now();
-  await c.env.DB.prepare(
-    "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at,requested_character_ids_json,generation_mode,provider_model,quoted_points,quoted_reserve_cents) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,idempotency_key) DO NOTHING",
-  )
-    .bind(
-      id,
-      story.id,
-      user.id,
-      input.prompt,
-      story.version,
-      input.idempotencyKey,
-      now,
-      now,
-      requestedCast,
-      input.generationMode,
-      generationModels[input.generationMode],
-      input.generationMode === "reference" ? offer.referencePoints : 0,
-      input.generationMode === "reference" ? offer.referenceReserveCents : 0,
+  let insertError: unknown;
+  try {
+    await c.env.DB.prepare(
+      "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at,requested_character_ids_json,generation_mode,provider_model,quoted_points,quoted_reserve_cents,billing_kind,proposal_ids_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,idempotency_key) DO NOTHING",
     )
-    .run();
+      .bind(
+        id,
+        story.id,
+        user.id,
+        input.prompt,
+        story.version,
+        input.idempotencyKey,
+        now,
+        now,
+        requestedCast,
+        input.generationMode,
+        generationModels[input.generationMode],
+        input.generationMode === "reference"
+          ? offer.referencePoints
+          : offer.textPoints,
+        input.generationMode === "reference"
+          ? offer.referenceReserveCents
+          : offer.textReserveCents,
+        "points",
+        proposals,
+      )
+      .run();
+  } catch (error) {
+    insertError = error;
+  }
   const saved = await c.env.DB.prepare(
-    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode FROM tasks WHERE user_id=? AND idempotency_key=?",
+    "SELECT id,story_id,prompt_original,requested_character_ids_json,generation_mode,source_kind,proposal_ids_json FROM tasks WHERE user_id=? AND idempotency_key=?",
   )
     .bind(user.id, input.idempotencyKey)
     .first<{
@@ -729,13 +769,18 @@ app.post("/api/stories/:id/tasks", async (c) => {
       prompt_original: string;
       requested_character_ids_json: string;
       generation_mode: string;
+      source_kind: string;
+      proposal_ids_json: string;
     }>();
+  if (!saved && insertError) throw insertError;
   if (
     !saved ||
     saved.story_id !== story.id ||
     saved.prompt_original !== input.prompt ||
     saved.requested_character_ids_json !== requestedCast ||
-    saved.generation_mode !== input.generationMode
+    saved.generation_mode !== input.generationMode ||
+    saved.source_kind !== "generated" ||
+    saved.proposal_ids_json !== proposals
   )
     throw new AppError(
       "idempotency_conflict",
@@ -764,6 +809,21 @@ app.post("/api/tasks/:id/preview", async (c) => {
     throw new AppError(
       "task_changed",
       "This contribution is already being processed.",
+      409,
+    );
+  if (t.source_kind === "upload")
+    throw new AppError(
+      "upload_not_generated",
+      "Review the uploaded video and its story information directly.",
+      409,
+    );
+  if (
+    t.billing_kind === "points" &&
+    (await paidWallet(c.env, t.user_id)).available < t.quoted_points
+  )
+    throw new AppError(
+      "paid_credits_unavailable",
+      "Top up creation points before preparing a generated scene.",
       409,
     );
   await rateLimit(c.env, `preview:${t.user_id}`, 3);
@@ -826,7 +886,7 @@ app.post("/api/tasks/:id/accept", async (c) => {
       409,
     );
   await assertOwnerApproval(c.env, t);
-  if (String(c.env.PROVIDER_MODE) === "disabled")
+  if (t.source_kind !== "upload" && String(c.env.PROVIDER_MODE) === "disabled")
     throw new AppError(
       "generation_unavailable",
       "Creation is not available yet. Your idea is saved.",
@@ -1002,6 +1062,7 @@ app.post("/api/notifications/read", async (c) => {
   return c.json({ ok: true });
 });
 app.route("/api/billing", billing);
+app.route("/api", production);
 app.route("/api", governance);
 app.route("/api/admin", admin);
 app.notFound((c) =>

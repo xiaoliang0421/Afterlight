@@ -307,7 +307,7 @@ function draft(
     englishPrompt: "A light appears beside the old door.",
   });
   db.prepare(
-    `INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at,billing_kind) VALUES(?,?,?,?,?,?,?,?,?,?,'legacy-free')`,
   ).run(
     id,
     story,

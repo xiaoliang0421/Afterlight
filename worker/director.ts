@@ -14,6 +14,7 @@ import { z } from "zod";
 
 // Reference URLs belong to the separately reviewed media workflow, never model output.
 const directorPlanSchema = planSchema.extend({
+  durationSeconds: z.literal(10),
   newCharacters: z
     .array(
       characterSchema.pick({

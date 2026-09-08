@@ -8,6 +8,15 @@ export class AppError extends Error {
   }
 }
 export const errorMessages: Record<string, string> = {
+  deletion_active_proposals:
+    "A selected audience proposal is still in production. Resolve it before deleting this account.",
+  proposal_changed:
+    "This proposal is no longer available. Refresh the story before selecting it.",
+  upload_not_ready:
+    "Check the uploaded video and its connection to the current story before submitting.",
+  upload_owner_required: "Only the story host can upload a finished video.",
+  generation_price_unavailable:
+    "Platform generation pricing is being prepared. You can still submit an idea to the host.",
   generation_restricted:
     "Generation is currently limited to approved test accounts. Your idea is saved.",
   account_deleted:
@@ -21,7 +30,7 @@ export const errorMessages: Record<string, string> = {
   owner_review_full:
     "This story has too many pending decisions. Your idea is saved; try again later.",
   reference_unavailable:
-    "Reference-guided creation is not open yet. Free text-to-video remains available.",
+    "Reference-guided creation is not open yet. Select an available generation method.",
   paid_credits_unavailable:
     "There are not enough available purchased points, or your payment needs review.",
   "payment_orders.user_id":

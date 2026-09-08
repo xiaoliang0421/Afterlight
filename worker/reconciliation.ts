@@ -1,3 +1,4 @@
+import { cleanupUploads } from "./production";
 import { reconcilePayments } from "./billing";
 import { cleanupDeletedAccountMedia } from "./account-deletion";
 import { reconcileSpeechChecks } from "./speech";
@@ -78,6 +79,7 @@ export async function reconcile(env: Cloudflare.Env, runId?: string) {
       {
         name: "housekeeping",
         run: async () => {
+          await cleanupUploads(env);
           await env.DB.batch([
             env.DB.prepare("DELETE FROM rate_limits WHERE expires_at<?").bind(
               Date.now(),

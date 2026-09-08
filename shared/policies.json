@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-06-draft5",
+  "version": "2026-09-08-draft6",
   "status": "draft",
-  "updatedAt": "2026-09-06",
+  "updatedAt": "2026-09-08",
   "effectiveAt": null,
   "operatorName": "",
   "contactName": "TaleRelay Support",
@@ -22,7 +22,8 @@
         "Account information: the account identifier and email supplied through Google sign-in, your chosen public nickname, session information, and records of the terms version you accepted. The authentication service may also receive the name and profile image permitted by Google; these are not automatically used as your public storyteller identity.",
         "Creative information: world and character details, saved prompts, English adaptations, approved scene plans, generated media, captions, contribution credits, reference materials and moderation decisions. A private draft is not public, but requesting an AI preview or generation sends relevant creative information to the configured model provider.",
         "Activity and support information: saved stories, viewing progress, credit reservations and usage, task status, reports, account requests and administrative audit records. Hosting and security providers also process technical request information such as IP address, browser and error information when delivering and protecting the service.",
-        "Purchase information, when enabled: point package, order and Paddle transaction identifiers, amount, currency, tax totals, payment status, purchase-term acceptance, point grants and adjustments. Full card details are handled by Paddle and are not stored in TaleRelay."
+        "Purchase information, when enabled: point package, order and Paddle transaction identifiers, amount, currency, tax totals, payment status, purchase-term acceptance, point grants and adjustments. Full card details are handled by Paddle and are not stored in TaleRelay.",
+        "Audience proposals include the original text, author, story version, host-selection status and exact contribution acceptance. Upload records include the finished video, declared story information, upload size, permission confirmation and processing status."
       ]
     },
     {
@@ -31,7 +32,8 @@
       "paragraphs": [
         "Your public nickname, contributor identifier, published original prompt, English adaptation and scene credit are visible with a published contribution, including its timeline and share page. Public story descriptions, character information and videos are also visible. A queued contribution may show your nickname and task stage before publication.",
         "Your account email, unpublished private prompts, account requests and credit records are not exposed through public contributor pages. Authorized studio staff can access information needed to operate the service and handle requests. Do not include contact details, credentials or sensitive personal information in a creative submission.",
-        "Public material may be viewed, linked, indexed or copied by others. Removing a page from TaleRelay cannot guarantee removal of independent copies, but this does not limit applicable privacy or removal rights."
+        "Public material may be viewed, linked, indexed or copied by others. Removing a page from TaleRelay cannot guarantee removal of independent copies, but this does not limit applicable privacy or removal rights.",
+        "A submitted audience proposal is visible to its author and the story host. If adopted in a published scene, its original text and nickname appear as contribution credits. The producer's unpublished video remains private until publication. Selected proposals must be resolved before account deletion; published proposal text is removed and attribution anonymized on approved account erasure."
       ]
     },
     {
@@ -107,9 +109,8 @@
       "id": "process",
       "title": "How contributions work",
       "paragraphs": [
-        "You may submit an idea in any supported input language. The service adapts it into an English scene plan. Review the adaptation and the public-attribution notice before joining the queue. Within a story, accepted ideas wait their turn; when an idea is ready to run, the service checks it against the latest published scene.",
-        "Small continuity edits may be needed to preserve the approved intent. Material changes return for review. An unfinished or rejected video does not become story canon. Submission does not guarantee publication, exact creative output, character similarity or a completion time. The interface distinguishes queued work, generation, review and failure.",
-        "An eligible queued task may be withdrawn. Once a paid provider request has started, cancellation may no longer prevent its processing. The application explains the available action and the treatment of reserved credits; it does not claim an uncertain upstream request was safely cancelled."
+        "Viewers can share a proposal privately with a story host without starting a model call or spending generation points. The host may select proposals and produce a scene using platform generation or a finished-video upload. Selection does not promise publication. An unselected proposal can be withdrawn; a selected proposal remains attached while the host's production is resolved.",
+        "Platform generation adapts an idea into an English scene plan. The person starting generation reviews its quoted creation-point cost and publication attribution before queue admission. Uploaded videos use the host's description of actual events, with permission-to-publish confirmation and playback review. Both methods are subject to story continuity, content review and available capacity. Only approved footage advances the story."
       ]
     },
     {
@@ -119,7 +120,8 @@
         "You retain any rights you hold in your original submission. Submit only material you have the right to use and authorize for this purpose, including any recognizable person’s image or voice. Do not provide confidential information or reference material without permission.",
         "When you request adaptation or generation, you grant TaleRelay a non-exclusive permission to process and adapt the necessary submission through its service providers for that task. When you approve publication, this permission includes hosting, reproducing, displaying, streaming, captioning, adapting and archiving the contribution as part of the shared story, and allowing later scenes to continue from it. It is limited to operating and presenting the service and its story/share pages; this draft does not grant unrelated advertising or model-training rights.",
         "Published contributions carry your chosen nickname and original-prompt attribution. Other participants can continue the shared story through the platform; they do not automatically acquire ownership of your original submission. Attribution is not a guarantee that an AI output has copyright protection, is exclusive, or belongs wholly to a single contributor.",
-        "You can request content removal or a change to identifying attribution. Publication in a shared story can require reviewing dependent scenes, but does not override applicable privacy, intellectual-property or other mandatory rights. The final retention and withdrawal process must be operational before launch."
+        "You can request content removal or a change to identifying attribution. Publication in a shared story can require reviewing dependent scenes, but does not override applicable privacy, intellectual-property or other mandatory rights. The final retention and withdrawal process must be operational before launch.",
+        "When you explicitly share a proposal for host selection, you permit its use in a reviewed adaptation and, if the resulting scene is published, display of the original proposal and your nickname as an idea contribution. Scene producer credit and adopted proposal credit are recorded separately. A host uploading a video must have permission to publish its footage, images, music and voices, and grant the service the hosting and display permissions described above."
       ]
     },
     {
@@ -135,11 +137,9 @@
       "id": "credits",
       "title": "Free allowances, purchased points and refunds",
       "paragraphs": [
-        "Text-to-video uses a limited daily free allowance, subject to platform capacity. Reference-guided creation, when available, uses separately purchased creation points. Both join the same story queue. Purchased points do not give queue priority. The mode and point quote are shown before admission and are not silently changed when settings change.",
-        "The current development preview has no live checkout. When purchases are enabled, you choose a one-time point package and review the price, currency, applicable tax and purchase terms in checkout. There is no subscription or automatic top-up. Only a server-verified completed payment grants points; a browser success message is not proof of an available balance. Sandbox orders are tests and do not represent real purchases.",
-        "A scene reserves the displayed allowance or points on joining the queue and consumes them on approved publication. An eligible withdrawal, failed generation or rejected output returns the reservation. An uncertain provider request may retain the reservation until reconciled. Returning generation points does not itself refund a payment. Visual references can improve continuity but do not guarantee an identical face, style or seamless transition.",
-        "Free allowances reset daily. Purchased points do not reset daily and are not transferable, redeemable for cash or an investment. Point packages, any expiry conditions and fulfillment terms must be approved and displayed before live sales begin. An existing free task never becomes a payable task merely because capacity runs out.",
-        "For a purchase refund or a problem with delivered output, use Payment help beside the relevant order in Account, and include the scene identifier where applicable. Money refunds are handled through Paddle and may require review. Approved full or partial payment refunds remove the corresponding purchased points; a refund of already-used points may restrict further paid creation while the balance is reviewed. No further charge is made automatically. Applicable mandatory consumer and refund rights are not waived by these draft terms."
+        "New platform text-to-video and reference-guided generation use prepaid creation points. The displayed quote is attached to the task before admission. The account confirming generation reserves and pays the quoted points; adopting another person's proposal does not debit that proposal author's balance. Existing tasks created under a free allowance keep their original settlement rules.",
+        "Points are reserved when a generation task enters the queue and consumed on approved publication. Cancellation before generation, failed delivery or moderation rejection releases the point reservation. An uncertain provider outcome remains reserved until verified. Returning generation points is distinct from refunding a purchase. Uploading a finished video does not use video-generation points; storage and service limits still apply.",
+        "Point packages, prices, taxes and purchase conditions are shown before checkout when purchases are enabled. There is no automatic recharge or subscription. Development balances are simulated and cannot be purchased, withdrawn or redeemed. Commercial availability remains subject to merchant setup and release acceptance."
       ]
     },
     {

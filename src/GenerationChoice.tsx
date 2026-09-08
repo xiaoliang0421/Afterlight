@@ -6,12 +6,16 @@ export function GenerationChoice({
   onChange,
   referenceEnabled,
   points,
+  textPoints,
+  textEnabled,
   disabled = false,
 }: {
   value: GenerationMode;
   onChange: (mode: GenerationMode) => void;
   referenceEnabled: boolean;
   points: number;
+  textPoints: number;
+  textEnabled: boolean;
   disabled?: boolean;
 }) {
   return (
@@ -27,10 +31,12 @@ export function GenerationChoice({
           name="generation-mode"
           value="text"
           checked={value === "text"}
+          disabled={!textEnabled}
           onChange={() => onChange("text")}
         />
         <span className="generation-option-title">
-          <Type size={16} /> Text to video <b>FREE</b>
+          <Type size={16} /> Text to video{" "}
+          <b>{textEnabled ? `${textPoints} POINTS` : "PRICING PENDING"}</b>
         </span>
         <span>
           Made from your idea and the story’s character descriptions. Faces and
@@ -62,8 +68,8 @@ export function GenerationChoice({
         </span>
       </label>
       <p>
-        Both follow the same story, English-language rules and queue. Paid
-        scenes do not jump ahead.
+        Both use creation points and follow the same story, English-language
+        rules and queue.
       </p>
     </fieldset>
   );

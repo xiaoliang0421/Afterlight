@@ -334,7 +334,9 @@ export function Player({
           <span>
             {fixture
               ? "ILLUSTRATIVE PLAYBACK SAMPLE"
-              : "AI CO-CREATED · ENGLISH"}
+              : scene.productionSource === "upload"
+                ? "HOST-UPLOADED · ENGLISH"
+                : "AI CO-CREATED · ENGLISH"}
           </span>
         </div>
         {!playing && !error && !scene.hidden && (
@@ -544,11 +546,23 @@ export function Player({
             </div>
             <Author id={pointed.authorId} name={pointed.author} compact />
             <p>“{original ? pointed.prompt : pointed.englishPrompt}”</p>
+            {!!pointed.contributors?.length && (
+              <div className="scene-contributors">
+                <strong>Audience ideas</strong>
+                {pointed.contributors.map((c, i) => (
+                  <p key={`${c.id}:${i}`}>
+                    <b>{c.name}</b> — {c.prompt}
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="prompt-foot">
               <span>
-                {pointed.source === "studio"
-                  ? "Studio opening"
-                  : "Community idea · adapted for continuity"}
+                {pointed.productionSource === "upload"
+                  ? "Host-uploaded finished video"
+                  : pointed.source === "studio"
+                    ? "Studio opening"
+                    : "Community idea · adapted for continuity"}
               </span>
               {pointed.prompt !== pointed.englishPrompt && (
                 <button
@@ -574,12 +588,12 @@ export function Player({
           name={scene.author}
           label={
             scene.source === "studio"
-              ? "OPENING IMAGINED BY"
-              : "THIS SCENE IMAGINED BY"
+              ? "OPENING PRODUCED BY"
+              : "THIS SCENE PRODUCED BY"
           }
         />
         <span className="credit-note">
-          Their idea. Part of this world forever.
+          See the scene details for adopted audience ideas.
         </span>
       </div>
     </div>

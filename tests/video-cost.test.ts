@@ -20,8 +20,8 @@ function setup() {
   db.exec(`UPDATE stories SET fixture=0 WHERE id='last-light';
     INSERT INTO credit_accounts VALUES('dev-creator','2026-09-06',3,0,0);
     INSERT INTO budget_periods VALUES('day','2026-09-06',3000,0,0),('month','2026-09',10000,0,0);
-    INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at)
-      VALUES('cost-test','last-light','dev-creator','Test idea',3,'cost-test','{}','{}',1,1);
+    INSERT INTO tasks(billing_kind,id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at)
+      VALUES('legacy-free','cost-test','last-light','dev-creator','Test idea',3,'cost-test','{}','{}',1,1);
     UPDATE tasks SET status='Queued',quota_period='2026-09-06',budget_day='2026-09-06',budget_month='2026-09',reserved_cents=50,updated_at=2 WHERE id='cost-test';
     UPDATE tasks SET status='NeedsModeration',provider_request_id='test-video-request',media_key='test.mp4',media_ready=1,media_duration_ms=10000,recorded_cost_cents=50,cost_status='estimated-ceiling' WHERE id='cost-test';`);
   const env = { DB: adaptD1(db) } as Cloudflare.Env;

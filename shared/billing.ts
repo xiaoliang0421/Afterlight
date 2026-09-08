@@ -41,6 +41,8 @@ export interface BillingOverview {
   }[];
   enabled: boolean;
   environment: "sandbox" | "production";
+  textEnabled: boolean;
+  textPoints: number;
   referenceEnabled: boolean;
   referencePoints: number;
   wallet: {

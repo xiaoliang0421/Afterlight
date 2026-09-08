@@ -50,11 +50,13 @@ export class StoryRoom extends DurableObject<Cloudflare.Env> {
       .bind(storyId, storyId)
       .run();
     const row = await this.env.DB.prepare(
-      "SELECT t.id,t.status,t.workflow_id,t.queue_sequence,t.provider_request_id FROM stories s JOIN tasks t ON t.id=s.active_task_id WHERE s.id=?",
+      "SELECT t.id,t.status,t.workflow_id,t.queue_sequence,t.provider_request_id,t.source_kind,t.base_version FROM stories s JOIN tasks t ON t.id=s.active_task_id WHERE s.id=?",
     )
       .bind(storyId)
       .first<{
         id: string;
+        source_kind: string;
+        base_version: number;
         status: string;
         workflow_id: string | null;
         provider_request_id: string | null;
@@ -65,6 +67,17 @@ export class StoryRoom extends DurableObject<Cloudflare.Env> {
       ["NeedsModeration", "ReconciliationNeeded"].includes(row.status)
     ) {
       await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    if (row.source_kind === "upload") {
+      await this.env.DB.prepare(
+        `UPDATE tasks SET status=CASE WHEN base_version=(SELECT version FROM stories WHERE id=tasks.story_id) THEN 'NeedsModeration' ELSE 'NeedsReview' END, reason=CASE WHEN base_version=(SELECT version FROM stories WHERE id=tasks.story_id) THEN 'Review the uploaded footage before publication.' ELSE 'The story advanced. Review how your finished video continues the latest scene.' END,updated_at=? WHERE id=? AND status IN ('Queued','Preparing')`,
+      )
+        .bind(Date.now(), row.id)
+        .run();
+      // Revisit the queue after a stale upload releases its reservation.
+      await this.ctx.storage.setAlarm(Date.now() + 1000);
+      await this.broadcast({ type: "queue.updated", storyId, taskId: row.id });
       return;
     }
     if (row.status === "Queued")

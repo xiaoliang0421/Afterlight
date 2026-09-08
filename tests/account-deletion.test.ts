@@ -22,7 +22,7 @@ function setup() {
       db.exec(sql);
   db.exec(readFileSync("fixtures/seed.sql", "utf8"));
   db.exec(`INSERT INTO account_requests(id,user_id,kind,reason,created_at) VALUES('delete-me','dev-creator','deletion','Private reason',1);
-    INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES('private-draft','last-light','dev-creator','Private prompt',3,'private-key',1,1);
+    INSERT INTO tasks(billing_kind,id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES('legacy-free','private-draft','last-light','dev-creator','Private prompt',3,'private-key',1,1);
     INSERT INTO "user" VALUES('dev-creator','Private Name','creator@example.invalid',1,NULL,1,1);
     INSERT INTO "session" VALUES('auth-session',9999999999999,'fake-token',1,1,'192.0.2.1','test','dev-creator');
     INSERT INTO "account"(id,accountId,providerId,userId,accessToken,createdAt,updatedAt) VALUES('auth-account','google-test','google','dev-creator','fake-oauth',1,1);
@@ -301,7 +301,7 @@ test("deleted accounts cannot be revived by an in-flight request, and attempt ID
     "UPDATE users SET display_name='Revived' WHERE id='dev-creator'",
     "INSERT INTO favorites VALUES('dev-creator','last-light')",
     "INSERT INTO sessions VALUES('late-login','dev-creator',9999999999999,1)",
-    "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES('late-task','last-light','dev-creator','late prompt',3,'late-key',1,1)",
+    "INSERT INTO tasks(billing_kind,id,story_id,user_id,prompt_original,base_version,idempotency_key,created_at,updated_at) VALUES('points','late-task','last-light','dev-creator','late prompt',3,'late-key',1,1)",
     "UPDATE tasks SET status='Draft',prompt_original='late draft' WHERE id='private-draft'",
   ])
     assert.throws(() => db.exec(sql), /account_deleted/);

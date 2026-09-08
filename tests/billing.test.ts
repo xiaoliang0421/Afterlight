@@ -231,7 +231,7 @@ test("paid scenes reserve and settle purchased points once without touching free
   const draft = (id: string) =>
     db
       .prepare(
-        "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at,generation_mode,provider_model,quoted_points,quoted_reserve_cents) VALUES(?,'last-light','dev-creator','An original idea.',3,?,'{}','{}',1,1,'reference','minimax/h3-max/reference-to-video',20,300)",
+        "INSERT INTO tasks(id,story_id,user_id,prompt_original,base_version,idempotency_key,plan_json,approved_plan_json,created_at,updated_at,generation_mode,provider_model,quoted_points,quoted_reserve_cents,billing_kind) VALUES(?,'last-light','dev-creator','An original idea.',3,?,'{}','{}',1,1,'reference','minimax/h3-max/reference-to-video',20,300,'points')",
       )
       .run(id, id);
   const accept = (id: string) =>

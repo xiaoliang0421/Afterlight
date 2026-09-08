@@ -143,8 +143,8 @@ export function BillingPanel() {
         <CreditCard size={25} />
       </div>
       <p className="muted">
-        Free text-to-video uses your daily allowance. Purchased points are a
-        separate balance for scenes made with approved visual references.
+        Use prepaid creation points for platform text or reference-guided
+        generation. Watching and proposing ideas do not spend generation points.
       </p>
       {resource.loading && <Loading />}
       {(error || resource.error) && (
@@ -175,9 +175,9 @@ export function BillingPanel() {
           )}
           {!data.enabled ? (
             <Notice>
-              Purchases are not open yet. You can keep creating with your free
-              allowance. Reference-guided creation will open after payment setup
-              and testing.
+              Top-ups are not open yet. You can keep watching and sharing ideas
+              with story hosts. Reference-guided creation will open after
+              payment setup and testing.
             </Notice>
           ) : (
             <>
@@ -188,9 +188,12 @@ export function BillingPanel() {
                 </Notice>
               )}
               <p>
-                {data.referencePoints} points per reference-guided scene, shown
-                again before you join the queue. No subscription or automatic
-                top-up. Taxes are shown in checkout.
+                {data.textPoints} points per text scene
+                {data.referenceEnabled
+                  ? ` · ${data.referencePoints} per reference-guided scene`
+                  : ""}
+                , shown again before you join the queue. No subscription or
+                automatic top-up. Taxes are shown in checkout.
               </p>
               <label className="checkbox-label">
                 <input
@@ -236,9 +239,8 @@ export function BillingPanel() {
           )}
           <p className="fine-print">
             A failed or rejected scene returns its reserved points. Returning
-            generation points is separate from a payment refund. Free allowances
-            reset daily; purchased points do not reset daily. Neither balance is
-            transferable.
+            generation points is separate from a payment refund. Purchased
+            points do not reset daily. Neither balance is transferable.
           </p>
           <div className="billing-heading">
             <h3>Your orders</h3>

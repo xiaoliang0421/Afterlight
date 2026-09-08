@@ -46,7 +46,13 @@ const queries: Record<
     table: "tasks",
     owner: "t.user_id",
     fields:
-      "t.id,t.story_id,t.prompt_original,t.plan_json,t.approved_plan_json,t.requested_character_ids_json,t.status,t.reason,t.base_version,t.queue_sequence,t.generation_mode,t.quoted_points,t.terms_version,t.attribution_accepted_at,t.created_at,t.updated_at",
+      "t.id,t.story_id,t.prompt_original,t.plan_json,t.approved_plan_json,t.requested_character_ids_json,t.status,t.reason,t.base_version,t.queue_sequence,t.source_kind,t.billing_kind,t.proposal_ids_json,t.generation_mode,t.quoted_points,t.terms_version,t.attribution_accepted_at,t.created_at,t.updated_at",
+  },
+  audienceProposals: {
+    table: "story_proposals",
+    owner: "t.author_id",
+    fields:
+      "t.id,t.story_id,t.prompt,t.base_version,t.status,t.selected_task_id,t.terms_version,t.attribution_accepted_at,t.created_at,t.updated_at",
   },
   scenes: {
     table: "scenes",

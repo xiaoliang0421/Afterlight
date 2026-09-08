@@ -16,6 +16,12 @@ import policies from "../shared/policies.json";
 import type { OwnerReviewStatus } from "../shared/governance";
 
 export interface TaskRow {
+  source_kind: "generated" | "upload";
+  billing_kind: "points" | "legacy-free" | "upload";
+  proposal_ids_json: string;
+  upload_bytes: number | null;
+  upload_lock: string | null;
+  upload_locked_at: number | null;
   plan_revision: number;
   preview_lock: string | null;
   owner_review_id: string | null;
@@ -116,13 +122,25 @@ export async function getScenes(
 ): Promise<Scene[]> {
   const rows = (
     await env.DB.prepare(
-      `SELECT s.id,s.story_id AS storyId,s.episode_id AS episodeId,s.version,s.title,s.summary,s.media_key AS mediaKey,s.stream_id AS streamId,s.thumbnail_url AS thumbnailUrl,s.duration_ms AS durationMs,s.start_ms AS startMs,s.prompt_original AS prompt,s.english_prompt AS englishPrompt,u.display_name AS author,s.author_id AS authorId,s.source,s.fixture,s.published_at AS publishedAt,s.hidden FROM scenes s JOIN users u ON u.id=s.author_id WHERE s.story_id=? ORDER BY s.version`,
+      `SELECT s.id,s.story_id AS storyId,s.episode_id AS episodeId,s.version,s.title,s.summary,s.media_key AS mediaKey,s.stream_id AS streamId,s.thumbnail_url AS thumbnailUrl,s.duration_ms AS durationMs,s.start_ms AS startMs,s.prompt_original AS prompt,s.english_prompt AS englishPrompt,u.display_name AS author,s.author_id AS authorId,s.source,COALESCE(t.source_kind,'generated') AS productionSource,s.fixture,s.published_at AS publishedAt,s.hidden FROM scenes s JOIN users u ON u.id=s.author_id LEFT JOIN tasks t ON t.id=s.task_id WHERE s.story_id=? ORDER BY s.version`,
     )
       .bind(storyId)
       .all<Scene & { mediaKey: string; streamId: string | null }>()
   ).results;
+  const contributions = (
+    await env.DB.prepare(
+      `SELECT p.selected_task_id AS taskId,p.author_id AS id,u.display_name AS name,p.prompt FROM story_proposals p JOIN users u ON u.id=p.author_id WHERE p.story_id=? AND p.status='published'`,
+    )
+      .bind(storyId)
+      .all<{ taskId: string; id: string; name: string; prompt: string }>()
+  ).results;
   return rows.map(({ mediaKey: _key, streamId, ...s }) => ({
     ...s,
+    contributors: s.hidden
+      ? []
+      : contributions
+          .filter((c) => c.taskId === s.id)
+          .map(({ taskId, ...c }) => c),
     ...(s.hidden
       ? {
           title: "Scene unavailable",
@@ -165,6 +183,14 @@ export function taskDto(
   privateView = true,
 ): Task {
   return {
+    sourceKind: t.source_kind ?? "generated",
+    billingKind:
+      t.billing_kind ??
+      (t.generation_mode === "reference" ? "points" : "legacy-free"),
+    proposalIds: privateView ? JSON.parse(t.proposal_ids_json ?? "[]") : [],
+    uploadReady: !!t.media_ready,
+    videoUrl:
+      privateView && t.media_ready ? `/api/production/${t.id}/video` : null,
     generationMode: t.generation_mode ?? "text",
     ownerReview:
       privateView && t.owner_review_id && t.owner_review_status
@@ -282,10 +308,14 @@ export async function acceptTask(env: Cloudflare.Env, t: TaskRow) {
       day,
       day,
       month,
-      t.quoted_reserve_cents || settings.taskReserveCents,
-      t.generation_mode === "reference"
-        ? "paid-reference-v1"
-        : settings.policyVersion,
+      t.source_kind === "upload"
+        ? 0
+        : t.quoted_reserve_cents || settings.taskReserveCents,
+      t.source_kind === "upload"
+        ? "owner-upload-v1"
+        : t.billing_kind === "points"
+          ? "paid-generation-v2"
+          : settings.policyVersion,
       policies.version,
       Date.now(),
       t.updated_at,

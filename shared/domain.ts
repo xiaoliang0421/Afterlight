@@ -42,7 +42,7 @@ export const planSchema = z.object({
   bridge: z.string().max(1200),
   videoPrompt: z.string().min(20).max(6000),
   language: z.literal("en"),
-  durationSeconds: z.literal(10),
+  durationSeconds: z.number().min(1).max(60),
   characterIds: z.array(z.string()).max(3),
   newCharacters: z.array(characterSchema).max(2),
   proposedEvents: z.array(z.string().min(1).max(400)).max(8),
@@ -80,6 +80,7 @@ export const storyInputSchema = z.object({
 });
 export const promptInputSchema = z.object({
   generationMode: z.enum(["text", "reference"]).default("text"),
+  proposalIds: z.array(z.string().uuid()).max(5).default([]),
   prompt: z.string().trim().min(10).max(2000),
   idempotencyKey: z.string().uuid(),
   characterIds: z
@@ -136,6 +137,8 @@ export interface Episode {
   durationMs: number;
 }
 export interface Scene {
+  productionSource: "generated" | "upload";
+  contributors: { id: string; name: string; prompt: string }[];
   id: string;
   storyId: string;
   episodeId: string;
@@ -157,6 +160,11 @@ export interface Scene {
   hidden: boolean;
 }
 export interface Task {
+  sourceKind: "generated" | "upload";
+  billingKind: "points" | "legacy-free" | "upload";
+  proposalIds: string[];
+  uploadReady: boolean;
+  videoUrl: string | null;
   ownerReview: OwnerReview | null;
   generationMode: GenerationMode;
   quotedPoints: number;
@@ -200,6 +208,9 @@ export interface AppConfig {
   paymentsEnabled: boolean;
   referenceEnabled: boolean;
   referencePoints: number;
+  textEnabled: boolean;
+  textPoints: number;
+  uploadsEnabled: boolean;
   supportEmail: string;
 }
 export interface StoryDetail {

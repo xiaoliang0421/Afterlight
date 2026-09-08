@@ -110,6 +110,7 @@ export async function startSpeechCheck(env: Cloudflare.Env, id: string) {
     );
   const task = await getTask(env, id);
   if (
+    task.source_kind === "upload" ||
     task.status !== "NeedsModeration" ||
     !task.media_ready ||
     !task.media_key ||

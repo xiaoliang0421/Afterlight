@@ -46,6 +46,16 @@ export async function deletionPreview(env: Cloudflare.Env, requestId: string) {
     blockers.push("This request is no longer open.");
   if (request.role === "admin")
     blockers.push("Transfer the studio role before deleting this account.");
+  if (
+    await env.DB.prepare(
+      "SELECT id FROM story_proposals WHERE author_id=? AND status='selected' LIMIT 1",
+    )
+      .bind(request.userId)
+      .first()
+  )
+    blockers.push(
+      "Resolve selected audience proposals before deleting this account.",
+    );
   if (counts?.activeTasks)
     blockers.push(
       "Resolve active tasks, previews and uncertain provider requests first, including tasks in this person's stories.",

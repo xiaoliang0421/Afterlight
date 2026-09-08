@@ -37,9 +37,9 @@ export function inspect(config, environment, release, policies) {
       failures.push("Set an explicit payments switch.");
     if (environment === "staging" && vars.PADDLE_ENVIRONMENT !== "sandbox")
       failures.push("Staging checkout must use the Paddle sandbox.");
-    if (vars.REFERENCE_GENERATION_ENABLED !== "true")
+    if (vars.PROVIDER_MODE !== "live")
       failures.push(
-        "Do not sell points before reference-guided fulfillment is available.",
+        "Do not sell points before platform generation is available.",
       );
     if (environment === "production") {
       if (
@@ -55,13 +55,21 @@ export function inspect(config, environment, release, policies) {
         "paddleDuplicateEvents",
         "paddleOrderRecovery",
         "paddleCatalogVerified",
-        "paidReferenceFulfillment",
+        "paidTextFulfillment",
         "purchaseTerms",
       ])
         if (!release?.checks?.[key])
           failures.push(`Payment release evidence is missing: ${key}.`);
     }
   }
+  if (
+    environment === "production" &&
+    vars.REFERENCE_GENERATION_ENABLED === "true" &&
+    !release?.checks?.paidReferenceFulfillment
+  )
+    failures.push(
+      "Payment release evidence is missing: paidReferenceFulfillment.",
+    );
   if (
     vars.REFERENCE_GENERATION_ENABLED === "true" &&
     environment === "production" &&
@@ -127,6 +135,7 @@ export function inspect(config, environment, release, policies) {
       "accountRequests",
       "abuseProtection",
       "cloudResourceSmokeTest",
+      "hostUploadFulfillment",
     ];
     for (const key of checks)
       if (!release?.checks?.[key])

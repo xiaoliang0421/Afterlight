@@ -3844,3 +3844,154 @@ video {
 .operation-checks .danger-text {
   color: var(--danger);
 }
+
+/* Host production and audience proposals share the story's existing visual system. */
+.production-panel {
+  display: grid;
+  gap: 20px;
+}
+.production-tabs,
+.production-methods {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.production-tabs button,
+.production-methods button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.production-tabs button.selected,
+.production-methods button.selected {
+  background: var(--accent);
+  color: var(--ink);
+}
+.proposal-form,
+.proposal-inbox,
+.upload-editor,
+.upload-review {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  min-width: 0;
+}
+.proposal-form h2,
+.upload-editor h2 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+}
+.proposal-form p,
+.upload-editor p,
+.upload-review p {
+  margin: 0;
+  line-height: 1.55;
+}
+.proposal-form textarea,
+.upload-editor textarea {
+  width: 100%;
+  resize: vertical;
+}
+.proposal-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.proposal-choice > span {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.proposal-choice input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.proposal-choice small,
+.selected-ideas small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.proposal-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.proposal-card {
+  display: flex;
+  gap: 16px;
+  align-items: start;
+  justify-content: space-between;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.proposal-card p {
+  margin: 8px 0 0;
+}
+.selected-ideas {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.upload-review progress {
+  width: 100%;
+}
+.upload-editor input[type="file"],
+.upload-review input[type="file"] {
+  max-width: 100%;
+  font-size: 12px;
+}
+.scene-contributors {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 12px;
+}
+@media (max-width: 480px) {
+  .proposal-form,
+  .proposal-inbox,
+  .upload-editor,
+  .upload-review {
+    padding: 18px;
+  }
+  .production-methods button {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .proposal-card {
+    flex-wrap: wrap;
+  }
+}
+
+.new-cast {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 0;
+}

@@ -40,6 +40,7 @@ import {
 } from "./components";
 import { Player } from "./Player";
 import { StoryArchive } from "./StoryArchive";
+import { ProductionPanel } from "./ProductionPanel";
 import { ShareModal } from "./ShareModal";
 import { CastPicker } from "./CastPicker";
 import { GenerationChoice } from "./GenerationChoice";
@@ -458,7 +459,22 @@ export function StoryPage({ slug }: { slug: string }) {
                         ? "This contribution is currently unavailable."
                         : s.englishPrompt}
                     </p>
-                    <Author id={s.authorId} name={s.author} compact />
+                    <div>
+                      <Author id={s.authorId} name={s.author} compact />
+                      <small>
+                        {s.productionSource === "upload"
+                          ? "Uploaded by host"
+                          : "Scene producer"}
+                      </small>
+                      {!!s.contributors?.length && (
+                        <div className="scene-contributors">
+                          <span>
+                            Ideas from{" "}
+                            {s.contributors.map((c) => c.name).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <button
                     className="icon-button"
@@ -547,16 +563,29 @@ export function StoryPage({ slug }: { slug: string }) {
           </div>
         </section>
         <aside className="creation-column">
-          <Composer
+          <ProductionPanel
+            story={story}
             characters={data.characters}
-            storyId={story.id}
-            title={story.title}
-            status={story.status}
-            queue={queue}
             onChanged={async () => {
               await detail.reload();
               await refresh();
             }}
+            renderGeneration={(proposalIds, initialPrompt) => (
+              <Composer
+                key={proposalIds.join(",")}
+                proposalIds={proposalIds}
+                initialPrompt={initialPrompt}
+                characters={data.characters}
+                storyId={story.id}
+                title={story.title}
+                status={story.status}
+                queue={queue}
+                onChanged={async () => {
+                  await detail.reload();
+                  await refresh();
+                }}
+              />
+            )}
           />
           <div className="creation-note">
             <span className="hand-drawn-star">✳</span>
@@ -589,6 +618,8 @@ export function StoryPage({ slug }: { slug: string }) {
 }
 
 export function Composer({
+  proposalIds = [],
+  initialPrompt = "",
   characters,
   storyId,
   title,
@@ -596,6 +627,8 @@ export function Composer({
   queue,
   onChanged,
 }: {
+  proposalIds?: string[];
+  initialPrompt?: string;
   characters: Character[];
   storyId: string;
   title: string;
@@ -615,7 +648,7 @@ export function Composer({
     idempotency = useRef(crypto.randomUUID());
   useEffect(() => {
     try {
-      setPrompt(localStorage.getItem(savedKey) ?? "");
+      setPrompt(initialPrompt || localStorage.getItem(savedKey) || "");
       const savedCast: unknown = JSON.parse(
         localStorage.getItem(`${savedKey}:cast`) ?? "[]",
       );
@@ -706,6 +739,7 @@ export function Composer({
           ? { task }
           : await api<{ task: Task }>(`/stories/${storyId}/tasks`, "POST", {
               prompt,
+              proposalIds,
               characterIds: selectedCast,
               generationMode,
               idempotencyKey: idempotency.current,
@@ -757,8 +791,8 @@ export function Composer({
           THE NEXT SCENE
         </span>
         <span className="free-tag">
-          {(task?.generationMode ?? generationMode) === "text"
-            ? "FREE ALLOWANCE"
+          {task?.billingKind === "legacy-free"
+            ? "EXISTING FREE TASK"
             : "CREATION POINTS"}
         </span>
       </div>
@@ -860,16 +894,16 @@ export function Composer({
               About 10 seconds
             </span>
             <span>
-              {task.generationMode === "reference"
-                ? `${task.quotedPoints} purchased points`
-                : "1 free credit"}
+              {task.billingKind === "legacy-free"
+                ? "1 existing free credit"
+                : `${task.quotedPoints} creation points`}
             </span>
             <span>English</span>
           </div>
           <p className="fine-print">
-            {task.generationMode === "reference"
-              ? "Uses approved visual references. Points are reserved now and used on publication. Failed or rejected scenes return the reservation. Consistency is not guaranteed."
-              : "Text-to-video uses character descriptions; appearances may vary. No payment required."}
+            {task.billingKind === "legacy-free"
+              ? "This previously saved task retains its original free allowance."
+              : "Points are reserved when you confirm and used on publication. Failed or rejected scenes return the reservation. Visual continuity still requires review."}
           </p>
           <OwnerApprovalGate
             task={task}
@@ -905,7 +939,11 @@ export function Composer({
                 busy={busy === "accept"}
                 onClick={() => void submit()}
               >
-                Join the story <ArrowRight size={16} />
+                Reserve{" "}
+                {task.billingKind === "legacy-free"
+                  ? "existing free credit"
+                  : `${task.quotedPoints} points`}{" "}
+                & join <ArrowRight size={16} />
               </Button>
             </>
           )}
@@ -922,6 +960,8 @@ export function Composer({
             value={generationMode}
             referenceEnabled={boot.config.referenceEnabled}
             points={boot.config.referencePoints}
+            textPoints={boot.config.textPoints}
+            textEnabled={boot.config.textEnabled}
             disabled={!!busy}
             onChange={(mode) => {
               setGenerationMode(mode);
@@ -972,6 +1012,9 @@ export function Composer({
               : "Save your idea"}
             <ArrowRight size={16} />
           </Button>
+          <Link to="/account#creation-points" className="text-button">
+            Top up creation points
+          </Link>
           {boot.config.generationEnabled && (
             <button
               className="text-button save-idea"
@@ -1002,19 +1045,12 @@ export function Composer({
       )}
       {error && <Notice danger>{error}</Notice>}
       <div className="composer-footer">
-        <span className="credit-circles">
-          {[0, 1, 2].map((i) => (
-            <i
-              key={i}
-              className={i < (boot.credits?.available ?? 3) ? "available" : ""}
-            />
-          ))}
-        </span>
         <span>
           {boot.user
-            ? `${boot.credits?.available ?? 0} free credits left today`
-            : "Sign in for your free creation credits"}
+            ? `${boot.wallet?.available ?? 0} creation points available`
+            : "Sign in to make a scene"}
         </span>
+        <Link to="/account#creation-points">Top up</Link>
       </div>
       <p className="fine-print">
         Ideas take turns. We check every scene against the latest story before

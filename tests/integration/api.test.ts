@@ -1,4 +1,5 @@
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import policies from "../../shared/policies.json";
@@ -25,7 +26,12 @@ function client() {
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...extra,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : body instanceof Uint8Array
+            ? new Uint8Array(body).buffer
+            : JSON.stringify(body),
     });
     const set = response.headers.getSetCookie();
     if (set.length) cookie = set.map((s) => s.split(";")[0]).join("; ");
@@ -392,8 +398,8 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       ).task;
       assert.equal(c.status, "Queued");
       const own = await ok(creator("/api/bootstrap"));
-      assert.equal(own.credits.reserved, 2);
-      assert.equal(own.credits.spent, 0);
+      assert.equal(own.wallet.reserved, 10);
+      assert.equal(own.wallet.spent, 0);
       const queue = await ok(guest("/api/stories/last-light"));
       assert.ok(queue.queue.every((q: any) => !q.prompt && !q.plan));
     },
@@ -442,9 +448,9 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       assert.equal(published.authorId, "dev-creator");
       assert.equal(published.startMs, 30000);
       assert.equal(story.scenes.length, 4);
-      const credits = (await ok(creator("/api/bootstrap"))).credits;
-      assert.equal(credits.spent, 1);
-      assert.equal(credits.reserved, 1);
+      const credits = (await ok(creator("/api/bootstrap"))).wallet;
+      assert.equal(credits.spent, 5);
+      assert.equal(credits.reserved, 5);
       await ok(creator("/api/account/profile", "PUT", { nickname: "River" }));
       const renamed = await ok(guest("/api/stories/last-light"));
       assert.equal(
@@ -461,7 +467,7 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       );
       const shared = await guest(`/story/the-last-light?scene=${a.id}`);
       assert.equal(shared.status, 200);
-      assert.match(shared.data, /Imagined by River/);
+      assert.match(shared.data, /Produced by River/);
       assert.equal(
         (await guest(`/api/scenes/${a.id}/video`, "HEAD")).status,
         200,
@@ -557,10 +563,10 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
           reason: "The sample does not fulfill the proposed events.",
         }),
       );
-      const credits = (await ok(creator("/api/bootstrap"))).credits;
+      const credits = (await ok(creator("/api/bootstrap"))).wallet;
       assert.equal(credits.reserved, 0);
-      assert.equal(credits.spent, 1);
-      assert.equal(credits.available, 2);
+      assert.equal(credits.spent, 5);
+      assert.equal(credits.available, 95);
     },
   );
   await t.test(
@@ -819,7 +825,7 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       const overview = await ok(creator("/api/billing"));
       assert.equal(overview.enabled, false);
       assert.equal(overview.referenceEnabled, false);
-      assert.equal(overview.wallet.available, 0);
+      assert.equal(overview.wallet.available, 95);
       assert.deepEqual(overview.orders, []);
       assert.deepEqual(overview.requests, []);
       assert.equal(
@@ -1073,4 +1079,187 @@ test("Cloudflare runtime: login, authorship, independent stories, FIFO workflow 
       );
     },
   );
+});
+
+test("native Workers upload: private MP4, retry, free review, publication and proposal credits", async () => {
+  const story = (
+    await ok(
+      studio("/api/stories", "POST", {
+        title: "Upload Runtime Test",
+        logline:
+          "A lighthouse keeper watches the beam pass over an empty rocky coastline.",
+        genre: "Mystery",
+        worldRules:
+          "An ordinary coastal town. The lighthouse and weather follow ordinary physical laws.",
+        visualStyle: "Natural coastal light with restrained colors.",
+        characters: [
+          {
+            name: "Keeper",
+            description: "A coastal lighthouse keeper in a dark coat.",
+            state: "Waiting inside the lighthouse.",
+          },
+        ],
+      }),
+    )
+  ).story;
+  await ok(studio(`/api/stories/${story.id}`, "PATCH", { status: "open" }));
+  const beforeHost = (await ok(studio("/api/bootstrap"))).wallet;
+  const beforeAuthor = (await ok(creator("/api/bootstrap"))).wallet;
+  const proposal = await ok(
+    creator(`/api/stories/${story.id}/proposals`, "POST", {
+      prompt: "Show the lighthouse from outside, over the rocky coastline.",
+      idempotencyKey: randomUUID(),
+      publicAttributionAccepted: true,
+      termsVersion: policies.version,
+    }),
+  );
+  assert.equal(
+    (await ok(newcomer(`/api/stories/${story.id}/proposals`))).proposals.length,
+    0,
+  );
+  const file = readFileSync("public/samples/playback.mp4");
+  const input = {
+    idempotencyKey: randomUUID(),
+    proposalIds: [proposal.id],
+    title: "The coast",
+    summary: "A lighthouse stands over the rocky coastline.",
+    bridge: "The view begins outside the keeper's lighthouse.",
+    events: ["The lighthouse beam crosses the coast."],
+    bytes: file.length,
+    rightsAccepted: true,
+  };
+  assert.equal(
+    (await creator(`/api/stories/${story.id}/uploads`, "POST", input)).status,
+    403,
+  );
+  const attempts = await Promise.all([
+    studio(`/api/stories/${story.id}/uploads`, "POST", input),
+    studio(`/api/stories/${story.id}/uploads`, "POST", input),
+  ]);
+  for (const attempt of attempts)
+    assert.ok(
+      [200, 201].includes(attempt.status),
+      JSON.stringify(attempt.data),
+    );
+  let task = attempts[0].data.task;
+  assert.equal(attempts[1].data.task.id, task.id);
+  assert.equal(
+    (
+      await studio(`/api/tasks/${task.id}/accept`, "POST", {
+        planUpdatedAt: task.updatedAt,
+        publicAttributionAccepted: true,
+      })
+    ).status,
+    409,
+  );
+  const filePath = `/api/production/${task.id}/file`;
+  assert.equal(
+    (await creator(filePath, "PUT", file, { "Content-Type": "video/mp4" }))
+      .status,
+    404,
+  );
+  assert.equal(
+    (
+      await studio(filePath, "PUT", file, {
+        "Content-Type": "application/octet-stream",
+      })
+    ).status,
+    400,
+  );
+  const broken = Buffer.from(file);
+  broken.fill(0, 0, Math.min(256, broken.length));
+  assert.equal(
+    (await studio(filePath, "PUT", broken, { "Content-Type": "video/mp4" }))
+      .status,
+    409,
+  );
+  task = (
+    await ok(studio(filePath, "PUT", file, { "Content-Type": "video/mp4" }))
+  ).task;
+  assert.equal(task.uploadReady, true);
+  assert.equal(task.sourceKind, "upload");
+  assert.equal(task.billingKind, "upload");
+  assert.equal(task.quotedPoints, 0);
+  assert.equal(
+    (await ok(studio(filePath, "PUT", file, { "Content-Type": "video/mp4" })))
+      .task.id,
+    task.id,
+  );
+  assert.equal((await guest(task.videoUrl)).status, 401);
+  assert.equal((await creator(task.videoUrl)).status, 404);
+  const preview = await studio(task.videoUrl, "GET", undefined, {
+    Range: "bytes=0-31",
+  });
+  assert.equal(preview.status, 206);
+  assert.equal(preview.response.headers.get("content-length"), "32");
+  assert.equal(
+    preview.response.headers.get("cache-control"),
+    "private, no-store",
+  );
+  await ok(
+    studio(`/api/tasks/${task.id}/accept`, "POST", {
+      planUpdatedAt: task.updatedAt,
+      publicAttributionAccepted: true,
+    }),
+  );
+  await waitTask(studio, task.id, "NeedsModeration");
+  const adminTask = (await ok(studio("/api/admin"))).tasks.find(
+    (t: any) => t.id === task.id,
+  );
+  assert.equal(adminTask.providerRequestId, null);
+  assert.equal(adminTask.reservedCents, 0);
+  assert.equal(adminTask.recordedCostCents, 0);
+  const review = {
+    summary: input.summary,
+    events: input.events,
+    englishAudio: true,
+    englishText: true,
+    continuity: true,
+    contentSafe: true,
+    captions: "",
+    noDialogue: true,
+    characterUpdates: [],
+    newCharacterIds: [],
+  };
+  await ok(studio(`/api/admin/tasks/${task.id}/approve`, "POST", review));
+  await ok(studio(`/api/admin/tasks/${task.id}/approve`, "POST", review));
+  const world = await ok(guest(`/api/stories/${story.id}`));
+  assert.equal(world.story.version, 1);
+  assert.equal(world.scenes.length, 1);
+  const scene = world.scenes[0];
+  assert.equal(scene.productionSource, "upload");
+  assert.equal(scene.authorId, "dev-studio");
+  assert.equal(scene.contributors[0].id, "dev-creator");
+  const media = await guest(`/api/scenes/${scene.id}/video`, "GET", undefined, {
+    Range: "bytes=0-31",
+  });
+  assert.equal(media.status, 206);
+  assert.equal(media.response.headers.get("content-length"), "32");
+  assert.deepEqual((await ok(studio("/api/bootstrap"))).wallet, beforeHost);
+  assert.deepEqual((await ok(creator("/api/bootstrap"))).wallet, beforeAuthor);
+  const adopted = (await ok(creator("/api/proposals"))).proposals.find(
+    (p: any) => p.id === proposal.id,
+  );
+  assert.equal(adopted.status, "published");
+  const nextProposal = await ok(
+    creator(`/api/stories/${story.id}/proposals`, "POST", {
+      prompt: "The keeper notices a second signal beyond the rocks.",
+      idempotencyKey: randomUUID(),
+      publicAttributionAccepted: true,
+      termsVersion: policies.version,
+    }),
+  );
+  const nextInput = {
+    prompt: "The keeper notices a second signal beyond the rocks.",
+    proposalIds: [nextProposal.id],
+    idempotencyKey: randomUUID(),
+  };
+  const drafts = await Promise.all([
+    studio(`/api/stories/${story.id}/tasks`, "POST", nextInput),
+    studio(`/api/stories/${story.id}/tasks`, "POST", nextInput),
+  ]);
+  for (const draft of drafts)
+    assert.ok([200, 201].includes(draft.status), JSON.stringify(draft.data));
+  assert.equal(drafts[0].data.task.id, drafts[1].data.task.id);
+  await ok(studio(`/api/tasks/${drafts[0].data.task.id}/cancel`, "POST", {}));
 });

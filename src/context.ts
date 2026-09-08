@@ -4,6 +4,12 @@ export interface Bootstrap {
   config: AppConfig;
   user: User | null;
   credits: Credits | null;
+  wallet: {
+    available: number;
+    reserved: number;
+    spent: number;
+    held: boolean;
+  } | null;
   stories: Story[];
   favorites: string[];
   notifications: {

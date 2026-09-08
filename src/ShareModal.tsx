@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useRef, useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import type { Scene, Story } from "../shared/domain";
@@ -24,25 +25,27 @@ export function ShareModal({
     : story.logline;
   return (
     <Modal
-      title="Pass the story on."
-      eyebrow="A STORY WORTH SHARING"
+      title={tr("Pass the story on.")}
+      eyebrow={tr("A STORY WORTH SHARING")}
       onClose={close}
     >
       <div className="share-preview">
         <img src={story.coverUrl} alt="" />
         <div>
           <p className="eyebrow">{story.title}</p>
-          <h3>{scene?.title ?? "Start from the beginning"}</h3>
+          <h3>{scene?.title ?? tr("Start from the beginning")}</h3>
           {scene && <Author id={scene.authorId} name={scene.author} compact />}
         </div>
       </div>
       <p className="modal-copy">
         {scene
-          ? "Your friend will open this scene, with its creator’s credit and prompt. They can keep watching or start the story from the beginning."
-          : "Your friend can watch this story without signing in."}
+          ? tr(
+              "Your friend will open this scene, with its creator’s credit and prompt. They can keep watching or start the story from the beginning.",
+            )
+          : tr("Your friend can watch this story without signing in.")}
       </p>
       <label className="field-label" htmlFor="share-url">
-        {scene ? "Link to this scene" : "Link to this story"}
+        {scene ? tr("Link to this scene") : tr("Link to this story")}
       </label>
       <input
         ref={input}
@@ -69,7 +72,7 @@ export function ShareModal({
           }}
         >
           {copied ? <Check size={16} /> : <Copy size={16} />}
-          {copied ? "Copied" : "Copy link"}
+          {copied ? tr("Copied") : tr("Copy link")}
         </Button>
         {typeof navigator.share === "function" && (
           <Button
@@ -86,15 +89,16 @@ export function ShareModal({
             }}
           >
             <Share2 size={16} />
-            Share with…
+            {tr("Share with…")}
           </Button>
         )}
       </div>
-      {error && <Notice>{error}</Notice>}
+      {error && <Notice>{tr(error)}</Notice>}
       {story.fixture && (
         <p className="fine-print">
-          Development fixture. This link currently works only where this preview
-          server is reachable.
+          {tr(
+            "Development fixture. This link currently works only where this preview server is reachable.",
+          )}
         </p>
       )}
     </Modal>

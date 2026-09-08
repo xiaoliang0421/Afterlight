@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Captions,
@@ -246,7 +247,9 @@ export function Player({
         className="video-frame"
         ref={frame}
         tabIndex={0}
-        aria-label="Story player. Space to play or pause; arrow keys to seek."
+        aria-label={tr(
+          "Story player. Space to play or pause; arrow keys to seek.",
+        )}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget || scene.hidden) return;
           if (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight")
@@ -315,7 +318,7 @@ export function Player({
             key={scene.id}
             kind="captions"
             srcLang="en"
-            label="English"
+            label={tr("English")}
             src={scene.captionsUrl}
             default={captions}
             onLoad={() => {
@@ -329,25 +332,29 @@ export function Player({
         </video>
         <div className="video-top">
           <span className="video-badge">
-            CHAPTER {String(episode.number).padStart(2, "0")}
+            {tr("CHAPTER")} {String(episode.number).padStart(2, "0")}
           </span>
           <span>
             {fixture
-              ? "ILLUSTRATIVE PLAYBACK SAMPLE"
+              ? tr("ILLUSTRATIVE PLAYBACK SAMPLE")
               : scene.productionSource === "upload"
-                ? "HOST-UPLOADED · ENGLISH"
-                : "AI CO-CREATED · ENGLISH"}
+                ? tr("HOST-UPLOADED · ENGLISH")
+                : tr("AI CO-CREATED · ENGLISH")}
           </span>
         </div>
         {!playing && !error && !scene.hidden && (
-          <button className="big-play" aria-label="Play story" onClick={toggle}>
+          <button
+            className="big-play"
+            aria-label={tr("Play story")}
+            onClick={toggle}
+          >
             <Play size={30} fill="currentColor" />
             <span>
               {time >= episode.durationMs
-                ? "Replay this chapter"
+                ? tr("Replay this chapter")
                 : time > 0
-                  ? "Continue watching"
-                  : "Step into the story"}
+                  ? tr("Continue watching")
+                  : tr("Step into the story")}
             </span>
           </button>
         )}
@@ -356,8 +363,10 @@ export function Player({
             <WifiOff size={28} />
             <p>
               {scene.hidden
-                ? "This scene has been removed. Its place in the timeline is preserved."
-                : error}
+                ? tr(
+                    "This scene has been removed. Its place in the timeline is preserved.",
+                  )
+                : tr(error)}
             </p>
             {!scene.hidden && (
               <Button
@@ -365,30 +374,32 @@ export function Player({
                 disabled={offline}
                 onClick={retryPlayback}
               >
-                Retry playback
+                {tr("Retry playback")}
               </Button>
             )}
           </div>
         )}
         {offline && (
           <span className="connection-indicator" role="status">
-            You’re offline. Reconnect to load more video.
+            {tr("You’re offline. Reconnect to load more video.")}
           </span>
         )}
         {loading && !error && !scene.hidden && !offline && (
           <span className="buffering-indicator" role="status">
-            Buffering…
+            {tr("Buffering…")}
           </span>
         )}
         <div className="video-bottom">
           <div className="video-caption">
-            <span>SCENE {String(index + 1).padStart(2, "0")}</span>
+            <span>
+              {tr("SCENE")} {String(index + 1).padStart(2, "0")}
+            </span>
             <h3>{scene.title}</h3>
           </div>
           <div className="video-controls">
             <button
               className="icon-button"
-              aria-label={playing ? "Pause" : "Play"}
+              aria-label={playing ? tr("Pause") : tr("Play")}
               disabled={scene.hidden}
               onClick={toggle}
             >
@@ -400,7 +411,7 @@ export function Player({
             </button>
             <button
               className="icon-button"
-              aria-label="Previous scene"
+              aria-label={tr("Previous scene")}
               disabled={index === 0}
               onClick={() => seek(scenes[index - 1].startMs)}
             >
@@ -408,7 +419,7 @@ export function Player({
             </button>
             <button
               className="icon-button"
-              aria-label="Next scene"
+              aria-label={tr("Next scene")}
               disabled={index === scenes.length - 1}
               onClick={() => seek(scenes[index + 1].startMs)}
             >
@@ -420,14 +431,14 @@ export function Player({
             <span className="control-spacer" />
             <button
               className="icon-button"
-              aria-label={muted ? "Unmute" : "Mute"}
+              aria-label={muted ? tr("Unmute") : tr("Mute")}
               onClick={() => setMuted(!muted)}
             >
               {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <button
               className={`icon-button ${captions ? "control-active" : ""}`}
-              aria-label="Toggle English captions"
+              aria-label={tr("Toggle English captions")}
               aria-pressed={captions}
               onClick={() => setCaptions(!captions)}
             >
@@ -435,7 +446,7 @@ export function Player({
             </button>
             <button
               className="icon-button"
-              aria-label="Fullscreen"
+              aria-label={tr("Fullscreen")}
               onClick={async () => {
                 setFullscreenNotice("");
                 try {
@@ -456,18 +467,18 @@ export function Player({
           </div>
           {fullscreenNotice && (
             <p className="playback-notice" role="status">
-              {fullscreenNotice}
+              {tr(fullscreenNotice)}
             </p>
           )}
         </div>
         {slowLoading && loading && !error && !offline && !scene.hidden && (
           <div className="playback-recovery" role="status">
             <p>
-              Loading is taking longer than usual. You can retry from{" "}
+              {tr("Loading is taking longer than usual. You can retry from")}{" "}
               {formatTime(time)}.
             </p>
             <Button kind="secondary" onClick={retryPlayback}>
-              Retry playback
+              {tr("Retry playback")}
             </Button>
           </div>
         )}
@@ -480,7 +491,7 @@ export function Player({
         }}
       >
         <label className="sr-only" htmlFor={`seek-${episode.id}`}>
-          Playback position
+          {tr("Playback position")}
         </label>
         <input
           className="seek-range"
@@ -503,7 +514,12 @@ export function Player({
               key={s.id}
               className={`timeline-segment ${i === index ? "current" : ""}`}
               style={{ flex: s.durationMs }}
-              aria-label={`Scene ${i + 1}: ${s.title}, by ${s.author}`}
+              aria-label={tr(
+                "Scene {0}: {1}, by {2}",
+                i + 1,
+                s.title,
+                s.author,
+              )}
               onMouseEnter={() => {
                 setHover(s.id);
                 setOriginal(false);
@@ -538,7 +554,7 @@ export function Player({
             onMouseLeave={() => setHover(null)}
           >
             <div className="prompt-meta">
-              <span>THE IDEA BEHIND THIS SCENE</span>
+              <span>{tr("THE IDEA BEHIND THIS SCENE")}</span>
               <span>
                 {formatTime(pointed.startMs)}–
                 {formatTime(pointed.startMs + pointed.durationMs)}
@@ -548,7 +564,7 @@ export function Player({
             <p>“{original ? pointed.prompt : pointed.englishPrompt}”</p>
             {!!pointed.contributors?.length && (
               <div className="scene-contributors">
-                <strong>Audience ideas</strong>
+                <strong>{tr("Audience ideas")}</strong>
                 {pointed.contributors.map((c, i) => (
                   <p key={`${c.id}:${i}`}>
                     <b>{c.name}</b> — {c.prompt}
@@ -559,26 +575,26 @@ export function Player({
             <div className="prompt-foot">
               <span>
                 {pointed.productionSource === "upload"
-                  ? "Host-uploaded finished video"
+                  ? tr("Host-uploaded finished video")
                   : pointed.source === "studio"
-                    ? "Studio opening"
-                    : "Community idea · adapted for continuity"}
+                    ? tr("Studio opening")
+                    : tr("Community idea · adapted for continuity")}
               </span>
               {pointed.prompt !== pointed.englishPrompt && (
                 <button
                   className="text-button"
                   onClick={() => setOriginal(!original)}
                 >
-                  {original ? "English translation" : "Original prompt"}
+                  {original ? tr("English translation") : tr("Original prompt")}
                 </button>
               )}
             </div>
           </div>
         )}
         <div className="timeline-legend">
-          <span>Every scene begins with someone’s idea.</span>
+          <span>{tr("Every scene begins with someone’s idea.")}</span>
           <span>
-            Hover or tap to meet its author <span>↗</span>
+            {tr("Hover or tap to meet its author")} <span>↗</span>
           </span>
         </div>
       </div>
@@ -588,12 +604,12 @@ export function Player({
           name={scene.author}
           label={
             scene.source === "studio"
-              ? "OPENING PRODUCED BY"
-              : "THIS SCENE PRODUCED BY"
+              ? tr("OPENING PRODUCED BY")
+              : tr("THIS SCENE PRODUCED BY")
           }
         />
         <span className="credit-note">
-          See the scene details for adopted audience ideas.
+          {tr("See the scene details for adopted audience ideas.")}
         </span>
       </div>
     </div>

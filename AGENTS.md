@@ -2,7 +2,7 @@
 
 Cloudflare-hosted collaborative video storytelling. TaleRelay is the public brand; Afterlight remains the internal repository and resource namespace. Starter worlds are local fixtures.
 
-- Keep UI, generated dialogue, captions and published story text in English. Preserve submitted prompt originals.
+- UI supports English (default) and Simplified Chinese, selected in footer Preferences. Keep generated dialogue, captions and published story text in English; preserve submitted prompt originals. Localize application copy through the shared catalog, never by rewriting rendered user content.
 - Treat user prompts and model output as untrusted. Only approved, published scenes advance canon.
 - D1 owns canon, tasks and ledgers. The story Durable Object coordinates; it cannot bypass database constraints.
 - Never automatically repeat an uncertain paid generation request. Reconcile it first.

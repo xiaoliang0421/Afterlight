@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { api, useResource } from "./api";
 import { Button, Modal, Notice, Loading } from "./components";
@@ -24,19 +25,22 @@ export function CommunityPanel() {
   if (!r.data)
     return (
       <>
-        {r.error ? <Notice danger>{r.error}</Notice> : <Loading />}
-        <Button onClick={() => void r.reload()}>Refresh community</Button>
+        {r.error ? <Notice danger>{tr(r.error)}</Notice> : <Loading />}
+        <Button onClick={() => void r.reload()}>
+          {tr("Refresh community")}
+        </Button>
       </>
     );
   return (
     <section className="community-panel">
-      <h2>Stories & community</h2>
+      <h2>{tr("Stories & community")}</h2>
       <p>
-        Review every public story introduction and nickname. Invitations allow
-        participation; they never grant publication or studio authority.
+        {tr(
+          "Review every public story introduction and nickname. Invitations allow participation; they never grant publication or studio authority.",
+        )}
       </p>
-      {error && <Notice danger>{error}</Notice>}
-      <h3>Story publication</h3>
+      {error && <Notice danger>{tr(error)}</Notice>}
+      <h3>{tr("Story publication")}</h3>
       <div className="community-list">
         {r.data.stories.map((s) => (
           <article key={s.id}>
@@ -44,8 +48,8 @@ export function CommunityPanel() {
               <strong>{s.title}</strong>
               <p>{s.logline}</p>
               <small>
-                {s.reviewStatus}
-                {s.publicationHold ? " · Publishing held by studio" : ""}
+                {tr(s.reviewStatus ?? "")}
+                {s.publicationHold ? tr(" · Publishing held by studio") : ""}
               </small>
             </div>
             <Button
@@ -56,36 +60,37 @@ export function CommunityPanel() {
                   .catch((e) => setError(e.message))
               }
             >
-              Review story
+              {tr("Review story")}
             </Button>
           </article>
         ))}
       </div>
-      <h3>Invitations & public names</h3>
+      <h3>{tr("Invitations & public names")}</h3>
       <p className="fine-print">
-        Ask an invited person to sign in first, then find their exact account
-        email here. A login alone cannot create or publish.
+        {tr(
+          "Ask an invited person to sign in first, then find their exact account email here. A login alone cannot create or publish.",
+        )}
       </p>
       <div className="community-list">
         {r.data.users.map((u) => (
           <article key={u.id}>
             <div>
-              <strong>{u.nickname || "No nickname yet"}</strong>
+              <strong>{u.nickname || tr("No nickname yet")}</strong>
               <p>{u.email}</p>
               <small>
-                {u.access} · Public name:{" "}
-                {u.publicName || "Storyteller (not approved)"}
+                {tr(u.access)} {tr("· Public name:")}{" "}
+                {u.publicName || tr("Storyteller (not approved)")}
               </small>
             </div>
             <Button kind="secondary" onClick={() => setUser(u)}>
-              Review account
+              {tr("Review account")}
             </Button>
           </article>
         ))}
       </div>
       {user && (
         <Modal
-          title="Account invitation & public name"
+          title={tr("Account invitation & public name")}
           onClose={() => setUser(null)}
         >
           <MemberReview
@@ -98,7 +103,10 @@ export function CommunityPanel() {
         </Modal>
       )}
       {story && (
-        <Modal title="Review story introduction" onClose={() => setStory(null)}>
+        <Modal
+          title={tr("Review story introduction")}
+          onClose={() => setStory(null)}
+        >
           <StoryReview
             review={story}
             done={async () => {
@@ -144,13 +152,13 @@ function MemberReview({
     <>
       <p>{member.email}</p>
       <dl>
-        <dt>Requested public nickname</dt>
-        <dd>{member.nickname || "Not chosen"}</dd>
-        <dt>Currently public</dt>
-        <dd>{member.publicName || "Storyteller"}</dd>
+        <dt>{tr("Requested public nickname")}</dt>
+        <dd>{member.nickname || tr("Not chosen")}</dd>
+        <dt>{tr("Currently public")}</dt>
+        <dd>{member.publicName || tr("Storyteller")}</dd>
       </dl>
       <label className="field-label">
-        Reason for this decision
+        {tr("Reason for this decision")}
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -158,14 +166,14 @@ function MemberReview({
           maxLength={600}
         />
       </label>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <div className="form-actions">
         <Button
           busy={busy}
           disabled={reason.trim().length < 10 || member.nickname.length < 2}
           onClick={() => void act("approve")}
         >
-          Approve this public name
+          {tr("Approve this public name")}
         </Button>
         <Button
           kind="danger"
@@ -173,33 +181,37 @@ function MemberReview({
           disabled={reason.trim().length < 10 || member.nickname.length < 2}
           onClick={() => void act("reject")}
         >
-          Remove public name
+          {tr("Remove public name")}
         </Button>
       </div>
       <label className="field-label">
-        Contribution access
+        {tr("Contribution access")}
         <select
           value={access}
           disabled={member.role === "admin"}
           onChange={(e) => setAccess(e.target.value)}
         >
-          <option value="none">Watching only</option>
-          <option value="member">Invited participant · propose ideas</option>
-          <option value="host">Invited host · create stories and upload</option>
-          <option value="suspended">Suspend contributions</option>
+          <option value="none">{tr("Watching only")}</option>
+          <option value="member">
+            {tr("Invited participant · propose ideas")}
+          </option>
+          <option value="host">
+            {tr("Invited host · create stories and upload")}
+          </option>
+          <option value="suspended">{tr("Suspend contributions")}</option>
         </select>
       </label>
       <p className="fine-print">
-        Suspension stops new creative work and publication. Account requests and
-        deletion remain available. Remove an unsafe public name or block a story
-        separately when required.
+        {tr(
+          "Suspension stops new creative work and publication. Account requests and deletion remain available. Remove an unsafe public name or block a story separately when required.",
+        )}
       </p>
       <Button
         busy={busy}
         disabled={reason.trim().length < 10 || member.role === "admin"}
         onClick={() => void act("access")}
       >
-        Save contribution access
+        {tr("Save contribution access")}
       </Button>
     </>
   );
@@ -237,21 +249,21 @@ function StoryReview({
       <h3>{review.story.title}</h3>
       <p>{review.story.logline}</p>
       <p>
-        <strong>Genre:</strong> {review.story.genre}
+        <strong>{tr("Genre:")}</strong> {review.story.genre}
       </p>
-      <h4>World rules</h4>
+      <h4>{tr("World rules")}</h4>
       <p className="preserve-lines">{review.story.worldRules}</p>
-      <h4>Visual style</h4>
+      <h4>{tr("Visual style")}</h4>
       <p>{review.story.visualStyle}</p>
-      <h4>Cover</h4>
+      <h4>{tr("Cover")}</h4>
       {review.story.coverUrl && (
         <img
           className="community-cover"
           src={review.story.coverUrl}
-          alt="Story cover under review"
+          alt={tr("Story cover under review")}
         />
       )}
-      <h4>Characters</h4>
+      <h4>{tr("Characters")}</h4>
       {review.characters.map((c) => (
         <article key={c.id}>
           <strong>{c.name}</strong>
@@ -261,7 +273,7 @@ function StoryReview({
             <img
               className="community-cover"
               src={c.referenceImage}
-              alt={`${c.name} reference under review`}
+              alt={tr("{0} reference under review", c.name)}
             />
           )}
         </article>
@@ -273,20 +285,20 @@ function StoryReview({
           onChange={(e) => setChecked(e.target.checked)}
         />
         <span>
-          I reviewed the title, introduction, world rules, character text,
-          images and publication restrictions for content safety, privacy,
-          rights and English-language suitability.
+          {tr(
+            "I reviewed the title, introduction, world rules, character text, images and publication restrictions for content safety, privacy, rights and English-language suitability.",
+          )}
         </span>
       </label>
       <label className="field-label">
-        Decision reason
+        {tr("Decision reason")}
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           maxLength={600}
         />
       </label>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <div className="form-actions">
         {[
           ["approve", "Approve & open"],
@@ -300,7 +312,7 @@ function StoryReview({
             disabled={!checked || reason.trim().length < 10}
             onClick={() => void act(action)}
           >
-            {label}
+            {tr(label)}
           </Button>
         ))}
       </div>

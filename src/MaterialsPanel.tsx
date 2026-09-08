@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { api, useResource } from "./api";
 import { Avatar, Button, Empty, Loading, Modal, Notice } from "./components";
@@ -20,21 +21,21 @@ export function MaterialsPanel() {
   }>("/admin/materials");
   const [editing, setEditing] = useState<Material | null>(null);
   if (resource.loading) return <Loading />;
-  if (!resource.data) return <Notice danger>{resource.error}</Notice>;
+  if (!resource.data) return <Notice danger>{tr(resource.error)}</Notice>;
   const { characters, candidates } = resource.data;
   return (
     <section>
       <p className="muted">
-        Stable identities, approved reference images and optional 2–5 second
-        voice samples. New characters become canon only after their first scene
-        is approved.
+        {tr(
+          "Stable identities, approved reference images and optional 2–5 second voice samples. New characters become canon only after their first scene is approved.",
+        )}
       </p>
       {[
         ["Established characters", characters],
         ["Proposed new characters", candidates],
       ].map(([label, items]) => (
         <div key={label as string}>
-          <h2>{label as string}</h2>
+          <h2>{tr(label as string)}</h2>
           <div className="character-grid">
             {(items as Material[]).map((ch) => (
               <article
@@ -46,18 +47,24 @@ export function MaterialsPanel() {
                 <h3>{ch.name}</h3>
                 <p>{ch.description}</p>
                 <p className="fine-print">
-                  {ch.referenceImage ? "Image approved" : "Image needed"}
-                  {ch.voiceReference ? " · Voice approved" : ""}
-                  {ch.materialVersion ? ` · Version ${ch.materialVersion}` : ""}
+                  {ch.referenceImage
+                    ? tr("Image approved")
+                    : tr("Image needed")}
+                  {ch.voiceReference ? tr(" · Voice approved") : ""}
+                  {ch.materialVersion
+                    ? tr(" · Version {0}", ch.materialVersion)
+                    : ""}
                 </p>
                 <Button kind="secondary" onClick={() => setEditing(ch)}>
-                  Review materials
+                  {tr("Review materials")}
                 </Button>
               </article>
             ))}
           </div>
           {!(items as Material[]).length && (
-            <p className="muted">No candidates awaiting material review.</p>
+            <p className="muted">
+              {tr("No candidates awaiting material review.")}
+            </p>
           )}
         </div>
       ))}
@@ -122,7 +129,7 @@ function MaterialModal({
         }}
       >
         <label className="field-label">
-          Approved image URL
+          {tr("Approved image URL")}
           <input
             type="url"
             required
@@ -131,11 +138,11 @@ function MaterialModal({
               setImage(e.target.value);
               setApproved(false);
             }}
-            placeholder="https://…"
+            placeholder={tr("https://…")}
           />
         </label>
         <label className="field-label">
-          Voice reference URL · optional
+          {tr("Voice reference URL · optional")}
           <input
             type="url"
             value={voice}
@@ -143,12 +150,12 @@ function MaterialModal({
               setVoice(e.target.value);
               setApproved(false);
             }}
-            placeholder="https://…"
+            placeholder={tr("https://…")}
           />
         </label>
         {voice && (
           <label className="field-label">
-            Verified audio duration · seconds
+            {tr("Verified audio duration · seconds")}
             <input
               type="number"
               min={2}
@@ -161,8 +168,9 @@ function MaterialModal({
           </label>
         )}
         <p className="fine-print">
-          Use stable URLs for materials you own or have permission to use. They
-          are sent to the video provider when a scene starts.
+          {tr(
+            "Use stable URLs for materials you own or have permission to use. They are sent to the video provider when a scene starts.",
+          )}
         </p>
         <label className="checkbox-label">
           <input
@@ -172,13 +180,14 @@ function MaterialModal({
             onChange={(e) => setApproved(e.target.checked)}
           />
           <span>
-            I have inspected these materials, checked usage rights and confirmed
-            this character’s identity.
+            {tr(
+              "I have inspected these materials, checked usage rights and confirmed this character’s identity.",
+            )}
           </span>
         </label>
-        {error && <Notice danger>{error}</Notice>}
+        {error && <Notice danger>{tr(error)}</Notice>}
         <Button type="submit" disabled={!approved} busy={busy}>
-          Approve materials
+          {tr("Approve materials")}
         </Button>
       </form>
     </Modal>

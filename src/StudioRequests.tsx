@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { useState } from "react";
 import { api, useResource } from "./api";
 import { Author, Button, Loading, Modal, Notice } from "./components";
@@ -23,28 +24,34 @@ export function StudioRequests() {
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState("");
   if (resource.loading) return <Loading />;
-  if (!resource.data) return <Notice danger>{resource.error}</Notice>;
+  if (!resource.data) return <Notice danger>{tr(resource.error)}</Notice>;
   return (
     <section>
       <p className="muted">
-        Review private requests, send an in-account response and check the
-        deletion impact. Active tasks and unresolved payments block deletion.
+        {tr(
+          "Review private requests, send an in-account response and check the deletion impact. Active tasks and unresolved payments block deletion.",
+        )}
       </p>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       {receipt && <Notice>{receipt}</Notice>}
       <div className="studio-tasks">
         {resource.data.requests.map((r) => (
           <article className="studio-task" key={r.id}>
-            <p className="eyebrow">ACCOUNT DELETION REQUEST</p>
+            <p className="eyebrow">{tr("ACCOUNT DELETION REQUEST")}</p>
             <Author id={r.userId} name={r.nickname || "Storyteller"} />
-            <p>{r.reason || "No additional note."}</p>
-            {r.response && <p className="muted">Your response: {r.response}</p>}
+            <p>{r.reason || tr("No additional note.")}</p>
+            {r.response && (
+              <p className="muted">
+                {tr("Your response:")} {r.response}
+              </p>
+            )}
             <p className="fine-print">
-              Private contact: {r.email}
+              {tr("Private contact:")} {r.email}
               <br />
-              Received {new Date(r.createdAt).toLocaleString("en")}
+              {tr("Received")}{" "}
+              {new Date(r.createdAt).toLocaleString(getLocale())}
               <br />
-              Request ID: {r.id}
+              {tr("Request ID:")} {r.id}
             </p>
             <Button
               kind="secondary"
@@ -69,43 +76,41 @@ export function StudioRequests() {
                 }
               }}
             >
-              Review request
+              {tr("Review request")}
             </Button>
           </article>
         ))}
       </div>
       {!resource.data.requests.length && (
-        <p className="muted">No account requests awaiting review.</p>
+        <p className="muted">{tr("No account requests awaiting review.")}</p>
       )}
       {review && (
         <Modal
-          title="Review account deletion"
+          title={tr("Review account deletion")}
           onClose={() => {
             if (!busy) setReview(null);
           }}
         >
           <p>
-            <strong>{review.request.nickname || "Storyteller"}</strong>
+            <strong>{review.request.nickname || tr("Storyteller")}</strong>
           </p>
           <p className="muted">
-            Deletion removes sign-in credentials, email, nickname, saved
-            activity and submitted prompt text. Published scenes remain with
-            anonymous credit; this person's stories pause. Required accounting
-            and policy records remain. Other people's contributions are
-            preserved.
+            {tr(
+              "Deletion removes sign-in credentials, email, nickname, saved activity and submitted prompt text. Published scenes remain with anonymous credit; this person's stories pause. Required accounting and policy records remain. Other people's contributions are preserved.",
+            )}
           </p>
           <p>
-            {review.counts?.publishedScenes ?? 0} published scenes ·{" "}
-            {review.counts?.ownedStories ?? 0} owned stories ·{" "}
-            {review.counts?.retainedOrders ?? 0} retained order records
+            {review.counts?.publishedScenes ?? 0} {tr("published scenes ·")}{" "}
+            {review.counts?.ownedStories ?? 0} {tr("owned stories ·")}{" "}
+            {review.counts?.retainedOrders ?? 0} {tr("retained order records")}
           </p>
           {review.blockers.map((message) => (
             <Notice key={message} danger>
-              {message}
+              {tr(message)}
             </Notice>
           ))}
           <label className="field-label">
-            Response visible to the requester
+            {tr("Response visible to the requester")}
             <textarea
               value={response}
               onChange={(e) => setResponse(e.target.value)}
@@ -134,13 +139,12 @@ export function StudioRequests() {
               }
             }}
           >
-            Save response
+            {tr("Save response")}
           </Button>
           <p className="fine-print">
-            Before executing, review identifying details in retained videos,
-            story text and references, and resolve any separate removal or legal
-            retention needs. Private unpublished video files are queued for
-            deletion; backup and provider copies follow the retention procedure.
+            {tr(
+              "Before executing, review identifying details in retained videos, story text and references, and resolve any separate removal or legal retention needs. Private unpublished video files are queued for deletion; backup and provider copies follow the retention procedure.",
+            )}
           </p>
           <label className="checkbox-row">
             <input
@@ -149,11 +153,12 @@ export function StudioRequests() {
               disabled={busy || !!review.blockers.length}
               onChange={(e) => setConfirmed(e.target.checked)}
             />
-            I reviewed the retained content and retention needs. I understand
-            that account deletion cannot be undone.
+            {tr(
+              "I reviewed the retained content and retention needs. I understand that account deletion cannot be undone.",
+            )}
           </label>
           <label className="field-label">
-            Type DELETE ACCOUNT to confirm
+            {tr("Type DELETE ACCOUNT to confirm")}
             <input
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
@@ -161,7 +166,7 @@ export function StudioRequests() {
               autoComplete="off"
             />
           </label>
-          {error && <Notice danger>{error}</Notice>}
+          {error && <Notice danger>{tr(error)}</Notice>}
           <Button
             disabled={
               busy ||
@@ -198,7 +203,7 @@ export function StudioRequests() {
               }
             }}
           >
-            Delete account
+            {tr("Delete account")}
           </Button>
         </Modal>
       )}

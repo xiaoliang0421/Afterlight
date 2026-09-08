@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { useState } from "react";
 import { api, useResource } from "./api";
 import { Button, Modal, Notice } from "./components";
@@ -17,18 +18,18 @@ export function AccountRequests() {
   const pending = resource.data?.requests.find((r) => r.status === "open");
   return (
     <section className="form-panel account-request-panel">
-      <h2>Account & privacy requests</h2>
+      <h2>{tr("Account & privacy requests")}</h2>
       <p className="muted">
-        You can request account deletion here. The studio will review unfinished
-        scenes, credit records and the attribution of shared stories before
-        completing the request.
+        {tr(
+          "You can request account deletion here. The studio will review unfinished scenes, credit records and the attribution of shared stories before completing the request.",
+        )}
       </p>
       {pending ? (
         <>
           <Notice>
-            Your deletion request was received on{" "}
-            {new Date(pending.createdAt).toLocaleDateString("en")}. It is
-            awaiting review.
+            {tr("Your deletion request was received on")}{" "}
+            {new Date(pending.createdAt).toLocaleDateString(getLocale())}
+            {tr(". It is awaiting review.")}
           </Notice>
           {pending.response && <Notice>{pending.response}</Notice>}
           <Button
@@ -42,21 +43,24 @@ export function AccountRequests() {
               }
             }}
           >
-            Withdraw request
+            {tr("Withdraw request")}
           </Button>
         </>
       ) : (
         <Button kind="secondary" onClick={() => setOpen(true)}>
-          Request account deletion
+          {tr("Request account deletion")}
         </Button>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       {open && (
-        <Modal title="Request account deletion" onClose={() => setOpen(false)}>
+        <Modal
+          title={tr("Request account deletion")}
+          onClose={() => setOpen(false)}
+        >
           <p>
-            This submits a request to the studio. Your account and published
-            scenes remain available during review. You can withdraw the request
-            from this page.
+            {tr(
+              "This submits a request to the studio. Your account and published scenes remain available during review. You can withdraw the request from this page.",
+            )}
           </p>
           <form
             onSubmit={async (e) => {
@@ -78,16 +82,16 @@ export function AccountRequests() {
             }}
           >
             <label className="field-label">
-              Anything we should know? · optional
+              {tr("Anything we should know? · optional")}
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 maxLength={1200}
               />
             </label>
-            {error && <Notice danger>{error}</Notice>}
+            {error && <Notice danger>{tr(error)}</Notice>}
             <Button busy={busy} type="submit">
-              Submit deletion request
+              {tr("Submit deletion request")}
             </Button>
           </form>
         </Modal>

@@ -6,7 +6,7 @@ The public brand is **TaleRelay**. The purchased domain is **tailrelay.com** (ta
 
 The owner confirmed **TaleRelay Support** as the public contact name and **Liang** as the author nickname on 2026-09-08. The configured support mailbox remains `talerelay@proton.me`. This display name is not an established legal entity. A mailto link does not prove inbox monitoring or response-time coverage.
 
-The owner confirmed worldwide service scope on 2026-09-08. The first edition keeps its English interface, invited creation and no-payment scope. Worldwide is the intended audience; local network/provider availability and applicable regional requirements still need validation.
+The owner confirmed worldwide service scope on 2026-09-08. The first edition offers English and Simplified Chinese interfaces, invited creation and no-payment scope. Worldwide is the intended audience; local network/provider availability and applicable regional requirements still need validation.
 
 The public contact name and author nickname are settled. Identification of the responsible operator, age eligibility, retention rules and final terms/privacy provisions remain part of final policy preparation. Do not infer legal identity from repository usernames or publish identity documents. Policies remain draft `2026-09-08-draft8`; earlier accepted document versions remain unchanged in D1.
 

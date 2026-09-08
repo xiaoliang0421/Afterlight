@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { BookOpen, Plus, RefreshCw } from "lucide-react";
 import type { Archive, ArchiveContext } from "../shared/archive";
@@ -21,43 +22,49 @@ export function ArchiveReview() {
   const r = useResource<{ archives: Item[] }>("/admin/archives");
   const [selected, setSelected] = useState<Item | null>(null);
   if (r.loading) return <Loading />;
-  if (!r.data) return <Notice danger>{r.error}</Notice>;
+  if (!r.data) return <Notice danger>{tr(r.error)}</Notice>;
   return (
     <section>
       <div className="section-heading">
         <p className="muted">
-          New scenes create an archive draft automatically. Review the recap,
-          character development and evidence before readers see it.
+          {tr(
+            "New scenes create an archive draft automatically. Review the recap, character development and evidence before readers see it.",
+          )}
         </p>
         <Button kind="secondary" onClick={() => void r.reload()}>
           <RefreshCw size={15} />
-          Refresh
+          {tr("Refresh")}
         </Button>
       </div>
       <div className="studio-tasks">
         {r.data.archives.map((a) => (
           <article className="studio-task" key={a.id}>
             <p className="eyebrow">
-              {a.storyTitle} · SCENE {a.version}
+              {a.storyTitle} {tr("· SCENE")} {a.version}
             </p>
             <h3>
               {a.status === "approved"
-                ? "Published story guide"
-                : "Story guide update"}
+                ? tr("Published story guide")
+                : tr("Story guide update")}
             </h3>
-            <span className="status-badge">{a.status}</span>
+            <span className="status-badge">{tr(a.status)}</span>
             <p>{a.reason}</p>
             {a.context && (
               <Button kind="secondary" onClick={() => setSelected(a)}>
-                {a.approved ? "Read accepted version" : "Review story guide"}
+                {a.approved
+                  ? tr("Read accepted version")
+                  : tr("Review story guide")}
               </Button>
             )}
           </article>
         ))}
       </div>
       {!r.data.archives.length && (
-        <Empty icon={<BookOpen size={30} />} title="A story to grow into.">
-          Publish a scene to prepare its first story guide.
+        <Empty
+          icon={<BookOpen size={30} />}
+          title={tr("A story to grow into.")}
+        >
+          {tr("Publish a scene to prepare its first story guide.")}
         </Empty>
       )}
       {selected && (
@@ -99,7 +106,10 @@ function Review({
   };
   const sourcePicker = (ids: string[], update: (ids: string[]) => void) => (
     <details className="archive-source-picker">
-      <summary>Source scenes ({ids.length})</summary>
+      <summary>
+        {tr("Source scenes (")}
+        {ids.length})
+      </summary>
       {context.scenes.map((s) => (
         <label className="checkbox-label" key={s.id}>
           <input
@@ -139,17 +149,21 @@ function Review({
   const slug = boot.stories.find((s) => s.id === item.storyId)?.slug;
   return (
     <Modal
-      title="Keep the story true."
-      eyebrow={`${item.storyTitle.toUpperCase()} · SCENE ${item.version}`}
+      title={tr("Keep the story true.")}
+      eyebrow={tr(
+        "{0} · SCENE {1}",
+        item.storyTitle.toUpperCase(),
+        item.version,
+      )}
       onClose={close}
     >
       <p className="modal-copy">
-        Compare the draft with the published scenes. Resolve uncertain
-        identities and contradictions; preserve each character’s existing
-        identity.
+        {tr(
+          "Compare the draft with the published scenes. Resolve uncertain identities and contradictions; preserve each character’s existing identity.",
+        )}
       </p>
       <details className="archive-evidence">
-        <summary>Read the published evidence</summary>
+        <summary>{tr("Read the published evidence")}</summary>
         {context.scenes.map((s) => (
           <article key={s.id}>
             <h4>
@@ -162,7 +176,7 @@ function Review({
                 target="_blank"
                 rel="noopener"
               >
-                Watch source scene ↗
+                {tr("Watch source scene ↗")}
               </a>
             )}
           </article>
@@ -170,7 +184,7 @@ function Review({
       </details>
       <fieldset disabled={!editable || busy} className="archive-fields">
         <label className="field-label" htmlFor="archive-recap">
-          Story recap
+          {tr("Story recap")}
         </label>
         <textarea
           id="archive-recap"
@@ -188,7 +202,7 @@ function Review({
             d.recap.sceneIds = ids;
           }),
         )}
-        <h3>Character development</h3>
+        <h3>{tr("Character development")}</h3>
         {draft.characters.map((ch, i) => (
           <section className="archive-edit-character" key={ch.id}>
             <div className="section-heading">
@@ -201,11 +215,11 @@ function Review({
                   })
                 }
               >
-                Remove from this update
+                {tr("Remove from this update")}
               </button>
             </div>
             <label className="field-label" htmlFor={`intro-${i}`}>
-              Introduction
+              {tr("Introduction")}
             </label>
             <textarea
               id={`intro-${i}`}
@@ -219,7 +233,7 @@ function Review({
               }
             />
             <label className="field-label" htmlFor={`growth-${i}`}>
-              Growth and changes
+              {tr("Growth and changes")}
             </label>
             <textarea
               id={`growth-${i}`}
@@ -243,7 +257,7 @@ function Review({
                   className="field-label"
                   htmlFor={`relationship-${i}-${j}`}
                 >
-                  Relationship with{" "}
+                  {tr("Relationship with")}{" "}
                   {
                     context.characters.find((c) => c.id === rel.characterId)
                       ?.name
@@ -274,12 +288,12 @@ function Review({
                     })
                   }
                 >
-                  Remove relationship
+                  {tr("Remove relationship")}
                 </button>
               </div>
             ))}
             <label className="field-label" htmlFor={`add-relation-${i}`}>
-              Add an observed relationship
+              {tr("Add an observed relationship")}
             </label>
             <select
               id={`add-relation-${i}`}
@@ -295,7 +309,7 @@ function Review({
               }
             >
               <option value="" disabled>
-                Choose an existing character
+                {tr("Choose an existing character")}
               </option>
               {context.characters
                 .filter(
@@ -312,7 +326,7 @@ function Review({
           </section>
         ))}
         <label className="field-label" htmlFor="archive-add-character">
-          Add a character to this update
+          {tr("Add a character to this update")}
         </label>
         <select
           id="archive-add-character"
@@ -331,7 +345,7 @@ function Review({
           }}
         >
           <option value="" disabled>
-            Choose an established character
+            {tr("Choose an established character")}
           </option>
           {context.characters
             .filter((c) => !draft.characters.some((x) => x.id === c.id))
@@ -345,13 +359,14 @@ function Review({
           <section key={key}>
             <h3>
               {key === "openThreads"
-                ? "Unanswered questions"
-                : "Concerns to resolve"}
+                ? tr("Unanswered questions")
+                : tr("Concerns to resolve")}
             </h3>
             {draft[key].map((entry, i) => (
               <div key={i}>
                 <label className="field-label" htmlFor={`${key}-${i}`}>
-                  {key === "openThreads" ? "Question" : "Concern"} {i + 1}
+                  {key === "openThreads" ? tr("Question") : tr("Concern")}{" "}
+                  {i + 1}
                 </label>
                 <textarea
                   id={`${key}-${i}`}
@@ -378,8 +393,8 @@ function Review({
                   }
                 >
                   {key === "concerns"
-                    ? "Resolved against the source — remove"
-                    : "Remove question"}
+                    ? tr("Resolved against the source — remove")
+                    : tr("Remove question")}
                 </button>
               </div>
             ))}
@@ -396,7 +411,7 @@ function Review({
                 }
               >
                 <Plus size={14} />
-                Add question
+                {tr("Add question")}
               </Button>
             )}
           </section>
@@ -411,34 +426,35 @@ function Review({
               onChange={(e) => setChecked(e.target.checked)}
             />
             <span>
-              I checked the cited scenes, confirmed English text and resolved
-              every concern. This guide accurately describes the published
-              story.
+              {tr(
+                "I checked the cited scenes, confirmed English text and resolved every concern. This guide accurately describes the published story.",
+              )}
             </span>
           </label>
-          {error && <Notice danger>{error}</Notice>}
+          {error && <Notice danger>{tr(error)}</Notice>}
           <div className="share-actions">
             <Button
               busy={busy}
               disabled={!checked || draft.concerns.length > 0}
               onClick={() => void act("approve")}
             >
-              Publish reviewed guide
+              {tr("Publish reviewed guide")}
             </Button>
             <Button
               kind="secondary"
               disabled={busy}
               onClick={() => void act("reject")}
             >
-              Discard draft
+              {tr("Discard draft")}
             </Button>
           </div>
         </>
       )}
       {!editable && (
         <p className="fine-print">
-          This reviewed version is preserved. Later scenes can add a new
-          version.
+          {tr(
+            "This reviewed version is preserved. Later scenes can add a new version.",
+          )}
         </p>
       )}
     </Modal>

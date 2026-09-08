@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -222,9 +223,9 @@ export function StoryPage({ slug }: { slug: string }) {
     return (
       <div className="page">
         <Notice danger>
-          {detail.error || "This story could not be found."}
+          {tr(detail.error) || tr("This story could not be found.")}
         </Notice>
-        <Button onClick={() => void detail.reload()}>Try again</Button>
+        <Button onClick={() => void detail.reload()}>{tr("Try again")}</Button>
       </div>
     );
   const { story, scenes, queue } = data,
@@ -250,7 +251,8 @@ export function StoryPage({ slug }: { slug: string }) {
           <p className="eyebrow">
             <span className="live-dot" />
             {story.genre.toUpperCase()}{" "}
-            <span className="eyebrow-divider">/</span> A WORLD WE WRITE TOGETHER
+            <span className="eyebrow-divider">/</span>{" "}
+            {tr("A WORLD WE WRITE TOGETHER")}
           </p>
           <h1>{story.title}</h1>
           <p className="story-logline">{story.logline}</p>
@@ -258,7 +260,7 @@ export function StoryPage({ slug }: { slug: string }) {
         <div className="story-actions">
           <button
             className={`icon-button outlined ${saved ? "saved" : ""}`}
-            aria-label={saved ? "Unsave story" : "Save story"}
+            aria-label={saved ? tr("Unsave story") : tr("Save story")}
             onClick={async () => {
               if (!requireLogin()) return;
               try {
@@ -284,7 +286,7 @@ export function StoryPage({ slug }: { slug: string }) {
             }}
           >
             <Share2 size={15} />
-            Share story
+            {tr("Share story")}
           </Button>
         </div>
       </div>
@@ -308,14 +310,20 @@ export function StoryPage({ slug }: { slug: string }) {
           ) : (
             <div className="unwritten-world">
               <Globe2 size={44} />
-              <span className="eyebrow">EVERY WORLD STARTS SOMEWHERE</span>
-              <h2>The first scene is still unwritten.</h2>
+              <span className="eyebrow">
+                {tr("EVERY WORLD STARTS SOMEWHERE")}
+              </span>
+              <h2>{tr("The first scene is still unwritten.")}</h2>
               <p>
-                The world and its characters are ready. Give them a beginning.
+                {tr(
+                  "The world and its characters are ready. Give them a beginning.",
+                )}
               </p>
               {owner && story.status === "draft" && (
                 <p>
-                  The introduction is private until Studio completes its review.
+                  {tr(
+                    "The introduction is private until Studio completes its review.",
+                  )}
                 </p>
               )}
             </div>
@@ -325,17 +333,21 @@ export function StoryPage({ slug }: { slug: string }) {
               <span className="status-dot" />
               <strong>
                 {story.status === "paused"
-                  ? "This story is taking a pause"
+                  ? tr("This story is taking a pause")
                   : queue.length
-                    ? `${queue.length} ${queue.length === 1 ? "idea" : "ideas"} in the making`
+                    ? tr(
+                        "{0} {1} in the making",
+                        queue.length,
+                        queue.length === 1 ? tr("idea") : tr("ideas"),
+                      )
                     : ended
-                      ? "You’re all caught up"
-                      : "The story is still unfolding"}
+                      ? tr("You’re all caught up")
+                      : tr("The story is still unfolding")}
               </strong>
               <span>
                 {!connected
-                  ? "Reconnecting to updates…"
-                  : "New scenes appear here when ready."}
+                  ? tr("Reconnecting to updates…")
+                  : tr("New scenes appear here when ready.")}
               </span>
             </div>
             {data.episodes.length > 0 && (
@@ -352,14 +364,14 @@ export function StoryPage({ slug }: { slug: string }) {
                   )
                 }
               >
-                Jump to latest <ArrowRight size={14} />
+                {tr("Jump to latest")} <ArrowRight size={14} />
               </button>
             )}
           </div>
           <div
             className="content-tabs"
             role="tablist"
-            aria-label="Story information"
+            aria-label={tr("Story information")}
           >
             {[
               ["episodes", "Chapters", Play],
@@ -380,7 +392,7 @@ export function StoryPage({ slug }: { slug: string }) {
                   onClick={() => setTab(String(key))}
                 >
                   <I size={15} />
-                  {String(label)}
+                  {tr(String(label))}
                   {key === "queue" && queue.length > 0 && (
                     <span className="count">{queue.length}</span>
                   )}
@@ -405,17 +417,18 @@ export function StoryPage({ slug }: { slug: string }) {
                     </span>
                     <span className="episode-copy">
                       <small>
-                        CHAPTER {String(e.number).padStart(2, "0")}{" "}
-                        {e.status === "open" && <i>UNFOLDING</i>}
+                        {tr("CHAPTER")} {String(e.number).padStart(2, "0")}{" "}
+                        {e.status === "open" && <i>{tr("UNFOLDING")}</i>}
                       </small>
                       <strong>{e.title}</strong>
                       <span>
                         {scenes.filter((s) => s.episodeId === e.id).length}{" "}
-                        scenes · {formatTime(e.durationMs)} · English
+                        {tr("scenes ·")} {formatTime(e.durationMs)}{" "}
+                        {tr("· English")}
                       </span>
                     </span>
                     {episode?.id === e.id ? (
-                      <span className="now-playing">NOW WATCHING</span>
+                      <span className="now-playing">{tr("NOW WATCHING")}</span>
                     ) : (
                       <ArrowRight size={18} />
                     )}
@@ -423,7 +436,9 @@ export function StoryPage({ slug }: { slug: string }) {
                 ))
               ) : (
                 <p className="muted">
-                  Chapters will appear as the first scenes are published.
+                  {tr(
+                    "Chapters will appear as the first scenes are published.",
+                  )}
                 </p>
               )}
             </div>
@@ -444,20 +459,20 @@ export function StoryPage({ slug }: { slug: string }) {
                     </button>
                     <p>
                       {s.hidden
-                        ? "This contribution is currently unavailable."
+                        ? tr("This contribution is currently unavailable.")
                         : s.englishPrompt}
                     </p>
                     <div>
                       <Author id={s.authorId} name={s.author} compact />
                       <small>
                         {s.productionSource === "upload"
-                          ? "Uploaded by host"
-                          : "Scene producer"}
+                          ? tr("Uploaded by host")
+                          : tr("Scene producer")}
                       </small>
                       {!!s.contributors?.length && (
                         <div className="scene-contributors">
                           <span>
-                            Ideas from{" "}
+                            {tr("Ideas from")}{" "}
                             {s.contributors.map((c) => c.name).join(", ")}
                           </span>
                         </div>
@@ -467,7 +482,7 @@ export function StoryPage({ slug }: { slug: string }) {
                   <button
                     className="icon-button"
                     disabled={s.hidden}
-                    aria-label={`Share ${s.title}`}
+                    aria-label={tr("Share {0}", s.title)}
                     onClick={() => setSharing({ scene: s })}
                   >
                     <Share2 size={16} />
@@ -500,7 +515,7 @@ export function StoryPage({ slug }: { slug: string }) {
                     </div>
                     {t.userId === boot.user?.id && (
                       <Link to="/contributions" className="text-button">
-                        Your idea <ArrowRight size={14} />
+                        {tr("Your idea")} <ArrowRight size={14} />
                       </Link>
                     )}
                   </div>
@@ -508,9 +523,9 @@ export function StoryPage({ slug }: { slug: string }) {
               ) : (
                 <Empty
                   icon={<Lightbulb size={28} />}
-                  title="A little room for your imagination"
+                  title={tr("A little room for your imagination")}
                 >
-                  Be the next person to move this story forward.
+                  {tr("Be the next person to move this story forward.")}
                 </Empty>
               )}
             </div>
@@ -539,8 +554,8 @@ export function StoryPage({ slug }: { slug: string }) {
                   }}
                 >
                   {story.status === "open"
-                    ? "Pause new scenes"
-                    : "Reopen the story"}
+                    ? tr("Pause new scenes")
+                    : tr("Reopen the story")}
                 </button>
               )}
             <button
@@ -550,7 +565,7 @@ export function StoryPage({ slug }: { slug: string }) {
               }}
             >
               <Flag size={13} />
-              Report a concern
+              {tr("Report a concern")}
             </button>
           </div>
         </section>
@@ -558,8 +573,9 @@ export function StoryPage({ slug }: { slug: string }) {
           {owner &&
             (story.reviewStatus !== "approved" || !!story.publicationHold) && (
               <Notice>
-                This story is awaiting studio review or has a publication
-                restriction. It cannot open until the studio clears it.{" "}
+                {tr(
+                  "This story is awaiting studio review or has a publication restriction. It cannot open until the studio clears it.",
+                )}{" "}
                 {story.reviewNote}
               </Notice>
             )}
@@ -591,13 +607,14 @@ export function StoryPage({ slug }: { slug: string }) {
             <span className="hand-drawn-star">✳</span>
             <div>
               <h3>
-                A shared world.
+                {tr("A shared world.")}
                 <br />
-                Your unique mark.
+                {tr("Your unique mark.")}
               </h3>
               <p>
-                Your name lives with your scene. Every viewer can discover the
-                idea — and the person — behind it.
+                {tr(
+                  "Your name lives with your scene. Every viewer can discover the idea — and the person — behind it.",
+                )}
               </p>
             </div>
           </div>
@@ -788,33 +805,36 @@ export function Composer({
       <div className="composer-top">
         <span className="eyebrow">
           <Sparkles size={13} />
-          THE NEXT SCENE
+          {tr("THE NEXT SCENE")}
         </span>
         <span className="free-tag">
           {task?.billingKind === "legacy-free"
-            ? "EXISTING FREE TASK"
-            : "CREATION POINTS"}
+            ? tr("EXISTING FREE TASK")
+            : tr("CREATION POINTS")}
         </span>
       </div>
       <h2>
         {task?.status === "Published"
-          ? "Your mark is in the story."
+          ? tr("Your mark is in the story.")
           : task?.status === "Failed" || task?.status === "Cancelled"
-            ? "Your idea is still yours."
+            ? tr("Your idea is still yours.")
             : inQueue
-              ? "Your idea is on its way."
-              : "What happens\nnext?"}
+              ? tr("Your idea is on its way.")
+              : tr("What happens\nnext?")}
       </h2>
       <p className="composer-intro">
-        A strange discovery. An unexpected visitor. A choice that changes
-        everything.
+        {tr(
+          "A strange discovery. An unexpected visitor. A choice that changes everything.",
+        )}
       </p>
       {queue.length > 0 && (
         <div className="queue-explainer" role="status">
           <Status state={queue[0].status} />
           <p>
-            {queue[0].author}’s idea is first in this story’s queue. New ideas
-            wait their turn, then adapt to the latest published scene.
+            {queue[0].author}
+            {tr(
+              "’s idea is first in this story’s queue. New ideas wait their turn, then adapt to the latest published scene.",
+            )}
           </p>
         </div>
       )}
@@ -834,15 +854,23 @@ export function Composer({
           <Status state={task.status} />
           <p>
             {task.status === "Queued"
-              ? "Your place is saved. Continuity will be checked again after earlier scenes are published."
+              ? tr(
+                  "Your place is saved. Continuity will be checked again after earlier scenes are published.",
+                )
               : task.status === "Published"
-                ? "Your scene is part of the story, with your name in the credits."
+                ? tr(
+                    "Your scene is part of the story, with your name in the credits.",
+                  )
                 : task.status === "Failed" || task.status === "Cancelled"
-                  ? "This scene did not enter the story. Your reserved credit has been returned."
-                  : "Your contribution is saved. You can close this page and check back anytime."}
+                  ? tr(
+                      "This scene did not enter the story. Your reserved credit has been returned.",
+                    )
+                  : tr(
+                      "Your contribution is saved. You can close this page and check back anytime.",
+                    )}
           </p>
           <Link to="/contributions" className="button primary">
-            Follow your scene <ArrowRight size={16} />
+            {tr("Follow your scene")} <ArrowRight size={16} />
           </Link>
           <button
             className="text-button"
@@ -853,16 +881,16 @@ export function Composer({
               idempotency.current = crypto.randomUUID();
             }}
           >
-            Save another idea for later
+            {tr("Save another idea for later")}
           </button>
         </div>
       ) : task?.plan ? (
         <div className="plan-preview">
-          <span className="eyebrow">YOUR SCENE, ADAPTED TO FIT</span>
+          <span className="eyebrow">{tr("YOUR SCENE, ADAPTED TO FIT")}</span>
           <h3>{task.plan.title}</h3>
           <p>{task.plan.summary}</p>
           <div className="plan-cast">
-            <span>Appearing in your scene</span>
+            <span>{tr("Appearing in your scene")}</span>
             {task.plan.characterIds.length ? (
               task.plan.characterIds.map((id) => {
                 const character =
@@ -870,19 +898,19 @@ export function Composer({
                   task.plan!.newCharacters.find((ch) => ch.id === id);
                 return (
                   <strong key={id}>
-                    {character?.name ?? "Character"}
+                    {character?.name ?? tr("Character")}
                     {task.plan!.newCharacters.some((ch) => ch.id === id)
-                      ? " · new"
+                      ? tr(" · new")
                       : ""}
                   </strong>
                 );
               })
             ) : (
-              <strong>No principal characters</strong>
+              <strong>{tr("No principal characters")}</strong>
             )}
           </div>
           <div className="bridge">
-            <span>How it connects</span>
+            <span>{tr("How it connects")}</span>
             {task.plan.bridge}
           </div>
           {task.plan.reason && (
@@ -891,19 +919,23 @@ export function Composer({
           <div className="scene-spec">
             <span>
               <Clock3 size={13} />
-              About 10 seconds
+              {tr("About 10 seconds")}
             </span>
             <span>
               {task.billingKind === "legacy-free"
-                ? "1 existing free credit"
-                : `${task.quotedPoints} creation points`}
+                ? tr("1 existing free credit")
+                : tr("{0} creation points", task.quotedPoints)}
             </span>
-            <span>English</span>
+            <span>{tr("English")}</span>
           </div>
           <p className="fine-print">
             {task.billingKind === "legacy-free"
-              ? "This previously saved task retains its original free allowance."
-              : "Points are reserved when you confirm and used on publication. Failed or rejected scenes return the reservation. Visual continuity still requires review."}
+              ? tr(
+                  "This previously saved task retains its original free allowance.",
+                )
+              : tr(
+                  "Points are reserved when you confirm and used on publication. Failed or rejected scenes return the reservation. Visual continuity still requires review.",
+                )}
           </p>
           <OwnerApprovalGate
             task={task}
@@ -921,16 +953,17 @@ export function Composer({
                   onChange={(e) => setConsent(e.target.checked)}
                 />
                 <span>
-                  Publish my original idea and nickname with the finished scene,
-                  as described in the{" "}
+                  {tr(
+                    "Publish my original idea and nickname with the finished scene, as described in the",
+                  )}{" "}
                   <a href="/terms#rights" target="_blank" rel="noopener">
-                    contribution terms
+                    {tr("contribution terms")}
                   </a>{" "}
-                  and{" "}
+                  {tr("and")}{" "}
                   <a href="/privacy#public" target="_blank" rel="noopener">
-                    public information notice
+                    {tr("public information notice")}
                   </a>
-                  . Small continuity edits are okay.
+                  {tr(". Small continuity edits are okay.")}
                 </span>
               </label>
               <Button
@@ -939,11 +972,11 @@ export function Composer({
                 busy={busy === "accept"}
                 onClick={() => void submit()}
               >
-                Reserve{" "}
+                {tr("Reserve")}{" "}
                 {task.billingKind === "legacy-free"
-                  ? "existing free credit"
-                  : `${task.quotedPoints} points`}{" "}
-                & join <ArrowRight size={16} />
+                  ? tr("existing free credit")
+                  : tr("{0} points", task.quotedPoints)}{" "}
+                {tr("& join")} <ArrowRight size={16} />
               </Button>
             </>
           )}
@@ -951,7 +984,7 @@ export function Composer({
             className="text-button full-width"
             onClick={() => setTask(null)}
           >
-            Back to my idea
+            {tr("Back to my idea")}
           </button>
         </div>
       ) : (
@@ -978,7 +1011,7 @@ export function Composer({
             disabled={!!busy}
           />
           <label className="sr-only" htmlFor={`idea-${storyId}`}>
-            Your idea for {title}
+            {tr("Your idea for")} {title}
           </label>
           <textarea
             id={`idea-${storyId}`}
@@ -988,14 +1021,20 @@ export function Composer({
             onChange={(e) => change(e.target.value)}
             placeholder={
               storyId === "last-light"
-                ? "The radio crackles again. This time, the voice tells her not to open the door…"
+                ? tr(
+                    "The radio crackles again. This time, the voice tells her not to open the door…",
+                  )
                 : storyId === "quiet-orbit"
-                  ? "Inez opens the research log. On the first page, someone has left a warning…"
-                  : "An unexpected discovery. A difficult choice. Tell us what happens next…"
+                  ? tr(
+                      "Inez opens the research log. On the first page, someone has left a warning…",
+                    )
+                  : tr(
+                      "An unexpected discovery. A difficult choice. Tell us what happens next…",
+                    )
             }
           />
           <div className="input-meta">
-            <span>Any input language. English on screen.</span>
+            <span>{tr("Any input language. English on screen.")}</span>
             <span>{prompt.length}/2000</span>
           </div>
           <Button
@@ -1008,13 +1047,13 @@ export function Composer({
           >
             <Sparkles size={16} />
             {boot.config.generationEnabled
-              ? "Preview your scene"
-              : "Save your idea"}
+              ? tr("Preview your scene")
+              : tr("Save your idea")}
             <ArrowRight size={16} />
           </Button>
           {boot.config.paymentsEnabled && (
             <Link to="/account#creation-points" className="text-button">
-              Top up creation points
+              {tr("Top up creation points")}
             </Link>
           )}
           {boot.config.generationEnabled && (
@@ -1023,44 +1062,47 @@ export function Composer({
               disabled={!!busy}
               onClick={() => void save(false)}
             >
-              Save as an idea for later
+              {tr("Save as an idea for later")}
             </button>
           )}
           {status !== "open" && (
             <Notice>
               {status === "draft"
-                ? "The owner can open this world when its setup is ready."
-                : "This story is paused. You can still save an idea."}
+                ? tr("The owner can open this world when its setup is ready.")
+                : tr("This story is paused. You can still save an idea.")}
             </Notice>
           )}
           <div className="creator-byline">
             <Avatar name={boot.user?.displayName || "?"} size={28} />
             <span>
-              Your scene will be credited to
+              {tr("Your scene will be credited to")}
               <br />
               <strong>
-                {boot.user?.displayName || "your storyteller name"}
+                {boot.user?.displayName || tr("your storyteller name")}
               </strong>
             </span>
           </div>
         </>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <div className="composer-footer">
         <span>
           {boot.user
-            ? `${boot.wallet?.available ?? 0} creation points available`
-            : "Sign in to make a scene"}
+            ? tr("{0} creation points available", boot.wallet?.available ?? 0)
+            : tr("Sign in to make a scene")}
         </span>
         {boot.config.paymentsEnabled && (
-          <Link to="/account#creation-points">Top up</Link>
+          <Link to="/account#creation-points">{tr("Top up")}</Link>
         )}
       </div>
       <p className="fine-print">
-        Ideas take turns. We check every scene against the latest story before
-        it’s made. Platform generation uses prepaid creation points.{" "}
+        {tr(
+          "Ideas take turns. We check every scene against the latest story before it’s made. Platform generation uses prepaid creation points.",
+        )}{" "}
         {boot.config.billingVisible && (
-          <Link to="/account#creation-points">About creation points</Link>
+          <Link to="/account#creation-points">
+            {tr("About creation points")}
+          </Link>
         )}
       </p>
     </div>
@@ -1078,10 +1120,15 @@ function ReportModal({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
-    <Modal title="Tell the studio." eyebrow="CONTENT & SUPPORT" onClose={close}>
+    <Modal
+      title={tr("Tell the studio.")}
+      eyebrow={tr("CONTENT & SUPPORT")}
+      onClose={close}
+    >
       <p className="modal-copy">
-        Describe the scene or issue and include a chapter or timestamp when
-        possible.
+        {tr(
+          "Describe the scene or issue and include a chapter or timestamp when possible.",
+        )}
       </p>
       <form
         onSubmit={async (e) => {
@@ -1099,7 +1146,7 @@ function ReportModal({
         }}
       >
         <label htmlFor="report-reason" className="field-label">
-          What should we look at?
+          {tr("What should we look at?")}
         </label>
         <textarea
           id="report-reason"
@@ -1110,9 +1157,9 @@ function ReportModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
-        {error && <Notice danger>{error}</Notice>}
+        {error && <Notice danger>{tr(error)}</Notice>}
         <Button className="full-width" type="submit" busy={busy}>
-          Send to the studio
+          {tr("Send to the studio")}
         </Button>
       </form>
     </Modal>

@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useEffect, useState } from "react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import type { Task } from "../shared/domain";
@@ -77,11 +78,11 @@ export function OwnerApprovalGate({
   return (
     <section
       className="owner-approval-gate"
-      aria-label="Story creator approval"
+      aria-label={tr("Story creator approval")}
       aria-live="polite"
     >
       <span className="eyebrow">
-        <ShieldCheck size={15} /> STORY CREATOR’S DECISION
+        <ShieldCheck size={15} /> {tr("STORY CREATOR’S DECISION")}
       </span>
       <p>
         {task
@@ -90,14 +91,24 @@ export function OwnerApprovalGate({
       </p>
       <Notice>
         {status === "approved"
-          ? "Approved for this plan and story version. Confirm below to join the queue."
+          ? tr(
+              "Approved for this plan and story version. Confirm below to join the queue.",
+            )
           : status === "pending"
-            ? "Waiting for the story creator. No generation credit is reserved, and other ideas can keep moving."
+            ? tr(
+                "Waiting for the story creator. No generation credit is reserved, and other ideas can keep moving.",
+              )
             : status === "rejected"
-              ? "The story creator declined this plan. You can withdraw it and propose a different direction."
+              ? tr(
+                  "The story creator declined this plan. You can withdraw it and propose a different direction.",
+                )
               : status === "expired"
-                ? "The story advanced. Prepare a fresh preview before requesting another decision."
-                : "This idea proposes a major change. The story creator must review it before generation."}
+                ? tr(
+                    "The story advanced. Prepare a fresh preview before requesting another decision.",
+                  )
+                : tr(
+                    "This idea proposes a major change. The story creator must review it before generation.",
+                  )}
       </Notice>
       {task.ownerReview?.note && (
         <blockquote className="owner-decision-note">
@@ -113,8 +124,9 @@ export function OwnerApprovalGate({
               onChange={(e) => setShare(e.target.checked)}
             />
             <span>
-              Share my original idea, nickname and this scene plan privately
-              with the story creator for a decision.
+              {tr(
+                "Share my original idea, nickname and this scene plan privately with the story creator for a decision.",
+              )}
             </span>
           </label>
           <Button
@@ -123,7 +135,7 @@ export function OwnerApprovalGate({
             disabled={!share}
             onClick={() => void act("request")}
           >
-            Request the creator’s decision <ArrowRight size={15} />
+            {tr("Request the creator’s decision")} <ArrowRight size={15} />
           </Button>
         </>
       )}
@@ -133,7 +145,7 @@ export function OwnerApprovalGate({
           busy={busy}
           onClick={() => void act("preview")}
         >
-          Prepare a fresh preview
+          {tr("Prepare a fresh preview")}
         </Button>
       )}
       {status === "pending" && (
@@ -142,10 +154,10 @@ export function OwnerApprovalGate({
           busy={busy}
           onClick={() => void act("refresh")}
         >
-          Refresh decision
+          {tr("Refresh decision")}
         </Button>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
     </section>
   );
 }
@@ -167,23 +179,26 @@ export function OwnerReviews({ storyId }: { storyId?: string }) {
     await refresh();
   };
   return (
-    <section className="owner-review-inbox" aria-label="Story decisions">
+    <section className="owner-review-inbox" aria-label={tr("Story decisions")}>
       <div className="section-heading">
         <div>
-          <span className="eyebrow">FOR THE WORLDS YOU CREATED</span>
-          <h2>Story decisions{pending > 0 ? ` · ${pending} waiting` : ""}</h2>
+          <span className="eyebrow">{tr("FOR THE WORLDS YOU CREATED")}</span>
+          <h2>
+            {tr("Story decisions")}
+            {pending > 0 ? tr(" · {0} waiting", pending) : ""}
+          </h2>
         </div>
         <Button kind="secondary" onClick={() => void reload()}>
-          Refresh decisions
+          {tr("Refresh decisions")}
         </Button>
       </div>
       <p className="fine-print">
-        Review major changes before video generation. Decisions apply to a
-        specific plan; they do not rewrite published scenes or bypass the final
-        video review.
+        {tr(
+          "Review major changes before video generation. Decisions apply to a specific plan; they do not rewrite published scenes or bypass the final video review.",
+        )}
       </p>
       {resource.loading && <Loading />}
-      {resource.error && <Notice danger>{resource.error}</Notice>}
+      {resource.error && <Notice danger>{tr(resource.error)}</Notice>}
       {resource.data?.reviews.map((item) => (
         <article className="owner-review-row" key={item.id}>
           <div>
@@ -195,19 +210,24 @@ export function OwnerReviews({ storyId }: { storyId?: string }) {
             <p>{item.plan.summary}</p>
             <span className="fine-print">
               {item.status === "pending"
-                ? "Waiting for your decision"
+                ? tr("Waiting for your decision")
                 : item.status}{" "}
-              · Story version {item.baseVersion}
+              {tr("· Story version")} {item.baseVersion}
             </span>
           </div>
           <Button kind="secondary" onClick={() => setSelected(item)}>
-            {item.status === "pending" ? "Review proposal" : "View decision"}
+            {item.status === "pending"
+              ? tr("Review proposal")
+              : tr("View decision")}
           </Button>
         </article>
       ))}
       {resource.data && !resource.data.reviews.length && (
-        <Empty icon={<ShieldCheck size={26} />} title="No decisions waiting.">
-          Major changes shared with you will appear here.
+        <Empty
+          icon={<ShieldCheck size={26} />}
+          title={tr("No decisions waiting.")}
+        >
+          {tr("Major changes shared with you will appear here.")}
         </Empty>
       )}
       {selected && (
@@ -254,57 +274,59 @@ function DecisionModal({
   return (
     <Modal
       title={item.plan.title}
-      eyebrow="STORY CHANGE PROPOSAL"
+      eyebrow={tr("STORY CHANGE PROPOSAL")}
       onClose={close}
     >
       <Author id={item.authorId} name={item.author} />
       <p className="fine-print">
-        {item.storyTitle} · Based on story version {item.baseVersion}
+        {item.storyTitle} {tr("· Based on story version")} {item.baseVersion}
       </p>
       <Notice>
         {item.plan.majorChanges.map((c) => majorChangeLabels[c]).join(" · ")}
       </Notice>
       <details className="advanced-review" open>
-        <summary>Current story context · version {item.contextVersion}</summary>
+        <summary>
+          {tr("Current story context · version")} {item.contextVersion}
+        </summary>
         <p>
-          <strong>World rules</strong> · {item.worldRules}
+          <strong>{tr("World rules")}</strong> · {item.worldRules}
         </p>
         <p>
-          <strong>Latest published scene</strong> ·{" "}
-          {item.latestSummary ?? "No scenes have been published yet."}
+          <strong>{tr("Latest published scene")}</strong> ·{" "}
+          {item.latestSummary ?? tr("No scenes have been published yet.")}
         </p>
         {item.cast.map((c) => (
           <p key={c.id}>
             <strong>{c.name}</strong> · {c.description}
             <br />
-            Current state: {c.state}
+            {tr("Current state:")} {c.state}
           </p>
         ))}
       </details>
       <div className="bridge">
-        <span>Original idea · shared privately</span>
+        <span>{tr("Original idea · shared privately")}</span>
         {item.prompt}
       </div>
       <div className="bridge">
-        <span>English adaptation</span>
+        <span>{tr("English adaptation")}</span>
         {item.plan.englishPrompt}
       </div>
       <p className="modal-copy">{item.plan.summary}</p>
       <div className="bridge">
-        <span>How it connects</span>
+        <span>{tr("How it connects")}</span>
         {item.plan.bridge}
       </div>
-      <p className="eyebrow">PROPOSED EVENTS</p>
+      <p className="eyebrow">{tr("PROPOSED EVENTS")}</p>
       <ul>
         {item.plan.proposedEvents.map((event, i) => (
           <li key={i}>{event}</li>
         ))}
       </ul>
       <details className="advanced-review">
-        <summary>Full scene plan, cast and state changes</summary>
+        <summary>{tr("Full scene plan, cast and state changes")}</summary>
         <p>{item.plan.videoPrompt}</p>
         <p>
-          Cast:{" "}
+          {tr("Cast:")}{" "}
           {item.plan.characterIds
             .map(
               (id) =>
@@ -312,11 +334,14 @@ function DecisionModal({
                 item.plan.newCharacters.find((c) => c.id === id)?.name ??
                 id,
             )
-            .join(", ") || "None"}
+            .join(", ") || tr("None")}
         </p>
         {item.plan.newCharacters.map((c) => (
           <p key={c.id}>
-            <strong>New: {c.name}</strong> · {c.description} · {c.state}
+            <strong>
+              {tr("New:")} {c.name}
+            </strong>{" "}
+            · {c.description} · {c.state}
           </p>
         ))}
         {item.plan.characterUpdates.map((c) => (
@@ -331,27 +356,29 @@ function DecisionModal({
         ))}
       </details>
       <p className="fine-print">
-        Approval lets the contributor confirm this plan and enter the normal
-        queue. If the story advances, a new decision may be needed. Only the
-        reviewed video can add facts to the story.
+        {tr(
+          "Approval lets the contributor confirm this plan and enter the normal queue. If the story advances, a new decision may be needed. Only the reviewed video can add facts to the story.",
+        )}
       </p>
       {item.status !== "pending" ? (
         <Notice>
-          {item.status}
+          {tr(item.status)}
           {item.note
             ? `: ${item.note}`
-            : " — this request no longer needs a decision."}
+            : tr(" — this request no longer needs a decision.")}
         </Notice>
       ) : (
         <>
           <label className="field-label">
-            Your explanation to the contributor
+            {tr("Your explanation to the contributor")}
             <textarea
               rows={3}
               maxLength={1200}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Explain why this direction fits, or what should change."
+              placeholder={tr(
+                "Explain why this direction fits, or what should change.",
+              )}
             />
           </label>
           <label className="checkbox-label">
@@ -361,18 +388,19 @@ function DecisionModal({
               onChange={(e) => setChecked(e.target.checked)}
             />
             <span>
-              I reviewed this exact proposal against the story’s rules,
-              characters and latest published events.
+              {tr(
+                "I reviewed this exact proposal against the story’s rules, characters and latest published events.",
+              )}
             </span>
           </label>
-          {error && <Notice danger>{error}</Notice>}
+          {error && <Notice danger>{tr(error)}</Notice>}
           <div className="owner-decision-actions">
             <Button
               busy={busy}
               disabled={!checked || note.trim().length < 10}
               onClick={() => void decide("approved")}
             >
-              Approve this direction
+              {tr("Approve this direction")}
             </Button>
             <Button
               kind="secondary"
@@ -380,7 +408,7 @@ function DecisionModal({
               disabled={!checked || note.trim().length < 10}
               onClick={() => void decide("rejected")}
             >
-              Decline with explanation
+              {tr("Decline with explanation")}
             </Button>
           </div>
         </>

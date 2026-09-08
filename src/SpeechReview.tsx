@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import type { SpeechAssessment } from "../shared/speech";
 import { api, useResource } from "./api";
@@ -41,27 +42,31 @@ export function SpeechReview({
     }
   };
   return (
-    <section className="advanced-review" aria-label="Automatic speech review">
-      <h3>Speech & caption check</h3>
+    <section
+      className="advanced-review"
+      aria-label={tr("Automatic speech review")}
+    >
+      <h3>{tr("Speech & caption check")}</h3>
       <p className="fine-print">
-        Independent language detection is a review aid. Listen to the entire
-        clip and check readable text separately; no automated result publishes a
-        scene.
+        {tr(
+          "Independent language detection is a review aid. Listen to the entire clip and check readable text separately; no automated result publishes a scene.",
+        )}
       </p>
       {resource.loading ? (
-        <p>Loading speech check…</p>
+        <p>{tr("Loading speech check…")}</p>
       ) : !check ? (
         <>
           <p>
-            No automatic transcript is available. You can review the audio
-            manually or run one speech check.
+            {tr(
+              "No automatic transcript is available. You can review the audio manually or run one speech check.",
+            )}
           </p>
           <Button
             kind="secondary"
             busy={busy}
             onClick={() => void act("start")}
           >
-            Check speech · up to $0.10 platform budget
+            {tr("Check speech · up to $0.10 platform budget")}
           </Button>
         </>
       ) : (
@@ -69,17 +74,18 @@ export function SpeechReview({
           <p>
             {check.status === "completed"
               ? check.result?.verdict === "english-likely"
-                ? "English detected — review still required."
-                : "Language or timing needs review."
-              : `Speech check: ${check.status}.`}
+                ? tr("English detected — review still required.")
+                : tr("Language or timing needs review.")
+              : tr("Speech check: {0}.", check.status)}
           </p>
           {check.result && (
             <>
               <p>
                 {check.result.language} ·{" "}
-                {Math.round(check.result.confidence * 100)}% language confidence
+                {Math.round(check.result.confidence * 100)}
+                {tr("% language confidence")}
               </p>
-              <p>{check.result.transcript || "No transcript returned."}</p>
+              <p>{check.result.transcript || tr("No transcript returned.")}</p>
               {check.result.issues.map((issue) => (
                 <Notice danger key={issue}>
                   {issue}
@@ -90,7 +96,7 @@ export function SpeechReview({
                   kind="secondary"
                   onClick={() => onCaptions(check.result!.captions)}
                 >
-                  Use caption draft for review
+                  {tr("Use caption draft for review")}
                 </Button>
               )}
             </>
@@ -101,21 +107,23 @@ export function SpeechReview({
               busy={busy}
               onClick={() => void act("refresh")}
             >
-              Refresh existing check
+              {tr("Refresh existing check")}
             </Button>
           )}
           {["uncertain", "queued", "failed"].includes(check.status) && (
             <details>
-              <summary>Resolve the existing speech attempt</summary>
+              <summary>{tr("Resolve the existing speech attempt")}</summary>
               <p className="fine-print">
-                Verify the request has stopped with the provider before closing
-                it. Its $0.10 cost ceiling remains counted. Closing never
-                resubmits or regenerates the clip.
+                {tr(
+                  "Verify the request has stopped with the provider before closing it. Its $0.10 cost ceiling remains counted. Closing never resubmits or regenerates the clip.",
+                )}
               </p>
               <p>
-                Provider request:{" "}
+                {tr("Provider request:")}{" "}
                 {check.requestId ||
-                  "Submission response was not recorded; investigate the provider request history."}
+                  tr(
+                    "Submission response was not recorded; investigate the provider request history.",
+                  )}
               </p>
               <label className="checkbox-label">
                 <input
@@ -123,11 +131,12 @@ export function SpeechReview({
                   checked={terminal}
                   onChange={(e) => setTerminal(e.target.checked)}
                 />
-                The provider attempt is terminal and its cost is within the
-                recorded ceiling.
+                {tr(
+                  "The provider attempt is terminal and its cost is within the recorded ceiling.",
+                )}
               </label>
               <label className="field-label">
-                Verification notes
+                {tr("Verification notes")}
                 <textarea
                   value={note}
                   maxLength={1000}
@@ -140,14 +149,14 @@ export function SpeechReview({
                 disabled={!terminal || note.trim().length < 20}
                 onClick={() => void act("close")}
               >
-                Close this check after verification
+                {tr("Close this check after verification")}
               </Button>
             </details>
           )}
         </>
       )}
       {(error || resource.error) && (
-        <Notice danger>{error || resource.error}</Notice>
+        <Notice danger>{tr(error || resource.error)}</Notice>
       )}
     </section>
   );

@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Sparkles, Upload, MessageSquare, ArrowRight } from "lucide-react";
 import type {
@@ -42,7 +43,10 @@ export function ProductionPanel({
   return (
     <section className="production-panel">
       {host && (
-        <div className="production-tabs" aria-label="Story host workspace">
+        <div
+          className="production-tabs"
+          aria-label={tr("Story host workspace")}
+        >
           <button
             className={tab === "ideas" ? "selected" : ""}
             onClick={() => {
@@ -50,13 +54,13 @@ export function ProductionPanel({
               void proposals.reload();
             }}
           >
-            <MessageSquare size={16} /> Audience ideas
+            <MessageSquare size={16} /> {tr("Audience ideas")}
           </button>
           <button
             className={tab === "make" ? "selected" : ""}
             onClick={() => setTab("make")}
           >
-            <Sparkles size={16} /> Make a scene
+            <Sparkles size={16} /> {tr("Make a scene")}
           </button>
         </div>
       )}
@@ -65,13 +69,13 @@ export function ProductionPanel({
           <ProposalForm story={story} onSaved={proposals.reload} />
           {host && (
             <div className="proposal-inbox">
-              <h3>Choose what happens next.</h3>
+              <h3>{tr("Choose what happens next.")}</h3>
               <p className="fine-print">
-                Select up to five ideas to credit in your next scene.
+                {tr("Select up to five ideas to credit in your next scene.")}
                 {generationAvailable &&
-                  " Your account pays if you choose platform generation."}
+                  tr(" Your account pays if you choose platform generation.")}
               </p>
-              {proposals.error && <Notice danger>{proposals.error}</Notice>}
+              {proposals.error && <Notice danger>{tr(proposals.error)}</Notice>}
               {proposals.data?.proposals
                 .filter((p) => p.status === "pending")
                 .map((p) => (
@@ -93,7 +97,9 @@ export function ProductionPanel({
                     <span>
                       <strong>{p.author}</strong>
                       <span>{p.prompt}</span>
-                      <small>Based on story version {p.baseVersion}</small>
+                      <small>
+                        {tr("Based on story version")} {p.baseVersion}
+                      </small>
                     </span>
                   </label>
                 ))}
@@ -102,14 +108,19 @@ export function ProductionPanel({
                   (p) => p.status === "pending",
                 ) && (
                   <p className="empty-copy">
-                    No audience ideas yet. You can start the next scene with
-                    your own idea.
+                    {tr(
+                      "No audience ideas yet. You can start the next scene with your own idea.",
+                    )}
                   </p>
                 )}
               <Button onClick={() => setTab("make")}>
                 {selected.length
-                  ? `Make a scene with ${selected.length} selected ${selected.length === 1 ? "idea" : "ideas"}`
-                  : "Make the next scene"}
+                  ? tr(
+                      "Make a scene with {0} selected {1}",
+                      selected.length,
+                      selected.length === 1 ? tr("idea") : tr("ideas"),
+                    )
+                  : tr("Make the next scene")}
                 <ArrowRight size={16} />
               </Button>
             </div>
@@ -125,33 +136,33 @@ export function ProductionPanel({
         <>
           {picked.length > 0 && (
             <div className="selected-ideas">
-              <span className="eyebrow">AUDIENCE CONTRIBUTIONS</span>
+              <span className="eyebrow">{tr("AUDIENCE CONTRIBUTIONS")}</span>
               {picked.map((p) => (
                 <p key={p.id}>
                   <strong>{p.author}</strong> — {p.prompt}
                 </p>
               ))}
               <small>
-                These ideas will be credited if the scene is published.
+                {tr("These ideas will be credited if the scene is published.")}
               </small>
             </div>
           )}
           {generationAvailable && (
             <div
               className="production-methods"
-              aria-label="Video production method"
+              aria-label={tr("Video production method")}
             >
               <button
                 className={method === "generate" ? "selected" : ""}
                 onClick={() => setMethod("generate")}
               >
-                <Sparkles size={16} /> Generate with points
+                <Sparkles size={16} /> {tr("Generate with points")}
               </button>
               <button
                 className={method === "upload" ? "selected" : ""}
                 onClick={() => setMethod("upload")}
               >
-                <Upload size={16} /> Upload a finished video
+                <Upload size={16} /> {tr("Upload a finished video")}
               </button>
             </div>
           )}
@@ -219,19 +230,22 @@ function ProposalForm({
   if (boot.user && !boot.config.canContribute)
     return (
       <Notice>
-        Watching is open. Sharing ideas and hosting stories are by invitation
-        during early access. Contact the studio from Help to request access.
+        {tr(
+          "Watching is open. Sharing ideas and hosting stories are by invitation during early access. Contact the studio from Help to request access.",
+        )}
       </Notice>
     );
   return (
     <div className="proposal-form">
-      <span className="eyebrow">HELP SHAPE THE NEXT SCENE</span>
-      <h2>What happens next?</h2>
+      <span className="eyebrow">{tr("HELP SHAPE THE NEXT SCENE")}</span>
+      <h2>{tr("What happens next?")}</h2>
       <p>
-        A discovery. A difficult choice. Share an idea for the host to consider.
+        {tr(
+          "A discovery. A difficult choice. Share an idea for the host to consider.",
+        )}
       </p>
       <textarea
-        aria-label="Your proposal"
+        aria-label={tr("Your proposal")}
         maxLength={2000}
         rows={4}
         value={text}
@@ -240,11 +254,12 @@ function ProposalForm({
           key.current = crypto.randomUUID();
           setMessage("");
         }}
-        placeholder="What should happen after this scene?"
+        placeholder={tr("What should happen after this scene?")}
       />
       <p className="fine-print">
-        Free to propose. Sharing an idea does not start generation or spend
-        points.
+        {tr(
+          "Free to propose. Sharing an idea does not start generation or spend points.",
+        )}
       </p>
       <label className="checkbox-label">
         <input
@@ -253,16 +268,17 @@ function ProposalForm({
           onChange={(e) => setConsent(e.target.checked)}
         />
         <span>
-          Share this idea privately with the host. If adopted, publish my
-          original idea and nickname with the scene under the{" "}
+          {tr(
+            "Share this idea privately with the host. If adopted, publish my original idea and nickname with the scene under the",
+          )}{" "}
           <a href="/terms#rights" target="_blank" rel="noopener">
-            contribution terms
+            {tr("contribution terms")}
           </a>
           .
         </span>
       </label>
-      {error && <Notice danger>{error}</Notice>}
-      {message && <Notice>{message}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
+      {message && <Notice>{tr(message)}</Notice>}
       <Button
         busy={busy}
         disabled={
@@ -270,7 +286,7 @@ function ProposalForm({
         }
         onClick={() => void send()}
       >
-        Send idea to host
+        {tr("Send idea to host")}
         <ArrowRight size={16} />
       </Button>
     </div>
@@ -286,12 +302,12 @@ export function ProposalList({
   const [error, setError] = useState("");
   return (
     <div className="proposal-list">
-      {proposals.length > 0 && <h3>Your proposals</h3>}
-      {error && <Notice danger>{error}</Notice>}
+      {proposals.length > 0 && <h3>{tr("Your proposals")}</h3>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       {proposals.map((p) => (
         <article className="proposal-card" key={p.id}>
           <div>
-            <span className="eyebrow">{p.status}</span>
+            <span className="eyebrow">{tr(p.status)}</span>
             <p>{p.prompt}</p>
           </div>
           {p.status === "pending" && (
@@ -308,12 +324,12 @@ export function ProposalList({
                 }
               }}
             >
-              Withdraw
+              {tr("Withdraw")}
             </button>
           )}
           {p.status === "published" && (
             <Link to={`/story/${p.storyId}?scene=${p.taskId}`}>
-              See the published scene
+              {tr("See the published scene")}
             </Link>
           )}
         </article>
@@ -329,7 +345,7 @@ export function MyProposals() {
   );
   return (
     <>
-      {r.error && <Notice danger>{r.error}</Notice>}
+      {r.error && <Notice danger>{tr(r.error)}</Notice>}
       <ProposalList proposals={r.data?.proposals ?? []} onChanged={r.reload} />
     </>
   );
@@ -448,17 +464,18 @@ function UploadEditor({
     );
   return (
     <div className="upload-editor">
-      <span className="eyebrow">YOUR FINISHED VIDEO</span>
-      <h2>Bring the next scene.</h2>
+      <span className="eyebrow">{tr("YOUR FINISHED VIDEO")}</span>
+      <h2>{tr("Bring the next scene.")}</h2>
       <p>
-        Upload your own film or a clip made elsewhere. No platform generation
-        points are used.
+        {tr(
+          "Upload your own film or a clip made elsewhere. No platform generation points are used.",
+        )}
       </p>
       {!boot.config.uploadsEnabled && (
-        <Notice>Finished-video uploads are being prepared.</Notice>
+        <Notice>{tr("Finished-video uploads are being prepared.")}</Notice>
       )}
       <label className="field-label">
-        MP4 video
+        {tr("MP4 video")}
         <input
           type="file"
           accept="video/mp4,.mp4"
@@ -469,12 +486,13 @@ function UploadEditor({
           }}
         />
         <small>
-          Up to 60 seconds and 64 MiB. H.264 video, AAC audio or no audio.
-          English dialogue and readable text.
+          {tr(
+            "Up to 60 seconds and 64 MiB. H.264 video, AAC audio or no audio. English dialogue and readable text.",
+          )}
         </small>
       </label>
       <label className="field-label">
-        Scene title
+        {tr("Scene title")}
         <input
           maxLength={100}
           value={title}
@@ -485,7 +503,7 @@ function UploadEditor({
         />
       </label>
       <label className="field-label">
-        What actually happens
+        {tr("What actually happens")}
         <textarea
           rows={3}
           maxLength={1200}
@@ -497,7 +515,7 @@ function UploadEditor({
         />
       </label>
       <label className="field-label">
-        How it continues the latest scene
+        {tr("How it continues the latest scene")}
         <textarea
           rows={2}
           maxLength={1200}
@@ -509,7 +527,7 @@ function UploadEditor({
         />
       </label>
       <label className="field-label">
-        New story facts · one per line
+        {tr("New story facts · one per line")}
         <textarea
           rows={3}
           value={events}
@@ -530,14 +548,16 @@ function UploadEditor({
       />
       {newCast.map((person, index) => (
         <fieldset className="new-cast" key={person.id}>
-          <legend>New character {index + 1}</legend>
+          <legend>
+            {tr("New character")} {index + 1}
+          </legend>
           {(["name", "description", "state"] as const).map((field) => (
             <label className="field-label" key={field}>
               {field === "name"
-                ? "Name"
+                ? tr("Name")
                 : field === "description"
-                  ? "Appearance and identity"
-                  : "State at the end of this scene"}
+                  ? tr("Appearance and identity")
+                  : tr("State at the end of this scene")}
               <input
                 value={person[field]}
                 maxLength={field === "name" ? 60 : 1200}
@@ -559,7 +579,7 @@ function UploadEditor({
               key.current = crypto.randomUUID();
             }}
           >
-            Remove character
+            {tr("Remove character")}
           </button>
         </fieldset>
       ))}
@@ -574,7 +594,7 @@ function UploadEditor({
             key.current = crypto.randomUUID();
           }}
         >
-          Add a character introduced in this video
+          {tr("Add a character introduced in this video")}
         </button>
       )}
       <label className="checkbox-label">
@@ -584,11 +604,12 @@ function UploadEditor({
           onChange={(e) => setRights(e.target.checked)}
         />
         <span>
-          I have permission to publish this video, including its images, music
-          and voices, and the information above describes the actual footage.
+          {tr(
+            "I have permission to publish this video, including its images, music and voices, and the information above describes the actual footage.",
+          )}
         </span>
       </label>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <Button
         busy={busy}
         disabled={
@@ -608,7 +629,7 @@ function UploadEditor({
         }
         onClick={() => void create()}
       >
-        Prepare upload
+        {tr("Prepare upload")}
         <Upload size={16} />
       </Button>
     </div>
@@ -680,7 +701,7 @@ export function UploadedScene({
   const active = !["Draft", "NeedsReview"].includes(task.status);
   return (
     <div className="upload-review">
-      <h3>{task.plan?.title ?? "Your uploaded scene"}</h3>
+      <h3>{task.plan?.title ?? tr("Your uploaded scene")}</h3>
       <Status state={task.status} />
       {task.reason && <p>{task.reason}</p>}
       {task.uploadReady ? (
@@ -698,7 +719,7 @@ export function UploadedScene({
       ) : (
         <>
           <label className="field-label">
-            Choose the saved draft’s MP4 file
+            {tr("Choose the saved draft’s MP4 file")}
             <input
               type="file"
               accept="video/mp4,.mp4"
@@ -712,8 +733,8 @@ export function UploadedScene({
               <progress max={100} value={progress} />
               <p role="status">
                 {progress < 100
-                  ? `Uploading · ${progress}%`
-                  : "Checking the uploaded video…"}
+                  ? tr("Uploading · {0}%", progress)
+                  : tr("Checking the uploaded video…")}
               </p>
             </>
           )}
@@ -722,14 +743,14 @@ export function UploadedScene({
             disabled={!file || active}
             onClick={() => void send()}
           >
-            Upload video
+            {tr("Upload video")}
           </Button>
           {busy && (
             <button
               className="text-button"
               onClick={() => controller.current?.abort()}
             >
-              Stop upload
+              {tr("Stop upload")}
             </button>
           )}
         </>
@@ -737,8 +758,8 @@ export function UploadedScene({
       {task.uploadReady && !active && (
         <>
           <div className="bridge">
-            <strong>Latest story</strong>
-            <p>{story.data?.scenes.at(-1)?.summary ?? "Opening scene"}</p>
+            <strong>{tr("Latest story")}</strong>
+            <p>{story.data?.scenes.at(-1)?.summary ?? tr("Opening scene")}</p>
           </div>
           <label className="checkbox-label">
             <input
@@ -747,8 +768,9 @@ export function UploadedScene({
               onChange={(e) => setWatched(e.target.checked)}
             />
             <span>
-              I watched the full uploaded video and verified playback, English
-              audio/text and its connection to the latest story.
+              {tr(
+                "I watched the full uploaded video and verified playback, English audio/text and its connection to the latest story.",
+              )}
             </span>
           </label>
           <label className="checkbox-label">
@@ -758,9 +780,10 @@ export function UploadedScene({
               onChange={(e) => setConsent(e.target.checked)}
             />
             <span>
-              Submit this video for publication with my producer credit and the
-              selected contributors. The scene information may be published
-              under the <a href="/terms#rights">contribution terms</a>.
+              {tr(
+                "Submit this video for publication with my producer credit and the selected contributors. The scene information may be published under the",
+              )}{" "}
+              <a href="/terms#rights">{tr("contribution terms")}</a>.
             </span>
           </label>
           <Button
@@ -773,14 +796,16 @@ export function UploadedScene({
             }
             onClick={() => void accept()}
           >
-            Submit for story review
+            {tr("Submit for story review")}
           </Button>
         </>
       )}
       {active && (
-        <Link to="/contributions">Follow this scene in Your contributions</Link>
+        <Link to="/contributions">
+          {tr("Follow this scene in Your contributions")}
+        </Link>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
     </div>
   );
 }
@@ -795,7 +820,7 @@ export function UploadReviewModal({
 }) {
   const [current, setCurrent] = useState(task);
   return (
-    <Modal wide title="Your uploaded scene" onClose={close}>
+    <Modal wide title={tr("Your uploaded scene")} onClose={close}>
       <UploadedScene
         task={current}
         onChanged={async (next) => {

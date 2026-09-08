@@ -73,3 +73,5 @@ See [architecture](docs/ARCHITECTURE.md), [deployment](docs/DEPLOYMENT.md), [ope
 ## Free and paid creation
 
 Watching and audience proposals are free. Hosts can select audience ideas, use prepaid points for text/reference generation, or upload a finished MP4 without generation charges. New tasks bind their source, billing contract and quote before queueing; existing free tasks retain their original agreement. See [product direction](docs/PRODUCT-DIRECTION.md). The Paddle checkout adapter, verified webhook reconciliation, separate purchased-point ledger and account order UI are implemented. Real checkout, active point packages and commercial generation pricing are disabled until merchant setup, sandbox acceptance and fulfillment verification. See [payments](docs/PAYMENTS.md).
+
+Interface languages: English by default, with Simplified Chinese under the footer’s Preferences. See [localization](docs/LOCALIZATION.md) for copy ownership and policy translation rules.

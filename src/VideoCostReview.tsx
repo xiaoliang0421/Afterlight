@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { api } from "./api";
 import { Button, Modal, Notice } from "./components";
@@ -22,7 +23,11 @@ export function VideoCostReview({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
-    <Modal title="Check the video charge" onClose={close} dismissible={!busy}>
+    <Modal
+      title={tr("Check the video charge")}
+      onClose={close}
+      dismissible={!busy}
+    >
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -49,19 +54,24 @@ export function VideoCostReview({
         }}
       >
         <p>
-          Match this request to the provider’s completed video charge before
-          recording its cost.
+          {tr(
+            "Match this request to the provider’s completed video charge before recording its cost.",
+          )}
         </p>
         <p className="field-label">
-          Provider request <code>{task.providerRequestId}</code>
+          {tr("Provider request")} <code>{task.providerRequestId}</code>
         </p>
         <p>
-          Recorded ceiling: ${(task.recordedCostCents / 100).toFixed(2)}. The $
-          {(task.reservedCents / 100).toFixed(2)} reservation stays held until
-          the scene is approved or rejected.
+          {tr("Recorded ceiling: $")}
+          {(task.recordedCostCents / 100).toFixed(2)}
+          {tr(". The $")}
+          {(task.reservedCents / 100).toFixed(2)}{" "}
+          {tr(
+            "reservation stays held until the scene is approved or rejected.",
+          )}
         </p>
         <label className="field-label">
-          Verified video charge · USD
+          {tr("Verified video charge · USD")}
           <input
             inputMode="decimal"
             required
@@ -72,19 +82,21 @@ export function VideoCostReview({
           />
         </label>
         <p className="fine-print">
-          Round fractional cents up. Include only this video request; speech
-          checks and story planning are recorded separately. Charges above the
-          reservation require an investigation.
+          {tr(
+            "Round fractional cents up. Include only this video request; speech checks and story planning are recorded separately. Charges above the reservation require an investigation.",
+          )}
         </p>
         <label className="field-label">
-          Billing evidence
+          {tr("Billing evidence")}
           <textarea
             required
             minLength={10}
             maxLength={600}
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
-            placeholder="Billing record, date and verified amount. Do not paste credentials or signed media links."
+            placeholder={tr(
+              "Billing record, date and verified amount. Do not paste credentials or signed media links.",
+            )}
             disabled={busy}
           />
         </label>
@@ -95,15 +107,15 @@ export function VideoCostReview({
             onChange={(e) => setReviewed(e.target.checked)}
             disabled={busy}
           />
-          I checked the final provider charge for this exact request.
+          {tr("I checked the final provider charge for this exact request.")}
         </label>
-        {error && <Notice danger>{error}</Notice>}
+        {error && <Notice danger>{tr(error)}</Notice>}
         <Button
           type="submit"
           busy={busy}
           disabled={!reviewed || !amount || evidence.trim().length < 10}
         >
-          Record verified cost
+          {tr("Record verified cost")}
         </Button>
       </form>
     </Modal>

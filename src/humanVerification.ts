@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 type Turnstile = {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
   remove: (id: string) => void;
@@ -64,15 +65,16 @@ export async function humanToken(
     const dialog = document.createElement("dialog");
     dialog.className = "human-verification";
     const title = document.createElement("h2");
-    title.textContent = "A quick security check";
+    title.textContent = tr("A quick security check");
     title.id = `verify-${crypto.randomUUID()}`;
     dialog.setAttribute("aria-labelledby", title.id);
     const copy = document.createElement("p");
-    copy.textContent =
-      "This helps keep community creation available for everyone.";
+    copy.textContent = tr(
+      "This helps keep community creation available for everyone.",
+    );
     const container = document.createElement("div");
     const cancel = document.createElement("button");
-    cancel.textContent = "Cancel";
+    cancel.textContent = tr("Cancel");
     cancel.type = "button";
     for (const child of [title, copy, container, cancel])
       dialog.appendChild(child);
@@ -114,7 +116,7 @@ export async function humanToken(
         sitekey: siteKey,
         action,
         theme: "dark",
-        language: "en",
+        language: getLocale(),
         callback: (token: string) => finish(token),
         "error-callback": () => {
           finish(undefined, "The security check failed. Please try again.");

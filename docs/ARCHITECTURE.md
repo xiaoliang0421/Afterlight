@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart LR
-  UI[React · English UI] --> API[Cloudflare Worker API]
+  UI[React · English / Chinese UI] --> API[Cloudflare Worker API]
   API --> Auth[Better Auth · Google]
   API --> D1[(D1 · Authoritative records)]
   API --> Room[Durable Object per story]

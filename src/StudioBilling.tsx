@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { api, useResource } from "./api";
 import { Button, Loading, Notice } from "./components";
@@ -18,25 +19,26 @@ export function StudioBilling() {
   return (
     <section>
       <p className="muted">
-        Reconcile only existing Paddle transactions. Refunds are handled in the
-        matching Paddle dashboard; a support response does not move money or
-        alter points.
+        {tr(
+          "Reconcile only existing Paddle transactions. Refunds are handled in the matching Paddle dashboard; a support response does not move money or alter points.",
+        )}
       </p>
       {(error || resource.error) && (
-        <Notice danger>{error || resource.error}</Notice>
+        <Notice danger>{tr(error || resource.error)}</Notice>
       )}
       {!resource.data?.orders.length && (
         <Notice>
-          No customer orders yet. Live payments are closed until merchant and
-          fulfillment acceptance.
+          {tr(
+            "No customer orders yet. Live payments are closed until merchant and fulfillment acceptance.",
+          )}
         </Notice>
       )}
       {resource.data?.requests.map((request) => (
         <article className="studio-task" key={request.id}>
-          <h3>Payment request</h3>
+          <h3>{tr("Payment request")}</h3>
           <p>{request.reason}</p>
           <small>
-            Order: {request.orderId} · Account: {request.userId}
+            {tr("Order:")} {request.orderId} {tr("· Account:")} {request.userId}
           </small>
           <form
             onSubmit={async (event) => {
@@ -59,7 +61,7 @@ export function StudioBilling() {
             }}
           >
             <label className="field-label">
-              Response visible to the customer
+              {tr("Response visible to the customer")}
               <textarea
                 name="response"
                 required
@@ -68,7 +70,7 @@ export function StudioBilling() {
               />
             </label>
             <Button type="submit" busy={busy === request.id}>
-              Record response and resolve request
+              {tr("Record response and resolve request")}
             </Button>
           </form>
         </article>
@@ -76,10 +78,10 @@ export function StudioBilling() {
       {resource.data?.orders.map((order) => (
         <article className="studio-task" key={order.id}>
           <h3>
-            {order.points} points · {order.status}
+            {order.points} {tr("points ·")} {tr(order.status)}
           </h3>
           <small>
-            Order: {order.id} · Account: {order.userId}
+            {tr("Order:")} {order.id} {tr("· Account:")} {order.userId}
           </small>
           <form
             onSubmit={async (event) => {
@@ -101,7 +103,7 @@ export function StudioBilling() {
             }}
           >
             <label className="field-label">
-              Verified existing Paddle transaction
+              {tr("Verified existing Paddle transaction")}
               <input
                 name="transactionId"
                 defaultValue={order.transactionId ?? ""}
@@ -110,7 +112,7 @@ export function StudioBilling() {
               />
             </label>
             <Button type="submit" kind="secondary" busy={busy === order.id}>
-              Check this transaction
+              {tr("Check this transaction")}
             </Button>
           </form>
         </article>

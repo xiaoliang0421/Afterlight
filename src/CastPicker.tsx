@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { useState } from "react";
 import { Check, Users } from "lucide-react";
 import type { Character } from "../shared/domain";
@@ -44,19 +45,21 @@ export function CastPicker({
       <summary>
         <Users size={16} />
         <span>
-          Choose characters<small>Optional · latest story cast</small>
+          {tr("Choose characters")}
+          <small>{tr("Optional · latest story cast")}</small>
         </span>
         <span className="cast-count">{selected.length}/3</span>
       </summary>
       <p className="fine-print">
-        Leave this empty to let the story editor choose. Selected characters
-        keep their identities; their actions still need to fit the latest scene.
+        {tr(
+          "Leave this empty to let the story editor choose. Selected characters keep their identities; their actions still need to fit the latest scene.",
+        )}
       </p>
       {characters.length > 6 && (
         <input
           className="cast-search"
-          aria-label="Find a character"
-          placeholder="Find a character…"
+          aria-label={tr("Find a character")}
+          placeholder={tr("Find a character…")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -95,16 +98,20 @@ export function CastPicker({
           })}
       </div>
       {!characters.length && (
-        <p className="fine-print">This world’s cast is still being prepared.</p>
+        <p className="fine-print">
+          {tr("This world’s cast is still being prepared.")}
+        </p>
       )}
       {search &&
         !characters.some((ch) =>
           ch.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
-        ) && <p className="fine-print">No character matches that name.</p>}
+        ) && (
+          <p className="fine-print">{tr("No character matches that name.")}</p>
+        )}
       <p className="fine-print">
-        Someone new? Describe their look and role in your idea. The editor
-        checks their introduction; they join the cast after a reviewed scene is
-        published.
+        {tr(
+          "Someone new? Describe their look and role in your idea. The editor checks their introduction; they join the cast after a reviewed scene is published.",
+        )}
       </p>
     </details>
   );

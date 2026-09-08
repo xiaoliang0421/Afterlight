@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import {
   useEffect,
   useRef,
@@ -138,7 +139,7 @@ export function Modal({
       <div className="modal-inner">
         {dismissible && (
           <button
-            aria-label="Close dialog"
+            aria-label={tr("Close dialog")}
             className="icon-button modal-close"
             onClick={onClose}
           >
@@ -192,7 +193,7 @@ export function Loading() {
   return (
     <div className="loading-state" role="status">
       <LoaderCircle className="spin" size={22} />
-      <span>Bringing the story into focus…</span>
+      <span>{tr("Bringing the story into focus…")}</span>
     </div>
   );
 }
@@ -222,7 +223,7 @@ export function Status({ state }: { state: TaskState }) {
       ) : (
         <i />
       )}
-      {statusLabels[state]}
+      {tr(statusLabels[state])}
     </span>
   );
 }

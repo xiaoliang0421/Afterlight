@@ -26,6 +26,12 @@ export async function api<T>(
     },
     body: data === undefined ? undefined : JSON.stringify(data),
     signal,
+  }).catch((error: unknown) => {
+    if (signal?.aborted) throw error;
+    throw new ApiError(
+      "Your request could not be sent. Check your connection and try again.",
+      "network_error",
+    );
   });
   const body = (await response.json().catch(() => null)) as
     | (T & {

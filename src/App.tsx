@@ -1,3 +1,5 @@
+import { t as tr, useLocale } from "./i18n";
+import { Preferences } from "./Preferences";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
@@ -32,6 +34,10 @@ import policies from "../shared/policies.json";
 import { brand } from "../shared/brand";
 
 export function App() {
+  const [locale] = useLocale();
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   const path = useLocation(),
     resource = useResource<Bootstrap>("/bootstrap");
   const [login, setLogin] = useState(false),
@@ -82,8 +88,10 @@ export function App() {
         <Loading />
         {resource.error && (
           <>
-            <Notice danger>{resource.error}</Notice>
-            <Button onClick={() => void resource.reload()}>Try again</Button>
+            <Notice danger>{tr(resource.error)}</Notice>
+            <Button onClick={() => void resource.reload()}>
+              {tr("Try again")}
+            </Button>
           </>
         )}
       </div>
@@ -112,7 +120,7 @@ export function App() {
       className={`nav-item ${path.startsWith(to) ? "selected" : ""}`}
     >
       {icon}
-      <span>{label}</span>
+      <span>{tr(label)}</span>
     </Link>
   );
   let page: ReactNode;
@@ -145,7 +153,7 @@ export function App() {
         {menu && (
           <button
             className="sidebar-scrim"
-            aria-label="Close navigation"
+            aria-label={tr("Close navigation")}
             onClick={() => setMenu(false)}
           />
         )}
@@ -155,14 +163,14 @@ export function App() {
           aria-hidden={mobile && !menu ? true : undefined}
         >
           <Brand />
-          <p className="brand-caption">THE NEXT SCENE IS YOURS.</p>
+          <p className="brand-caption">{tr("THE NEXT SCENE IS YOURS.")}</p>
           <div className="nav-section">
-            <span className="section-label">YOUR FRONT ROW</span>
+            <span className="section-label">{tr("YOUR FRONT ROW")}</span>
             {nav("/discover", <Compass size={19} />, "Discover stories")}
             {story && (
               <Link to={`/story/${story.slug}`} className="nav-item selected">
                 <Film size={19} />
-                <span>Now watching</span>
+                <span>{tr("Now watching")}</span>
                 <span className="live-dot" />
               </Link>
             )}
@@ -175,10 +183,10 @@ export function App() {
           </div>
           <div className="nav-section worlds-nav">
             <div className="section-heading">
-              <span className="section-label">WORLDS TO STEP INTO</span>
+              <span className="section-label">{tr("WORLDS TO STEP INTO")}</span>
               <Link to="/create" className="icon-button">
                 <Plus size={16} />
-                <span className="sr-only">Create a story</span>
+                <span className="sr-only">{tr("Create a story")}</span>
               </Link>
             </div>
             {boot.stories.slice(0, 6).map((s) => (
@@ -202,31 +210,40 @@ export function App() {
           </div>
           <Link to="/create" className="new-world-link">
             <Plus size={16} />
-            Start a new story
+            {tr("Start a new story")}
             <ArrowRight size={15} />
           </Link>
           <div className="sidebar-bottom">
             <p>
-              Some stories stay with you.
+              {tr("Some stories stay with you.")}
               <br />
-              Here, you can stay with them.
+              {tr("Here, you can stay with them.")}
             </p>
-            {nav("/about", <HelpCircle size={17} />, `How ${brand.name} works`)}
+            {nav(
+              "/about",
+              <HelpCircle size={17} />,
+              tr("How {0} works", brand.name),
+            )}
             {boot.user?.role === "admin" &&
               nav("/studio", <Settings2 size={17} />, "Studio dashboard")}
             {boot.user ? (
               <Link to="/account" className="user-menu">
                 <Avatar name={boot.user.displayName} />
                 <span>
-                  <strong>{boot.user.displayName || "Choose your name"}</strong>
+                  <strong>
+                    {boot.user.displayName || tr("Choose your name")}
+                  </strong>
                   <small>
                     {boot.config.billingVisible
-                      ? `${boot.wallet?.available ?? 0} creation points available`
+                      ? tr(
+                          "{0} creation points available",
+                          boot.wallet?.available ?? 0,
+                        )
                       : boot.config.canHost
-                        ? "Invited story host"
+                        ? tr("Invited story host")
                         : boot.config.canContribute
-                          ? "Invited participant"
-                          : "Watching account"}
+                          ? tr("Invited participant")
+                          : tr("Watching account")}
                   </small>
                 </span>
                 <ChevronDown size={14} />
@@ -235,8 +252,8 @@ export function App() {
               <button className="user-menu" onClick={() => setLogin(true)}>
                 <Avatar name="?" />
                 <span>
-                  <strong>Join the story</strong>
-                  <small>Watch stories. Join by invitation.</small>
+                  <strong>{tr("Join the story")}</strong>
+                  <small>{tr("Watch stories. Join by invitation.")}</small>
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -247,7 +264,7 @@ export function App() {
           <header className="topbar">
             <button
               className="icon-button mobile-menu"
-              aria-label="Open navigation"
+              aria-label={tr("Open navigation")}
               onClick={() => setMenu(true)}
             >
               <Menu size={22} />
@@ -258,7 +275,7 @@ export function App() {
                 aria-expanded={switcher}
               >
                 <Layers3 size={17} />
-                <span>{story?.title ?? `Explore ${brand.name}`}</span>
+                <span>{story?.title ?? tr("Explore {0}", brand.name)}</span>
                 <ChevronDown size={15} />
               </button>
               {switcher && (
@@ -271,27 +288,27 @@ export function App() {
                   ))}
                   <Link to="/create">
                     <Plus size={16} />
-                    Create a new story
+                    {tr("Create a new story")}
                   </Link>
                 </div>
               )}
             </div>
             <div className="topbar-actions">
               <span className="edition">
-                A LITTLE IMAGINATION GOES A LONG WAY
+                {tr("A LITTLE IMAGINATION GOES A LONG WAY")}
               </span>
               {boot.user ? (
                 <>
                   {boot.config.billingVisible && (
                     <span className="credit-pill">
                       <Sparkles size={13} />
-                      {boot.wallet?.available ?? 0} points
+                      {boot.wallet?.available ?? 0} {tr("points")}
                     </span>
                   )}
                   <div className="notification-wrap">
                     <button
                       className="icon-button"
-                      aria-label="Notifications"
+                      aria-label={tr("Notifications")}
                       onClick={() => {
                         setNotifications(!notifications);
                         if (!notifications)
@@ -307,7 +324,7 @@ export function App() {
                     </button>
                     {notifications && (
                       <div className="dropdown notification-dropdown">
-                        <strong>Your updates</strong>
+                        <strong>{tr("Your updates")}</strong>
                         {boot.notifications.length ? (
                           boot.notifications.slice(0, 8).map((n) => (
                             <Link key={n.id} to="/contributions">
@@ -316,8 +333,9 @@ export function App() {
                           ))
                         ) : (
                           <p>
-                            No updates yet. Your scene’s progress will appear
-                            here.
+                            {tr(
+                              "No updates yet. Your scene’s progress will appear here.",
+                            )}
                           </p>
                         )}
                       </div>
@@ -326,7 +344,7 @@ export function App() {
                 </>
               ) : (
                 <button className="text-button" onClick={() => setLogin(true)}>
-                  Sign in <ArrowUpIcon />
+                  {tr("Sign in")} <ArrowUpIcon />
                 </button>
               )}
             </div>
@@ -334,34 +352,37 @@ export function App() {
           {boot.config.development && (
             <div className="development-banner">
               <span />
-              Development preview · Illustrative storyboards and sample playback
-              · No paid generation
+              {tr(
+                "Development preview · Illustrative storyboards and sample playback · No paid generation",
+              )}
             </div>
           )}
           {boot.config.environment === "staging" && (
             <div className="development-banner">
               <span />
-              Test site ·{" "}
+              {tr("Test site ·")}{" "}
               {boot.config.canSignIn
-                ? "Google sign-in available"
-                : "Google sign-in is being configured"}
+                ? tr("Google sign-in available")
+                : tr("Google sign-in is being configured")}
               {boot.config.generationEnabled
-                ? " · Controlled generation testing"
-                : " · Generation is paused"}
+                ? tr(" · Controlled generation testing")
+                : tr(" · Generation is paused")}
               {boot.config.paymentsEnabled
-                ? " · Sandbox checkout only"
-                : " · Purchases are unavailable"}
+                ? tr(" · Sandbox checkout only")
+                : tr(" · Purchases are unavailable")}
             </div>
           )}
           <main>{page}</main>
           <footer className="site-footer">
             <span>
-              {brand.name.toUpperCase()} <i>Stories we make together.</i>
+              {brand.name.toUpperCase()}{" "}
+              <i>{tr("Stories we make together.")}</i>
             </span>
             <div>
-              <Link to="/privacy">Privacy</Link>
-              <Link to="/terms">Terms & attribution</Link>
-              <Link to="/about">Help</Link>
+              <Link to="/privacy">{tr("Privacy")}</Link>
+              <Link to="/terms">{tr("Terms & attribution")}</Link>
+              <Link to="/about">{tr("Help")}</Link>
+              {!legalKind && <Preferences />}
               {boot.config.supportEmail && (
                 <a href={`mailto:${boot.config.supportEmail}`}>
                   {policies.contactName}
@@ -391,10 +412,10 @@ export function App() {
       )}
       {message && (
         <div className="toast" role="status">
-          {message}
+          {tr(message)}
           <button
             className="icon-button"
-            aria-label="Dismiss message"
+            aria-label={tr("Dismiss message")}
             onClick={() => setMessage("")}
           >
             <X size={16} />
@@ -448,13 +469,14 @@ function LoginModal({
   };
   return (
     <Modal
-      title="Every story needs you."
-      eyebrow={`WELCOME TO ${brand.name.toUpperCase()}`}
+      title={tr("Every story needs you.")}
+      eyebrow={tr("WELCOME TO {0}", brand.name.toUpperCase())}
       onClose={close}
     >
       <p className="modal-copy">
-        Watch from the beginning, save your favorite worlds, and leave your name
-        on what happens next.
+        {tr(
+          "Watch from the beginning, save your favorite worlds, and leave your name on what happens next.",
+        )}
       </p>
       {!development && (
         <Button
@@ -476,53 +498,56 @@ function LoginModal({
             }
           }}
         >
-          Continue with Google
+          {tr("Continue with Google")}
         </Button>
       )}
       {!configured && (
         <Notice>
-          Sign-in is being prepared. You can still explore the stories.
+          {tr("Sign-in is being prepared. You can still explore the stories.")}
         </Notice>
       )}
       {development && (
         <div className="stack">
           <Notice>
-            Local test accounts. These do not connect to Google or spend money.
+            {tr(
+              "Local test accounts. These do not connect to Google or spend money.",
+            )}
           </Notice>
           <Button
             busy={busy === "creator"}
             onClick={() => void login("creator")}
           >
-            Explore as a storyteller <ArrowRight size={16} />
+            {tr("Explore as a storyteller")} <ArrowRight size={16} />
           </Button>
           <Button
             kind="secondary"
             busy={busy === "newcomer"}
             onClick={() => void login("newcomer")}
           >
-            Test first-time sign-in
+            {tr("Test first-time sign-in")}
           </Button>
           <Button
             kind="ghost"
             busy={busy === "studio"}
             onClick={() => void login("studio")}
           >
-            Open the local studio account
+            {tr("Open the local studio account")}
           </Button>
         </div>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <p className="fine-print">
-        Your email stays private. You’ll choose a public nickname for your
-        contributions. No credit card needed. Read our{" "}
+        {tr(
+          "Your email stays private. You’ll choose a public nickname for your contributions. No credit card needed. Read our",
+        )}{" "}
         <a href="/terms" target="_blank" rel="noopener">
-          Terms
+          {tr("Terms")}
         </a>{" "}
-        and{" "}
+        {tr("and")}{" "}
         <a href="/privacy" target="_blank" rel="noopener">
-          Privacy policy
+          {tr("Privacy policy")}
         </a>{" "}
-        before signing in.
+        {tr("before signing in.")}
       </p>
     </Modal>
   );
@@ -543,15 +568,18 @@ function NicknameModal({
   return (
     <Modal
       title={
-        initialName ? "Before your next scene." : "What should we call you?"
+        initialName
+          ? tr("Before your next scene.")
+          : tr("What should we call you?")
       }
-      eyebrow="YOUR STORYTELLER IDENTITY"
+      eyebrow={tr("YOUR STORYTELLER IDENTITY")}
       dismissible={false}
       onClose={() => {}}
     >
       <p className="modal-copy">
-        This name will appear on your scenes, creative prompts and public
-        profile. Your email will never be used as a public byline.
+        {tr(
+          "This name will appear on your scenes, creative prompts and public profile. Your email will never be used as a public byline.",
+        )}
       </p>
       <form
         onSubmit={async (e) => {
@@ -574,7 +602,7 @@ function NicknameModal({
         }}
       >
         <label className="field-label" htmlFor="first-nickname">
-          Public nickname
+          {tr("Public nickname")}
         </label>
         <input
           id="first-nickname"
@@ -583,14 +611,14 @@ function NicknameModal({
           minLength={2}
           maxLength={30}
           required
-          placeholder="Your name in the credits"
+          placeholder={tr("Your name in the credits")}
           onChange={(e) => setNickname(e.target.value)}
         />
         <div className="byline-preview">
           <Avatar name={nickname} />
           <span>
-            Next scene imagined by{" "}
-            <strong>{nickname || "your nickname"}</strong>
+            {tr("Next scene imagined by")}{" "}
+            <strong>{nickname || tr("your nickname")}</strong>
           </span>
         </div>
         <label className="checkbox-label">
@@ -601,34 +629,35 @@ function NicknameModal({
             required
           />
           <span>
-            I agree to the{" "}
+            {tr("I agree to the")}{" "}
             <a href="/terms" target="_blank" rel="noopener">
-              Terms of service
+              {tr("Terms of service")}
             </a>{" "}
-            and acknowledge the{" "}
+            {tr("and acknowledge the")}{" "}
             <a href="/privacy" target="_blank" rel="noopener">
-              Privacy policy
+              {tr("Privacy policy")}
             </a>
             .
           </span>
         </label>
         {policies.status === "draft" && (
           <p className="fine-print">
-            Development draft · This records a preview acknowledgment. Final
-            policies will require a new review before public use.
+            {tr(
+              "Development draft · This records a preview acknowledgment. Final policies will require a new review before public use.",
+            )}
           </p>
         )}
-        {error && <Notice danger>{error}</Notice>}
+        {error && <Notice danger>{tr(error)}</Notice>}
         <Button
           type="submit"
           className="full-width"
           busy={busy}
           disabled={!accepted}
         >
-          Make it yours <ArrowRight size={16} />
+          {tr("Make it yours")} <ArrowRight size={16} />
         </Button>
         <button type="button" className="text-button" onClick={decline}>
-          Keep watching without accepting
+          {tr("Keep watching without accepting")}
         </button>
       </form>
     </Modal>

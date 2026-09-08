@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { useState } from "react";
 import {
   Activity,
@@ -93,9 +94,11 @@ export function StudioPage() {
       <div className="page">
         <Empty
           icon={<ShieldCheck size={32} />}
-          title="The studio is a private workspace."
+          title={tr("The studio is a private workspace.")}
         >
-          Sign in with a studio account to review scenes and manage operations.
+          {tr(
+            "Sign in with a studio account to review scenes and manage operations.",
+          )}
         </Empty>
       </div>
     );
@@ -103,8 +106,8 @@ export function StudioPage() {
   if (!resource.data)
     return (
       <div className="page">
-        <Notice danger>{resource.error}</Notice>
-        <Button onClick={() => void resource.reload()}>Retry</Button>
+        <Notice danger>{tr(resource.error)}</Notice>
+        <Button onClick={() => void resource.reload()}>{tr("Retry")}</Button>
       </div>
     );
   const d = resource.data,
@@ -115,45 +118,53 @@ export function StudioPage() {
     <div className="page studio-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">BEHIND THE SCENES</p>
-          <h1>The studio.</h1>
+          <p className="eyebrow">{tr("BEHIND THE SCENES")}</p>
+          <h1>{tr("The studio.")}</h1>
           <p>
-            Keep the worlds coherent, the credits fair and the costs visible.
+            {tr(
+              "Keep the worlds coherent, the credits fair and the costs visible.",
+            )}
           </p>
         </div>
         <Button kind="secondary" onClick={() => void reload()}>
           <RefreshCw size={15} />
-          Refresh
+          {tr("Refresh")}
         </Button>
       </div>
       <div className="metrics-grid">
         <div>
           <Clapperboard size={18} />
-          <span>Scenes awaiting attention</span>
+          <span>{tr("Scenes awaiting attention")}</span>
           <strong>{pending.length}</strong>
         </div>
         <div>
           <DollarSign size={18} />
-          <span>Recorded cost ceilings</span>
+          <span>{tr("Recorded cost ceilings")}</span>
           <strong>{dollars(d.recordedSpendCents)}</strong>
         </div>
         <div>
           <Activity size={18} />
-          <span>Provider balance snapshot</span>
+          <span>{tr("Provider balance snapshot")}</span>
           <strong>{dollars(d.settings.providerBalanceCents)}</strong>
           <small>
             {d.settings.providerCheckedAt
-              ? new Date(d.settings.providerCheckedAt).toLocaleTimeString("en")
-              : "Not checked"}
+              ? new Date(d.settings.providerCheckedAt).toLocaleTimeString(
+                  getLocale(),
+                )
+              : tr("Not checked")}
           </small>
         </div>
         <div>
           <ShieldCheck size={18} />
-          <span>Authorized spending ceiling</span>
+          <span>{tr("Authorized spending ceiling")}</span>
           <strong>{dollars(d.authorizedSpendCents)}</strong>
         </div>
       </div>
-      <div className="content-tabs" role="tablist" aria-label="Studio sections">
+      <div
+        className="content-tabs"
+        role="tablist"
+        aria-label={tr("Studio sections")}
+      >
         {[
           "Review queue",
           "Stories & community",
@@ -175,30 +186,34 @@ export function StudioPage() {
               className={tab === t ? "active" : ""}
               onClick={() => setTab(t)}
             >
-              {t}
+              {tr(t)}
             </button>
           ))}
       </div>
       {tab === "Stories & community" && <CommunityPanel />}
       {tab === "Operations" && (
         <section className="panel">
-          <h2>Recovery & protection</h2>
+          <h2>{tr("Recovery & protection")}</h2>
           <p>
-            Last successful scheduled check:{" "}
+            {tr("Last successful scheduled check:")}{" "}
             {d.operations.runtime?.completedAt
-              ? new Date(d.operations.runtime.completedAt).toLocaleString()
-              : "No scheduled checks recorded yet."}
+              ? new Date(d.operations.runtime.completedAt).toLocaleString(
+                  getLocale(),
+                )
+              : tr("No scheduled checks recorded yet.")}
           </p>
           {d.operations.overdue && (
             <Notice danger>
-              Scheduled reconciliation has not completed in the last 15 minutes.
-              Check Cloudflare Worker logs and cron triggers.
+              {tr(
+                "Scheduled reconciliation has not completed in the last 15 minutes. Check Cloudflare Worker logs and cron triggers.",
+              )}
             </Notice>
           )}
           {d.operations.runtime?.status === "failed" && (
             <Notice danger>
-              The latest scheduled check was incomplete. Review the failed
-              checks below. Other recovery work continues independently.
+              {tr(
+                "The latest scheduled check was incomplete. Review the failed checks below. Other recovery work continues independently.",
+              )}
             </Notice>
           )}
           {!!d.operations.components?.length && (
@@ -206,36 +221,40 @@ export function StudioPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>Scheduled check</th>
-                    <th>Latest result</th>
-                    <th>Last success</th>
+                    <th>{tr("Scheduled check")}</th>
+                    <th>{tr("Latest result")}</th>
+                    <th>{tr("Last success")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {d.operations.components.map((operation) => (
                     <tr key={operation.name}>
                       <td>
-                        {operationLabels[operation.name as OperationName] ??
-                          operation.name}
+                        {tr(
+                          operationLabels[operation.name as OperationName] ??
+                            operation.name,
+                        )}
                       </td>
                       <td>
                         {operation.status === "failed" ? (
                           <strong className="danger-text">
-                            Needs attention
+                            {tr("Needs attention")}
                           </strong>
                         ) : operation.status === "succeeded" ? (
-                          "Passed"
+                          tr("Passed")
                         ) : operation.status === "skipped" ? (
-                          "Not enabled"
+                          tr("Not enabled")
                         ) : operation.status === "running" ? (
-                          "Running"
+                          tr("Running")
                         ) : (
-                          "Not checked"
+                          tr("Not checked")
                         )}
                       </td>
                       <td>
                         {operation.completedAt
-                          ? new Date(operation.completedAt).toLocaleString()
+                          ? new Date(operation.completedAt).toLocaleString(
+                              getLocale(),
+                            )
                           : "—"}
                       </td>
                     </tr>
@@ -245,20 +264,25 @@ export function StudioPage() {
             </div>
           )}
           <p>
-            {d.operations.queue?.held ?? 0} attempts on hold ·{" "}
-            {d.operations.queue?.missingRequestIds ?? 0} missing provider IDs ·{" "}
-            {dollars(d.operations.queue?.reservedCents ?? 0)} reserved
+            {d.operations.queue?.held ?? 0} {tr("attempts on hold ·")}{" "}
+            {d.operations.queue?.missingRequestIds ?? 0}{" "}
+            {tr("missing provider IDs ·")}{" "}
+            {dollars(d.operations.queue?.reservedCents ?? 0)} {tr("reserved")}
           </p>
           <p>
-            Creation verification:{" "}
+            {tr("Creation verification:")}{" "}
             {d.readiness.turnstile
-              ? "Keys configured; confirm the live widget and host in staging."
-              : "Not configured. Remote creation stays closed; local fixtures can be tested offline."}
+              ? tr(
+                  "Keys configured; confirm the live widget and host in staging.",
+                )
+              : tr(
+                  "Not configured. Remote creation stays closed; local fixtures can be tested offline.",
+                )}
           </p>
           <p className="fine-print">
-            Recovery uses the existing provider request. Do not restart a paid
-            submission or remove its attempt marker. These diagnostics are
-            visible only to the studio.
+            {tr(
+              "Recovery uses the existing provider request. Do not restart a paid submission or remove its attempt marker. These diagnostics are visible only to the studio.",
+            )}
           </p>
         </section>
       )}
@@ -278,26 +302,26 @@ export function StudioPage() {
                   </span>
                   <Status state={t.status} />
                 </div>
-                <h3>{t.plan?.title || "A new scene"}</h3>
+                <h3>{t.plan?.title || tr("A new scene")}</h3>
                 <p>{t.plan?.summary || t.prompt}</p>
                 <Author id={t.userId} name={t.author} compact />
                 {t.reason && <p className="fine-print">{t.reason}</p>}
                 {t.providerRequestId && (
                   <p className="fine-print">
-                    Video cost: {dollars(t.recordedCostCents)} ·{" "}
+                    {tr("Video cost:")} {dollars(t.recordedCostCents)} ·{" "}
                     {t.costStatus === "reconciled"
-                      ? "Verified"
-                      : "Estimated ceiling"}
+                      ? tr("Verified")
+                      : tr("Estimated ceiling")}
                   </p>
                 )}
                 {t.status === "NeedsModeration" && (
                   <Button kind="secondary" onClick={() => setReview(t)}>
-                    Watch & review <ArrowRight size={15} />
+                    {tr("Watch & review")} <ArrowRight size={15} />
                   </Button>
                 )}
                 {t.status === "ReconciliationNeeded" && (
                   <Button kind="secondary" onClick={() => setResolve(t)}>
-                    Reconcile request
+                    {tr("Reconcile request")}
                   </Button>
                 )}
                 {t.status === "NeedsModeration" &&
@@ -307,14 +331,14 @@ export function StudioPage() {
                   t.videoUrl &&
                   !boot.stories.find((s) => s.id === t.storyId)?.fixture && (
                     <Button kind="secondary" onClick={() => setCostReview(t)}>
-                      Check video cost
+                      {tr("Check video cost")}
                     </Button>
                   )}
               </article>
             ))
           ) : (
-            <Empty icon={<Check size={30} />} title="A clear horizon.">
-              Scenes will appear here when they need a studio review.
+            <Empty icon={<Check size={30} />} title={tr("A clear horizon.")}>
+              {tr("Scenes will appear here when they need a studio review.")}
             </Empty>
           )}
         </div>
@@ -327,13 +351,13 @@ export function StudioPage() {
             done={reload}
           />
           <section className="form-panel">
-            <h2>Provider readiness</h2>
+            <h2>{tr("Provider readiness")}</h2>
             <div className="readiness-list">
               {Object.entries(d.readiness).map(([key, ok]) => (
                 <div key={key}>
                   <span>{key}</span>
                   <b className={ok ? "ready" : "not-ready"}>
-                    {ok ? "Configured" : "Not configured"}
+                    {ok ? tr("Configured") : tr("Not configured")}
                   </b>
                 </div>
               ))}
@@ -356,21 +380,22 @@ export function StudioPage() {
                 }
               }}
             >
-              Check provider balance
+              {tr("Check provider balance")}
             </Button>
             <p className="fine-print">
-              Model balances and platform budgets are separate. Cost ceilings
-              remain conservative until actual charges are reconciled.
+              {tr(
+                "Model balances and platform budgets are separate. Cost ceilings remain conservative until actual charges are reconciled.",
+              )}
             </p>
-            <h3>Budget periods</h3>
+            <h3>{tr("Budget periods")}</h3>
             {d.budgets.map((b) => (
               <div className="budget-row" key={`${b.kind}${b.period}`}>
                 <strong>{b.period}</strong>
                 <span>
-                  {dollars(b.spent_cents)} recorded ·{" "}
-                  {dollars(b.reserved_cents)} reserved
+                  {dollars(b.spent_cents)} {tr("recorded ·")}{" "}
+                  {dollars(b.reserved_cents)} {tr("reserved")}
                   <br />
-                  {dollars(b.limit_cents)} limit
+                  {dollars(b.limit_cents)} {tr("limit")}
                 </span>
               </div>
             ))}
@@ -384,7 +409,7 @@ export function StudioPage() {
               <article className="form-panel" key={r.id}>
                 <div className="section-heading">
                   <strong>{r.author}</strong>
-                  <span className="eyebrow">{r.status}</span>
+                  <span className="eyebrow">{tr(r.status)}</span>
                 </div>
                 <p>{r.reason}</p>
                 {r.status === "open" && (
@@ -399,14 +424,17 @@ export function StudioPage() {
                       }
                     }}
                   >
-                    Mark resolved
+                    {tr("Mark resolved")}
                   </Button>
                 )}
               </article>
             ))
           ) : (
-            <Empty icon={<ShieldCheck size={28} />} title="No reports waiting.">
-              Reports and support requests will appear here.
+            <Empty
+              icon={<ShieldCheck size={28} />}
+              title={tr("No reports waiting.")}
+            >
+              {tr("Reports and support requests will appear here.")}
             </Empty>
           )}
         </div>
@@ -417,7 +445,7 @@ export function StudioPage() {
             <div key={i}>
               <span>{l.action}</span>
               <code>{l.target_id}</code>
-              <time>{new Date(l.created_at).toLocaleString("en")}</time>
+              <time>{new Date(l.created_at).toLocaleString(getLocale())}</time>
             </div>
           ))}
         </div>
@@ -460,7 +488,7 @@ function SettingsForm({
     [busy, setBusy] = useState(false);
   return (
     <section className="form-panel">
-      <h2>Creation capacity</h2>
+      <h2>{tr("Creation capacity")}</h2>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -490,7 +518,7 @@ function SettingsForm({
               setForm({ ...form, generationEnabled: e.target.checked })
             }
           />
-          <span>Accept new generation tasks</span>
+          <span>{tr("Accept new generation tasks")}</span>
         </label>
         {(
           [
@@ -501,7 +529,7 @@ function SettingsForm({
           ] as const
         ).map(([key, label]) => (
           <label className="field-label" key={key}>
-            {label}
+            {tr(label)}
             <input
               type="number"
               min={0}
@@ -515,12 +543,13 @@ function SettingsForm({
           </label>
         ))}
         <p className="fine-print">
-          Changing these limits does not grant additional spending authorization
-          or revoke in-flight reservations. Checkout stays disabled.
+          {tr(
+            "Changing these limits does not grant additional spending authorization or revoke in-flight reservations. Checkout stays disabled.",
+          )}
         </p>
-        {error && <Notice danger>{error}</Notice>}
+        {error && <Notice danger>{tr(error)}</Notice>}
         <Button type="submit" busy={busy}>
-          Save capacity settings
+          {tr("Save capacity settings")}
         </Button>
       </form>
     </section>
@@ -591,8 +620,8 @@ function ModerationModal({
   return (
     <Modal
       wide
-      title="Review what actually happened."
-      eyebrow="PUBLISH ONLY WHAT THE VIDEO SHOWS"
+      title={tr("Review what actually happened.")}
+      eyebrow={tr("PUBLISH ONLY WHAT THE VIDEO SHOWS")}
       onClose={close}
     >
       <video
@@ -601,26 +630,29 @@ function ModerationModal({
         controls
         playsInline
       />
-      <Author id={task.userId} name={task.author} label="PRODUCED BY" />
+      <Author id={task.userId} name={task.author} label={tr("PRODUCED BY")} />
       <p className="modal-copy">
-        The plan below is a starting point. Correct it to match the actual video
-        before it becomes story history.
+        {tr(
+          "The plan below is a starting point. Correct it to match the actual video before it becomes story history.",
+        )}
       </p>
       {task.sourceKind !== "upload" && (
         <SpeechReview taskId={task.id} onCaptions={setCaptions} />
       )}
-      <h4>Original submitted text</h4>
+      <h4>{tr("Original submitted text")}</h4>
       <p className="preserve-lines">{task.prompt}</p>
-      <h4>Adopted audience ideas and public credits</h4>
-      {ideas.error && <Notice danger>{ideas.error}</Notice>}
+      <h4>{tr("Adopted audience ideas and public credits")}</h4>
+      {ideas.error && <Notice danger>{tr(ideas.error)}</Notice>}
       {ideas.loading && <Loading />}
       {ideas.data?.ideas.map((p) => (
         <article key={p.id}>
-          <strong>{p.publicName || "Storyteller"}</strong>
+          <strong>{p.publicName || tr("Storyteller")}</strong>
           <p className="preserve-lines">{p.prompt}</p>
         </article>
       ))}
-      {ideas.data?.ideas.length === 0 && <p>No adopted audience ideas.</p>}
+      {ideas.data?.ideas.length === 0 && (
+        <p>{tr("No adopted audience ideas.")}</p>
+      )}
       <div className="review-checks">
         {[
           "The actual audio is English (or there is no speech).",
@@ -639,12 +671,12 @@ function ModerationModal({
                 )
               }
             />
-            <span>{label}</span>
+            <span>{tr(label)}</span>
           </label>
         ))}
       </div>
       <label className="field-label">
-        What the video actually shows
+        {tr("What the video actually shows")}
         <textarea
           rows={3}
           value={summary}
@@ -652,7 +684,7 @@ function ModerationModal({
         />
       </label>
       <label className="field-label">
-        Published facts · one per line
+        {tr("Published facts · one per line")}
         <textarea
           rows={3}
           value={events}
@@ -665,11 +697,11 @@ function ModerationModal({
           checked={noDialogue}
           onChange={(e) => setNoDialogue(e.target.checked)}
         />
-        <span>This clip has no dialogue or narration.</span>
+        <span>{tr("This clip has no dialogue or narration.")}</span>
       </label>
       {!noDialogue && (
         <label className="field-label">
-          Reviewed English WebVTT captions
+          {tr("Reviewed English WebVTT captions")}
           <textarea
             rows={5}
             value={captions}
@@ -678,13 +710,14 @@ function ModerationModal({
         </label>
       )}
       <details className="advanced-review">
-        <summary>Character state changes</summary>
+        <summary>{tr("Character state changes")}</summary>
         <p className="fine-print">
-          Only approved state changes enter canon. Remove any change not shown
-          in the video.
+          {tr(
+            "Only approved state changes enter canon. Remove any change not shown in the video.",
+          )}
         </p>
         <textarea
-          aria-label="Approved character state changes as JSON"
+          aria-label={tr("Approved character state changes as JSON")}
           rows={4}
           value={updates}
           onChange={(e) => setUpdates(e.target.value)}
@@ -703,28 +736,29 @@ function ModerationModal({
               }
             />
             <span>
-              {ch.name} actually appears and may enter the character registry.
+              {ch.name}{" "}
+              {tr("actually appears and may enter the character registry.")}
             </span>
           </label>
         ))}
       </details>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <Button
         className="full-width"
         busy={busy}
         disabled={!checks.every(Boolean) || !ideas.data || !!ideas.error}
         onClick={() => void act(true)}
       >
-        Approve & publish with author credit <Check size={16} />
+        {tr("Approve & publish with author credit")} <Check size={16} />
       </Button>
       <div className="reject-section">
         <label className="field-label">
-          Or return the author’s credit with an explanation
+          {tr("Or return the author’s credit with an explanation")}
           <textarea
             rows={2}
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="What needs to change?"
+            placeholder={tr("What needs to change?")}
           />
         </label>
         <Button
@@ -733,7 +767,7 @@ function ModerationModal({
           disabled={rejectReason.trim().length < 10}
           onClick={() => void act(false)}
         >
-          Reject this result
+          {tr("Reject this result")}
         </Button>
       </div>
     </Modal>
@@ -802,20 +836,20 @@ function ResolveModal({
   };
   return (
     <Modal
-      title="Reconcile before retrying."
-      eyebrow="PROVIDER REQUEST RECOVERY"
+      title={tr("Reconcile before retrying.")}
+      eyebrow={tr("PROVIDER REQUEST RECOVERY")}
       onClose={close}
     >
       <p className="modal-copy">
-        Provider request:{" "}
+        {tr("Provider request:")}{" "}
         <code>
           {linked
             ? requestId
-            : "Not yet recorded — check the provider request log."}
+            : tr("Not yet recorded — check the provider request log.")}
         </code>
       </p>
       <label className="field-label">
-        What did you verify?
+        {tr("What did you verify?")}
         <textarea
           rows={3}
           value={reason}
@@ -825,19 +859,20 @@ function ResolveModal({
       {!linked && (
         <>
           <label className="field-label">
-            Existing fal request ID
+            {tr("Existing fal request ID")}
             <input
               value={requestId}
               onChange={(e) => {
                 setRequestId(e.target.value.trim());
                 setEvidence(null);
               }}
-              placeholder="Request UUID from the fal dashboard"
+              placeholder={tr("Request UUID from the fal dashboard")}
             />
           </label>
           <p className="fine-print">
-            Read-only verification compares the model, submission time and saved
-            input. Older attempts without saved evidence remain on hold.
+            {tr(
+              "Read-only verification compares the model, submission time and saved input. Older attempts without saved evidence remain on hold.",
+            )}
           </p>
           <Button
             kind="secondary"
@@ -845,21 +880,23 @@ function ResolveModal({
             disabled={!requestId || reason.trim().length < 10}
             onClick={() => void recover(false)}
           >
-            Verify existing request
+            {tr("Verify existing request")}
           </Button>
           {evidence && (
             <Notice>
               <p>
                 {evidence.model} · {evidence.status}
                 <br />
-                Sent {new Date(evidence.sentAt).toLocaleString()}
+                {tr("Sent")}{" "}
+                {new Date(evidence.sentAt).toLocaleString(getLocale())}
               </p>
               <p>
-                The saved input matches. Linking keeps this task on hold until
-                you resume it.
+                {tr(
+                  "The saved input matches. Linking keeps this task on hold until you resume it.",
+                )}
               </p>
               <Button busy={busy} onClick={() => void recover(true)}>
-                Link this verified request
+                {tr("Link this verified request")}
               </Button>
             </Notice>
           )}
@@ -871,11 +908,11 @@ function ResolveModal({
           disabled={reason.length < 10}
           onClick={() => void act(true)}
         >
-          Resume the existing request
+          {tr("Resume the existing request")}
         </Button>
       )}
       <label className="field-label">
-        Or close as failed · actual reconciled provider cost in cents
+        {tr("Or close as failed · actual reconciled provider cost in cents")}
         <input
           type="number"
           min={0}
@@ -884,18 +921,18 @@ function ResolveModal({
         />
       </label>
       <p className="fine-print">
-        Only close after confirming the provider request is finished or was
-        never accepted. The author’s credit is returned; upstream costs remain
-        in the ledger.
+        {tr(
+          "Only close after confirming the provider request is finished or was never accepted. The author’s credit is returned; upstream costs remain in the ledger.",
+        )}
       </p>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <Button
         kind="secondary"
         busy={busy}
         disabled={reason.length < 10 || cost === ""}
         onClick={() => void act(false)}
       >
-        Close & return the creation credit
+        {tr("Close & return the creation credit")}
       </Button>
     </Modal>
   );

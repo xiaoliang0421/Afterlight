@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { MyProposals, UploadReviewModal } from "./ProductionPanel";
 import {
   ArrowRight,
@@ -63,27 +64,27 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
           <div>
             <p className="eyebrow">
               <span className="live-dot" />
-              WATCH. IMAGINE. BELONG.
+              {tr("WATCH. IMAGINE. BELONG.")}
             </p>
             <h1>
-              The story is still
+              {tr("The story is still")}
               <br />
-              <em>being written.</em>
+              <em>{tr("being written.")}</em>
             </h1>
             <p>
-              Step into an unfolding world.
+              {tr("Step into an unfolding world.")}
               <br />
-              Leave a little of yourself in what happens next.
+              {tr("Leave a little of yourself in what happens next.")}
             </p>
             <Link to={`/story/${featured.slug}`} className="button primary">
-              Find your place in the story <ArrowRight size={17} />
+              {tr("Find your place in the story")} <ArrowRight size={17} />
             </Link>
             <span className="hero-footnote">
-              Free to watch · Made together · Always a new possibility
+              {tr("Free to watch · Made together · Always a new possibility")}
             </span>
           </div>
           <span className="hero-credit">
-            FEATURED WORLD
+            {tr("FEATURED WORLD")}
             <br />
             <strong>{featured.title}</strong>
           </span>
@@ -93,14 +94,16 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
         <div>
           <p className="eyebrow">
             {saved
-              ? "SOMEWHERE TO RETURN TO"
-              : "ONE PLATFORM. ENDLESS POSSIBILITIES."}
+              ? tr("SOMEWHERE TO RETURN TO")
+              : tr("ONE PLATFORM. ENDLESS POSSIBILITIES.")}
           </p>
-          <h2>{saved ? "Your library" : "Find a world to get lost in."}</h2>
+          <h2>
+            {saved ? tr("Your library") : tr("Find a world to get lost in.")}
+          </h2>
         </div>
         <Link to="/create" className="button secondary">
           <Plus size={16} />
-          Start a new story
+          {tr("Start a new story")}
         </Link>
       </div>
       <div className="discovery-controls">
@@ -112,7 +115,7 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
                 className={genre === g ? "active" : ""}
                 onClick={() => setGenre(g)}
               >
-                {g}
+                {tr(g)}
               </button>
             ),
           )}
@@ -120,8 +123,8 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
         <label className="search-field">
           <Search size={16} />
           <input
-            aria-label="Search stories"
-            placeholder="Find a story…"
+            aria-label={tr("Search stories")}
+            placeholder={tr("Find a story…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -130,12 +133,14 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
       {saved && !boot.user ? (
         <Empty
           icon={<BookOpen size={30} />}
-          title="Keep your favorite worlds close."
+          title={tr("Keep your favorite worlds close.")}
           action={
-            <Button onClick={requireLogin}>Sign in to save stories</Button>
+            <Button onClick={requireLogin}>
+              {tr("Sign in to save stories")}
+            </Button>
           }
         >
-          Your saved stories and viewing progress will be here.
+          {tr("Your saved stories and viewing progress will be here.")}
         </Empty>
       ) : stories.length ? (
         <div className="story-card-grid">
@@ -147,23 +152,25 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
         <Empty
           icon={<Globe2 size={30} />}
           title={
-            saved ? "Your next favorite is out there." : "A little quiet here."
+            saved
+              ? tr("Your next favorite is out there.")
+              : tr("A little quiet here.")
           }
           action={
             <Link
               to={saved ? "/discover" : "/create"}
               className="button secondary"
             >
-              {saved ? "Discover stories" : "Create a story"}
+              {saved ? tr("Discover stories") : tr("Create a story")}
               <ArrowRight size={15} />
             </Link>
           }
         >
           {query
-            ? "Try another title or genre."
+            ? tr("Try another title or genre.")
             : saved
-              ? "Save a story with the bookmark beside its title."
-              : "Be the first to give this world a beginning."}
+              ? tr("Save a story with the bookmark beside its title.")
+              : tr("Be the first to give this world a beginning.")}
         </Empty>
       )}
       {!saved && (
@@ -187,8 +194,8 @@ export function DiscoverPage({ saved = false }: { saved?: boolean }) {
           ].map(([n, title, copy]) => (
             <div key={n}>
               <span>{n}</span>
-              <h3>{title}</h3>
-              <p>{copy}</p>
+              <h3>{tr(title)}</h3>
+              <p>{tr(copy)}</p>
             </div>
           ))}
         </div>
@@ -214,19 +221,20 @@ function StoryCard({ story: s }: { story: Story }) {
         <span className="eyebrow">
           <i className={s.status === "open" ? "live-dot" : "quiet-dot"} />
           {s.status === "open"
-            ? "UNFOLDING"
+            ? tr("UNFOLDING")
             : s.status === "paused"
-              ? "ON A PAUSE"
-              : "A NEW BEGINNING"}
+              ? tr("ON A PAUSE")
+              : tr("A NEW BEGINNING")}
         </span>
         <h3>{s.title}</h3>
         <p>{s.logline}</p>
         <div>
           <span>
-            {s.episodeCount} {s.episodeCount === 1 ? "chapter" : "chapters"} ·{" "}
-            {s.sceneCount} scenes
+            {s.episodeCount}{" "}
+            {s.episodeCount === 1 ? tr("chapter") : tr("chapters")} ·{" "}
+            {s.sceneCount} {tr("scenes")}
           </span>
-          <span>{s.fixture ? "Studio sample" : "Community story"}</span>
+          <span>{s.fixture ? tr("Studio sample") : tr("Community story")}</span>
         </div>
       </div>
     </Link>
@@ -278,10 +286,11 @@ export function CreateStoryPage() {
       <div className="page">
         <Empty
           icon={<Globe2 size={32} />}
-          title="Story hosting is by invitation."
+          title={tr("Story hosting is by invitation.")}
         >
-          You can watch published stories. Contact the studio from Help to
-          request a host invitation.
+          {tr(
+            "You can watch published stories. Contact the studio from Help to request a host invitation.",
+          )}
         </Empty>
       </div>
     );
@@ -289,11 +298,12 @@ export function CreateStoryPage() {
     <div className="page create-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">A WORLD THAT STARTS WITH YOU</p>
-          <h1>Give a story its beginning.</h1>
+          <p className="eyebrow">{tr("A WORLD THAT STARTS WITH YOU")}</p>
+          <h1>{tr("Give a story its beginning.")}</h1>
           <p>
-            Its own characters. Its own possibilities. One shared way to bring
-            it to life.
+            {tr(
+              "Its own characters. Its own possibilities. One shared way to bring it to life.",
+            )}
           </p>
         </div>
       </div>
@@ -307,7 +317,7 @@ export function CreateStoryPage() {
                 onClick={() => setStep(i + 1)}
               >
                 <span>{step > i + 1 ? <Check size={12} /> : i + 1}</span>
-                {s}
+                {tr(s)}
               </button>
             ))}
           </div>
@@ -320,10 +330,10 @@ export function CreateStoryPage() {
           >
             {step === 1 && (
               <>
-                <p className="eyebrow">01 / THE PREMISE</p>
-                <h2>What draws us in?</h2>
+                <p className="eyebrow">{tr("01 / THE PREMISE")}</p>
+                <h2>{tr("What draws us in?")}</h2>
                 <label className="field-label" htmlFor="story-title">
-                  Story title
+                  {tr("Story title")}
                 </label>
                 <input
                   id="story-title"
@@ -332,10 +342,10 @@ export function CreateStoryPage() {
                   maxLength={80}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="A name with a little possibility"
+                  placeholder={tr("A name with a little possibility")}
                 />
                 <label className="field-label" htmlFor="story-logline">
-                  The one-sentence invitation
+                  {tr("The one-sentence invitation")}
                 </label>
                 <textarea
                   id="story-logline"
@@ -345,10 +355,12 @@ export function CreateStoryPage() {
                   maxLength={240}
                   value={logline}
                   onChange={(e) => setLogline(e.target.value)}
-                  placeholder="A place, a person, and something that changes everything…"
+                  placeholder={tr(
+                    "A place, a person, and something that changes everything…",
+                  )}
                 />
                 <label className="field-label" htmlFor="story-genre">
-                  Genre
+                  {tr("Genre")}
                 </label>
                 <select
                   id="story-genre"
@@ -362,17 +374,19 @@ export function CreateStoryPage() {
                     "Adventure",
                     "Drama",
                   ].map((g) => (
-                    <option key={g}>{g}</option>
+                    <option key={g} value={g}>
+                      {tr(g)}
+                    </option>
                   ))}
                 </select>
               </>
             )}
             {step === 2 && (
               <>
-                <p className="eyebrow">02 / THE WORLD</p>
-                <h2>A few rules. Room to grow.</h2>
+                <p className="eyebrow">{tr("02 / THE WORLD")}</p>
+                <h2>{tr("A few rules. Room to grow.")}</h2>
                 <label className="field-label" htmlFor="world-rules">
-                  Setting & boundaries
+                  {tr("Setting & boundaries")}
                 </label>
                 <textarea
                   id="world-rules"
@@ -382,14 +396,17 @@ export function CreateStoryPage() {
                   maxLength={4000}
                   value={rules}
                   onChange={(e) => setRules(e.target.value)}
-                  placeholder="Where and when are we? What is possible here? Which facts should every new scene respect?"
+                  placeholder={tr(
+                    "Where and when are we? What is possible here? Which facts should every new scene respect?",
+                  )}
                 />
                 <p className="field-help">
-                  These rules belong only to this story. Leave room for other
-                  people to add discoveries.
+                  {tr(
+                    "These rules belong only to this story. Leave room for other people to add discoveries.",
+                  )}
                 </p>
                 <label className="field-label" htmlFor="visual-style">
-                  Visual direction
+                  {tr("Visual direction")}
                 </label>
                 <textarea
                   id="visual-style"
@@ -401,24 +418,27 @@ export function CreateStoryPage() {
                   onChange={(e) => setStyle(e.target.value)}
                 />
                 <Notice>
-                  Every world uses English dialogue, narration and captions.
-                  Contributor prompts can begin in any language.
+                  {tr(
+                    "Every world uses English dialogue, narration and captions. Contributor prompts can begin in any language.",
+                  )}
                 </Notice>
               </>
             )}
             {step === 3 && (
               <>
-                <p className="eyebrow">03 / THE PEOPLE</p>
-                <h2>Who do we meet first?</h2>
+                <p className="eyebrow">{tr("03 / THE PEOPLE")}</p>
+                <h2>{tr("Who do we meet first?")}</h2>
                 {characters.map((ch, i) => (
                   <div className="character-form" key={i}>
                     <div className="section-heading">
-                      <strong>Character {i + 1}</strong>
+                      <strong>
+                        {tr("Character")} {i + 1}
+                      </strong>
                       {characters.length > 1 && (
                         <button
                           type="button"
                           className="icon-button"
-                          aria-label={`Remove character ${i + 1}`}
+                          aria-label={tr("Remove character {0}", i + 1)}
                           onClick={() =>
                             setCharacters((cs) => cs.filter((_, n) => n !== i))
                           }
@@ -428,7 +448,7 @@ export function CreateStoryPage() {
                       )}
                     </div>
                     <label className="field-label" htmlFor={`name-${i}`}>
-                      English name
+                      {tr("English name")}
                     </label>
                     <input
                       id={`name-${i}`}
@@ -441,7 +461,7 @@ export function CreateStoryPage() {
                       }
                     />
                     <label className="field-label" htmlFor={`description-${i}`}>
-                      Appearance & personality
+                      {tr("Appearance & personality")}
                     </label>
                     <textarea
                       id={`description-${i}`}
@@ -452,10 +472,12 @@ export function CreateStoryPage() {
                       onChange={(e) =>
                         changeCharacter(i, "description", e.target.value)
                       }
-                      placeholder="Distinctive appearance, voice, motivation…"
+                      placeholder={tr(
+                        "Distinctive appearance, voice, motivation…",
+                      )}
                     />
                     <label className="field-label" htmlFor={`state-${i}`}>
-                      Where their story begins
+                      {tr("Where their story begins")}
                     </label>
                     <input
                       id={`state-${i}`}
@@ -465,7 +487,9 @@ export function CreateStoryPage() {
                       onChange={(e) =>
                         changeCharacter(i, "state", e.target.value)
                       }
-                      placeholder="Location, what they know, what they carry"
+                      placeholder={tr(
+                        "Location, what they know, what they carry",
+                      )}
                     />
                   </div>
                 ))}
@@ -481,17 +505,17 @@ export function CreateStoryPage() {
                     }
                   >
                     <Plus size={15} />
-                    Add a character
+                    {tr("Add a character")}
                   </Button>
                 )}
                 <p className="fine-print">
-                  Your story introduction stays private until the studio reviews
-                  it. Every finished video also needs approval before
-                  publication.
+                  {tr(
+                    "Your story introduction stays private until the studio reviews it. Every finished video also needs approval before publication.",
+                  )}
                 </p>
               </>
             )}
-            {error && <Notice danger>{error}</Notice>}
+            {error && <Notice danger>{tr(error)}</Notice>}
             <div className="form-actions">
               {step > 1 && (
                 <Button
@@ -499,29 +523,30 @@ export function CreateStoryPage() {
                   kind="ghost"
                   onClick={() => setStep(step - 1)}
                 >
-                  Back
+                  {tr("Back")}
                 </Button>
               )}
               <Button type="submit" busy={busy}>
                 {step < 3
-                  ? "Continue"
+                  ? tr("Continue")
                   : boot.user
-                    ? "Send this world for review"
-                    : "Sign in to create"}
+                    ? tr("Send this world for review")
+                    : tr("Sign in to create")}
                 <ArrowRight size={16} />
               </Button>
             </div>
           </form>
         </section>
         <aside className="world-preview">
-          <span className="eyebrow">YOUR WORLD, TAKING SHAPE</span>
+          <span className="eyebrow">{tr("YOUR WORLD, TAKING SHAPE")}</span>
           <div className="world-preview-art">
             <Globe2 size={54} />
             <span>{genre}</span>
           </div>
-          <h2>{title || "An unwritten story"}</h2>
+          <h2>{title || tr("An unwritten story")}</h2>
           <p>
-            {logline || "A small idea can become a world someone returns to."}
+            {logline ||
+              tr("A small idea can become a world someone returns to.")}
           </p>
           <div className="preview-cast">
             {characters
@@ -536,8 +561,9 @@ export function CreateStoryPage() {
           <div className="world-independence">
             <Check size={16} />
             <p>
-              Independent characters, history and queue. Your other stories stay
-              exactly as they are.
+              {tr(
+                "Independent characters, history and queue. Your other stories stay exactly as they are.",
+              )}
             </p>
           </div>
         </aside>
@@ -561,24 +587,27 @@ export function ContributionsPage() {
     <div className="page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">THE MARK YOU LEAVE</p>
-          <h1>Your contributions.</h1>
+          <p className="eyebrow">{tr("THE MARK YOU LEAVE")}</p>
+          <h1>{tr("Your contributions.")}</h1>
           <p>
-            Every idea has a home. Follow yours from the first spark to the
-            final scene.
+            {tr(
+              "Every idea has a home. Follow yours from the first spark to the final scene.",
+            )}
           </p>
         </div>
         <Button kind="secondary" onClick={() => void reload()}>
-          Refresh status
+          {tr("Refresh status")}
         </Button>
       </div>
       {!boot.user ? (
         <Empty
           icon={<Sparkles size={30} />}
-          title="Your imagination belongs here."
-          action={<Button onClick={requireLogin}>Sign in to begin</Button>}
+          title={tr("Your imagination belongs here.")}
+          action={
+            <Button onClick={requireLogin}>{tr("Sign in to begin")}</Button>
+          }
         >
-          Your ideas, queue updates and scene credits will appear here.
+          {tr("Your ideas, queue updates and scene credits will appear here.")}
         </Empty>
       ) : resource.loading ? (
         <Loading />
@@ -597,11 +626,11 @@ export function ContributionsPage() {
                 className={filter === f ? "active" : ""}
                 onClick={() => setFilter(f)}
               >
-                {f}
+                {tr(f)}
               </button>
             ))}
           </div>
-          {resource.error && <Notice danger>{resource.error}</Notice>}
+          {resource.error && <Notice danger>{tr(resource.error)}</Notice>}
           {boot.stories.some((s) => s.ownerId === boot.user?.id) && (
             <OwnerReviews />
           )}
@@ -627,24 +656,24 @@ export function ContributionsPage() {
                         to={`/story/${story?.slug ?? t.storyId}`}
                         className="eyebrow"
                       >
-                        {story?.title ?? "Your story"}{" "}
+                        {story?.title ?? tr("Your story")}{" "}
                         <ArrowUpRight size={13} />
                       </Link>
                       {t.ownerReview?.status === "pending" ? (
                         <span className="free-tag">
-                          CREATOR DECISION PENDING
+                          {tr("CREATOR DECISION PENDING")}
                         </span>
                       ) : (
                         <Status state={t.status} />
                       )}
                     </div>
-                    <h3>{t.plan?.title || "A saved possibility"}</h3>
+                    <h3>{t.plan?.title || tr("A saved possibility")}</h3>
                     <p className="contribution-prompt">“{t.prompt}”</p>
                     {t.reason && <Notice>{t.reason}</Notice>}
                     <div className="contribution-meta">
                       <Author id={t.userId} name={t.author} compact />
                       <span>
-                        {new Date(t.createdAt).toLocaleDateString("en", {
+                        {new Date(t.createdAt).toLocaleDateString(getLocale(), {
                           month: "short",
                           day: "numeric",
                         })}
@@ -653,10 +682,10 @@ export function ContributionsPage() {
                         {["Draft", "NeedsReview"].includes(t.status) && (
                           <Button kind="secondary" onClick={() => setReview(t)}>
                             {t.sourceKind === "upload"
-                              ? "Review uploaded scene"
+                              ? tr("Review uploaded scene")
                               : t.status === "Draft"
-                                ? "Preview & continue"
-                                : "Review new plan"}
+                                ? tr("Preview & continue")
+                                : tr("Review new plan")}
                           </Button>
                         )}
                         {["Draft", "NeedsReview", "Queued"].includes(
@@ -676,7 +705,7 @@ export function ContributionsPage() {
                               }
                             }}
                           >
-                            Withdraw
+                            {tr("Withdraw")}
                           </button>
                         )}
                         {t.status === "Published" && (
@@ -684,7 +713,7 @@ export function ContributionsPage() {
                             to={`/story/${story?.slug ?? t.storyId}?scene=${encodeURIComponent(t.id)}`}
                             className="button secondary"
                           >
-                            Watch your scene <ArrowRight size={14} />
+                            {tr("Watch your scene")} <ArrowRight size={14} />
                           </Link>
                         )}
                       </div>
@@ -696,14 +725,14 @@ export function ContributionsPage() {
           {!resource.data?.tasks.length && (
             <Empty
               icon={<Clapperboard size={30} />}
-              title="Your first scene is waiting."
+              title={tr("Your first scene is waiting.")}
               action={
                 <Link to="/discover" className="button primary">
-                  Find a story <ArrowRight size={15} />
+                  {tr("Find a story")} <ArrowRight size={15} />
                 </Link>
               }
             >
-              Begin with a world that catches your imagination.
+              {tr("Begin with a world that catches your imagination.")}
             </Empty>
           )}
         </>
@@ -741,23 +770,24 @@ function ReviewModal({
     [consent, setConsent] = useState(false);
   return (
     <Modal
-      title={task.plan?.title || "Find your idea’s place."}
-      eyebrow="YOUR CONTRIBUTION"
+      title={task.plan?.title || tr("Find your idea’s place.")}
+      eyebrow={tr("YOUR CONTRIBUTION")}
       onClose={close}
     >
       <p className="modal-copy">{task.plan?.summary || task.prompt}</p>
       {task.plan && (
         <div className="bridge">
-          <span>Connecting to the story</span>
+          <span>{tr("Connecting to the story")}</span>
           {task.plan.bridge}
         </div>
       )}
       {task.reason && <Notice>{task.reason}</Notice>}
       {task.billingKind === "points" && (
         <Notice>
-          {task.quotedPoints} purchased points will be reserved and used on
-          publication. Failed or rejected scenes return the reservation.
-          References improve continuity but do not guarantee an exact match.
+          {task.quotedPoints}{" "}
+          {tr(
+            "purchased points will be reserved and used on publication. Failed or rejected scenes return the reservation. References improve continuity but do not guarantee an exact match.",
+          )}
         </Notice>
       )}
       {task.plan && (
@@ -777,12 +807,13 @@ function ReviewModal({
             onChange={(e) => setConsent(e.target.checked)}
           />
           <span>
-            Publish my original idea and nickname with this scene. I approve
-            this plan and small continuity edits.
+            {tr(
+              "Publish my original idea and nickname with this scene. I approve this plan and small continuity edits.",
+            )}
           </span>
         </label>
       )}
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       {!waitingForOwner(task) && (
         <Button
           className="full-width"
@@ -815,8 +846,13 @@ function ReviewModal({
           }}
         >
           {task.plan
-            ? `Join the queue · ${task.billingKind === "points" ? `${task.quotedPoints} points` : "1 existing free credit"}`
-            : "Prepare my scene plan"}
+            ? tr(
+                "Join the queue · {0}",
+                task.billingKind === "points"
+                  ? tr("{0} points", task.quotedPoints)
+                  : tr("1 existing free credit"),
+              )
+            : tr("Prepare my scene plan")}
           <ArrowRight size={16} />
         </Button>
       )}
@@ -834,10 +870,10 @@ export function AccountPage() {
       <div className="page">
         <Empty
           icon={<Avatar name="?" size={48} />}
-          title="Your storyteller account"
-          action={<Button onClick={requireLogin}>Sign in</Button>}
+          title={tr("Your storyteller account")}
+          action={<Button onClick={requireLogin}>{tr("Sign in")}</Button>}
         >
-          A name in the credits. A place in the story.
+          {tr("A name in the credits. A place in the story.")}
         </Empty>
       </div>
     );
@@ -845,8 +881,8 @@ export function AccountPage() {
     <div className="page account-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">YOUR PLACE IN THE STORY</p>
-          <h1>Your storyteller account.</h1>
+          <p className="eyebrow">{tr("YOUR PLACE IN THE STORY")}</p>
+          <h1>{tr("Your storyteller account.")}</h1>
         </div>
       </div>
       <div className="account-grid">
@@ -856,7 +892,7 @@ export function AccountPage() {
             <div>
               <h2>{boot.user.displayName}</h2>
               <Link to={`/people/${boot.user.id}`} className="text-button">
-                View your public credits <ArrowUpRight size={14} />
+                {tr("View your public credits")} <ArrowUpRight size={14} />
               </Link>
             </div>
           </div>
@@ -879,7 +915,7 @@ export function AccountPage() {
             }}
           >
             <label className="field-label" htmlFor="nickname">
-              Public nickname
+              {tr("Public nickname")}
             </label>
             <input
               id="nickname"
@@ -890,68 +926,75 @@ export function AccountPage() {
               required
             />
             <p className="field-help">
-              Changes need studio review before appearing publicly. Your
-              permanent author ID keeps every contribution connected to you.
+              {tr(
+                "Changes need studio review before appearing publicly. Your permanent author ID keeps every contribution connected to you.",
+              )}
             </p>
             <label className="field-label" htmlFor="email">
-              Account email · only visible to you
+              {tr("Account email · only visible to you")}
             </label>
             <input id="email" value={boot.user.email ?? ""} readOnly />
             <p className="field-help">
-              Your email is never shown in scene credits or on your public
-              profile.
+              {tr(
+                "Your email is never shown in scene credits or on your public profile.",
+              )}
             </p>
-            {error && <Notice danger>{error}</Notice>}
+            {error && <Notice danger>{tr(error)}</Notice>}
             <Button type="submit" busy={busy}>
-              Save profile
+              {tr("Save profile")}
             </Button>
           </form>
         </section>
         {boot.config.billingVisible ? (
           <section className="credit-panel">
-            <span className="eyebrow">YOUR CREATION BALANCE</span>
+            <span className="eyebrow">{tr("YOUR CREATION BALANCE")}</span>
             <strong>
               {boot.wallet?.available ?? 0}
-              <small>points available</small>
+              <small>{tr("points available")}</small>
             </strong>
             <p>
               {boot.config.paymentsEnabled
-                ? "Watch and share ideas for free. Top up points when you choose platform generation."
-                : "Purchases are closed. Your existing balance and order records remain available."}
+                ? tr(
+                    "Watch and share ideas for free. Top up points when you choose platform generation.",
+                  )
+                : tr(
+                    "Purchases are closed. Your existing balance and order records remain available.",
+                  )}
             </p>
             {boot.config.paymentsEnabled && (
               <a href="#creation-points" className="button secondary">
-                Top up creation points
+                {tr("Top up creation points")}
               </a>
             )}
             {!!boot.credits?.reserved && (
               <p className="fine-print">
-                {boot.credits.reserved} legacy free credits remain reserved for
-                earlier tasks.
+                {boot.credits.reserved}{" "}
+                {tr("legacy free credits remain reserved for earlier tasks.")}
               </p>
             )}
           </section>
         ) : (
           <section className="credit-panel">
-            <span className="eyebrow">EARLY ACCESS</span>
+            <span className="eyebrow">{tr("EARLY ACCESS")}</span>
             <h2>
               {boot.config.canHost
-                ? "Your host invitation is active."
+                ? tr("Your host invitation is active.")
                 : boot.config.canContribute
-                  ? "Your participant invitation is active."
-                  : "Enjoy the stories."}
+                  ? tr("Your participant invitation is active.")
+                  : tr("Enjoy the stories.")}
             </h2>
             <p>
-              Watching is free. Invited participants share ideas, and invited
-              hosts upload finished scenes for studio review. Purchases are not
-              offered in this release.
+              {tr(
+                "Watching is free. Invited participants share ideas, and invited hosts upload finished scenes for studio review. Purchases are not offered in this release.",
+              )}
             </p>
             <p>
-              Public name:{" "}
-              {boot.user.publicDisplayName || "Storyteller · awaiting review"}
+              {tr("Public name:")}{" "}
+              {boot.user.publicDisplayName ||
+                tr("Storyteller · awaiting review")}
             </p>
             <Link to="/about" className="button secondary">
-              How to take part
+              {tr("How to take part")}
             </Link>
           </section>
         )}
@@ -973,10 +1016,10 @@ export function AccountPage() {
           }}
         >
           <LogOut size={16} />
-          Sign out
+          {tr("Sign out")}
         </Button>
         <Link to="/privacy" className="text-button">
-          Privacy & account deletion
+          {tr("Privacy & account deletion")}
         </Link>
         <PolicyRecords />
       </div>
@@ -1001,7 +1044,7 @@ export function PersonPage({ id }: { id: string }) {
   if (!r.data)
     return (
       <div className="page">
-        <Notice danger>{r.error}</Notice>
+        <Notice danger>{tr(r.error)}</Notice>
       </div>
     );
   const { person, contributions } = r.data;
@@ -1009,16 +1052,16 @@ export function PersonPage({ id }: { id: string }) {
     <div className="page">
       <div className="public-profile-heading">
         <Avatar name={person.displayName} size={84} />
-        <p className="eyebrow">A VOICE IN THESE WORLDS</p>
+        <p className="eyebrow">{tr("A VOICE IN THESE WORLDS")}</p>
         <h1>{person.displayName}</h1>
         <p>
           {contributions.length}{" "}
-          {contributions.length === 1 ? "scene" : "scenes"} contributed to. Part
-          of something bigger.
+          {contributions.length === 1 ? tr("scene") : tr("scenes")}{" "}
+          {tr("contributed to. Part of something bigger.")}
         </p>
       </div>
       <div className="page-heading">
-        <h2>Their place in the story.</h2>
+        <h2>{tr("Their place in the story.")}</h2>
       </div>
       <div className="story-card-grid">
         {contributions.map((c) => (
@@ -1039,7 +1082,7 @@ export function PersonPage({ id }: { id: string }) {
               <span className="eyebrow">{c.storyTitle}</span>
               <h3>{c.title}</h3>
               <p>
-                Contribution by {person.displayName} ·{" "}
+                {tr("Contribution by")} {person.displayName} ·{" "}
                 {formatTime(c.durationMs)}
               </p>
             </div>
@@ -1047,8 +1090,11 @@ export function PersonPage({ id }: { id: string }) {
         ))}
       </div>
       {!contributions.length && (
-        <Empty icon={<Sparkles size={28} />} title="A story yet to be told.">
-          Published scene credits will appear here.
+        <Empty
+          icon={<Sparkles size={28} />}
+          title={tr("A story yet to be told.")}
+        >
+          {tr("Published scene credits will appear here.")}
         </Empty>
       )}
     </div>
@@ -1058,99 +1104,100 @@ export function AboutPage() {
   const { boot } = useApp();
   return (
     <div className="page about-page">
-      <p className="eyebrow">A SMALL GUIDE TO A SHARED WORLD</p>
+      <p className="eyebrow">{tr("A SMALL GUIDE TO A SHARED WORLD")}</p>
       <h1>
-        Stories belong to the people
+        {tr("Stories belong to the people")}
         <br />
-        who imagine them.
+        {tr("who imagine them.")}
       </h1>
       <section>
-        <h2>How a scene becomes part of the story</h2>
+        <h2>{tr("How a scene becomes part of the story")}</h2>
         <ol>
           <li>
-            Watch a world and get to know its characters. You can always start
-            at the beginning.
+            {tr(
+              "Watch a world and get to know its characters. You can always start at the beginning.",
+            )}
           </li>
           <li>
-            Invited participants share an idea privately with the host. Watching
-            requires no purchase.
+            {tr(
+              "Invited participants share an idea privately with the host. Watching requires no purchase.",
+            )}
           </li>
           <li>
-            The host chooses ideas, then uploads a finished video. Scenes take
-            turns within their own story.
+            {tr(
+              "The host chooses ideas, then uploads a finished video. Scenes take turns within their own story.",
+            )}
           </li>
           <li>
-            The host checks how the footage continues the latest scene. If the
-            story changes, the continuation needs another review.
+            {tr(
+              "The host checks how the footage continues the latest scene. If the story changes, the continuation needs another review.",
+            )}
           </li>
           <li>
-            The studio reviews the video, audio, public text and credits.
-            Approved scenes are published with the producer and adopted ideas.
+            {tr(
+              "The studio reviews the video, audio, public text and credits. Approved scenes are published with the producer and adopted ideas.",
+            )}
           </li>
         </ol>
       </section>
       <section id="attribution">
-        <h2>Your name stays with your scene</h2>
+        <h2>{tr("Your name stays with your scene")}</h2>
         <p>
-          Your contribution appears beside the video, in its timeline and on
-          your public storyteller profile. The original idea and its English
-          translation are labeled separately. System-created transitions are not
-          presented as your words.
+          {tr(
+            "Your contribution appears beside the video, in its timeline and on your public storyteller profile. The original idea and its English translation are labeled separately. System-created transitions are not presented as your words.",
+          )}
         </p>
       </section>
       <section id="privacy">
-        <h2>Your email is private. Your creativity is public.</h2>
+        <h2>{tr("Your email is private. Your creativity is public.")}</h2>
         <p>
-          Your email supports sign-in and account recovery. Your chosen
-          nickname, published prompts and scene credits are public. Do not
-          include passwords, contact details or other private information in a
-          creative prompt.
+          {tr(
+            "Your email supports sign-in and account recovery. Your chosen nickname, published prompts and scene credits are public. Do not include passwords, contact details or other private information in a creative prompt.",
+          )}
         </p>
         <Link to="/privacy" className="text-button">
-          Read the full Privacy policy <ArrowRight size={15} />
+          {tr("Read the full Privacy policy")} <ArrowRight size={15} />
         </Link>
         <p>
-          Request account deletion from your Account page. To request correction
-          or prompt removal, use “Report a concern” on a story. The studio can
-          review your request while preserving an understandable record of the
-          shared story.
+          {tr(
+            "Request account deletion from your Account page. To request correction or prompt removal, use “Report a concern” on a story. The studio can review your request while preserving an understandable record of the shared story.",
+          )}
         </p>
       </section>
       <section id="terms">
-        <h2>A few shared agreements</h2>
+        <h2>{tr("A few shared agreements")}</h2>
         <Link to="/terms" className="text-button">
-          Read the full Terms of service <ArrowRight size={15} />
+          {tr("Read the full Terms of service")} <ArrowRight size={15} />
         </Link>
         <p>
-          Submit original ideas and reference material you have permission to
-          use. By approving a scene, you allow the platform to adapt your idea,
-          generate and publicly show the resulting scene, and retain its
-          contribution credit as part of the story. AI generation can differ
-          from the plan; you can report a result that needs review.
+          {tr(
+            "Submit original ideas and reference material you have permission to use. By approving a scene, you allow the platform to adapt your idea, generate and publicly show the resulting scene, and retain its contribution credit as part of the story. AI generation can differ from the plan; you can report a result that needs review.",
+          )}
         </p>
         <p>
-          Do not use the platform for harassment, exploitation, sexual content
-          involving minors, hateful attacks, or graphic violence. Stories can be
-          paused and content removed after review.
+          {tr(
+            "Do not use the platform for harassment, exploitation, sexual content involving minors, hateful attacks, or graphic violence. Stories can be paused and content removed after review.",
+          )}
         </p>
         <p>
-          This release offers no purchases or subscriptions. Invited hosts bring
-          their own videos. Paid generation is reserved for a later release and
-          is not required to participate.
+          {tr(
+            "This release offers no purchases or subscriptions. Invited hosts bring their own videos. Paid generation is reserved for a later release and is not required to participate.",
+          )}
         </p>
       </section>
       <section>
-        <h2>Need a hand?</h2>
+        <h2>{tr("Need a hand?")}</h2>
         <p>
-          Sign in and choose “Report a concern” on the relevant story. Include
-          the chapter, timestamp and what you need help with.
+          {tr(
+            "Sign in and choose “Report a concern” on the relevant story. Include the chapter, timestamp and what you need help with.",
+          )}
         </p>
         {boot.config.supportEmail && (
           <a
             href={`mailto:${boot.config.supportEmail}`}
             className="text-button"
           >
-            Email the studio <ArrowRight size={15} />
+            {tr("Email the studio")} <ArrowRight size={15} />
           </a>
         )}
       </section>

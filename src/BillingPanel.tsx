@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import type { Paddle } from "@paddle/paddle-js";
 import { CreditCard, RefreshCw } from "lucide-react";
@@ -137,63 +138,70 @@ export function BillingPanel() {
     <section className="billing-panel" id="creation-points">
       <div className="billing-heading">
         <div>
-          <p className="eyebrow">FOR REFERENCE-GUIDED SCENES</p>
-          <h2>Creation points.</h2>
+          <p className="eyebrow">{tr("FOR REFERENCE-GUIDED SCENES")}</p>
+          <h2>{tr("Creation points.")}</h2>
         </div>
         <CreditCard size={25} />
       </div>
       <p className="muted">
-        Use prepaid creation points for platform text or reference-guided
-        generation. Watching and proposing ideas do not spend generation points.
+        {tr(
+          "Use prepaid creation points for platform text or reference-guided generation. Watching and proposing ideas do not spend generation points.",
+        )}
       </p>
       {resource.loading && <Loading />}
       {(error || resource.error) && (
-        <Notice danger>{error || resource.error}</Notice>
+        <Notice danger>{tr(error || resource.error)}</Notice>
       )}
-      {message && <Notice>{message}</Notice>}
+      {message && <Notice>{tr(message)}</Notice>}
       {data && (
         <>
           <div className="point-balances">
             <div>
               <strong>{data.wallet.available}</strong>
-              <span>Available points</span>
+              <span>{tr("Available points")}</span>
             </div>
             <div>
               <strong>{data.wallet.reserved}</strong>
-              <span>Reserved for scenes</span>
+              <span>{tr("Reserved for scenes")}</span>
             </div>
             <div>
               <strong>{data.wallet.spent}</strong>
-              <span>Used on published scenes</span>
+              <span>{tr("Used on published scenes")}</span>
             </div>
           </div>
           {(data.wallet.held || data.wallet.debt > 0) && (
             <Notice danger>
-              Your purchased balance needs a payment review. Use “Payment help”
-              beside the relevant order to contact the studio.
+              {tr(
+                "Your purchased balance needs a payment review. Use “Payment help” beside the relevant order to contact the studio.",
+              )}
             </Notice>
           )}
           {!data.enabled ? (
             <Notice>
-              Top-ups are not open yet. You can keep watching and sharing ideas
-              with story hosts. Reference-guided creation will open after
-              payment setup and testing.
+              {tr(
+                "Top-ups are not open yet. You can keep watching and sharing ideas with story hosts. Reference-guided creation will open after payment setup and testing.",
+              )}
             </Notice>
           ) : (
             <>
               {data.environment === "sandbox" && (
                 <Notice>
-                  Payment sandbox · test orders and test cards only. These are
-                  not live purchases.
+                  {tr(
+                    "Payment sandbox · test orders and test cards only. These are not live purchases.",
+                  )}
                 </Notice>
               )}
               <p>
-                {data.textPoints} points per text scene
+                {data.textPoints} {tr("points per text scene")}
                 {data.referenceEnabled
-                  ? ` · ${data.referencePoints} per reference-guided scene`
+                  ? tr(
+                      " · {0} per reference-guided scene",
+                      data.referencePoints,
+                    )
                   : ""}
-                , shown again before you join the queue. No subscription or
-                automatic top-up. Taxes are shown in checkout.
+                {tr(
+                  ", shown again before you join the queue. No subscription or automatic top-up. Taxes are shown in checkout.",
+                )}
               </p>
               <label className="checkbox-label">
                 <input
@@ -202,62 +210,66 @@ export function BillingPanel() {
                   onChange={(event) => setAccepted(event.target.checked)}
                 />
                 <span>
-                  I have reviewed the{" "}
+                  {tr("I have reviewed the")}{" "}
                   <a href="/terms#credits" target="_blank" rel="noopener">
-                    purchase and refund terms
+                    {tr("purchase and refund terms")}
                   </a>
-                  . Points are reserved on joining the queue and used when a
-                  scene is published. Visual consistency is not guaranteed.
+                  {tr(
+                    ". Points are reserved on joining the queue and used when a scene is published. Visual consistency is not guaranteed.",
+                  )}
                 </span>
               </label>
               <div className="point-packages">
                 {data.packages.map((pack) => (
                   <article key={pack.id}>
                     <h3>{pack.name}</h3>
-                    <strong>{pack.points} points</strong>
+                    <strong>
+                      {pack.points} {tr("points")}
+                    </strong>
                     <p>
-                      {money(pack.amountCents, pack.currency)} + applicable tax
-                      · one time
+                      {money(pack.amountCents, pack.currency)}{" "}
+                      {tr("+ applicable tax · one time")}
                     </p>
                     <Button
                       disabled={!accepted || !!busy || !!pending}
                       busy={busy === pack.id}
                       onClick={() => void purchase(pack.id)}
                     >
-                      Buy points
+                      {tr("Buy points")}
                     </Button>
                   </article>
                 ))}
               </div>
               {!data.packages.length && (
                 <Notice>
-                  Point packages are being prepared. No purchase can be made
-                  yet.
+                  {tr(
+                    "Point packages are being prepared. No purchase can be made yet.",
+                  )}
                 </Notice>
               )}
             </>
           )}
           <p className="fine-print">
-            A failed or rejected scene returns its reserved points. Returning
-            generation points is separate from a payment refund. Purchased
-            points do not reset daily. Neither balance is transferable.
+            {tr(
+              "A failed or rejected scene returns its reserved points. Returning generation points is separate from a payment refund. Purchased points do not reset daily. Neither balance is transferable.",
+            )}
           </p>
           <div className="billing-heading">
-            <h3>Your orders</h3>
+            <h3>{tr("Your orders")}</h3>
             <Button kind="secondary" onClick={() => void resource.reload()}>
               <RefreshCw size={14} />
-              Refresh
+              {tr("Refresh")}
             </Button>
           </div>
           {!data.orders.length ? (
-            <p className="muted">No purchases yet.</p>
+            <p className="muted">{tr("No purchases yet.")}</p>
           ) : (
             <div className="billing-orders">
               {data.orders.map((order) => (
                 <article key={order.id}>
                   <div>
                     <strong>
-                      {order.points} points ·{" "}
+                      {order.points} {tr("points ·")}{" "}
                       {money(
                         order.totalPaidCents ?? order.amountCents,
                         order.currency,
@@ -265,25 +277,34 @@ export function BillingPanel() {
                     </strong>
                     <p>
                       {order.status === "pending"
-                        ? "Awaiting payment confirmation"
+                        ? tr("Awaiting payment confirmation")
                         : order.status === "review"
-                          ? "Needs a studio payment review"
+                          ? tr("Needs a studio payment review")
                           : order.status === "creating"
-                            ? "Checkout status is being checked"
+                            ? tr("Checkout status is being checked")
                             : order.status === "refunded"
-                              ? "Refunded / points withdrawn"
+                              ? tr("Refunded / points withdrawn")
                               : order.status === "completed"
-                                ? `${order.grantedPoints} points credited after adjustments`
-                                : "Canceled"}
+                                ? tr(
+                                    "{0} points credited after adjustments",
+                                    order.grantedPoints,
+                                  )
+                                : tr("Canceled")}
                     </p>
                     <small>
-                      {new Date(order.createdAt).toLocaleDateString("en")} ·{" "}
-                      {order.environment === "sandbox" ? "Test order · " : ""}
+                      {new Date(order.createdAt).toLocaleDateString(
+                        getLocale(),
+                      )}{" "}
+                      ·{" "}
+                      {order.environment === "sandbox"
+                        ? tr("Test order · ")
+                        : ""}
                       {order.id}
                     </small>
                     {order.taxCents !== null && (
                       <small>
-                        Includes {money(order.taxCents, order.currency)} tax
+                        {tr("Includes")} {money(order.taxCents, order.currency)}{" "}
+                        {tr("tax")}
                       </small>
                     )}
                   </div>
@@ -295,7 +316,7 @@ export function BillingPanel() {
                         setHelpReason("");
                       }}
                     >
-                      Payment help
+                      {tr("Payment help")}
                     </Button>
                     {order.status === "pending" && data.enabled && (
                       <Button
@@ -319,7 +340,7 @@ export function BillingPanel() {
                           }
                         }}
                       >
-                        Resume checkout
+                        {tr("Resume checkout")}
                       </Button>
                     )}
                     <Button
@@ -343,7 +364,7 @@ export function BillingPanel() {
                         }
                       }}
                     >
-                      Check payment
+                      {tr("Check payment")}
                     </Button>
                   </div>
                 </article>
@@ -352,10 +373,14 @@ export function BillingPanel() {
           )}
           {data.requests?.map((request) => (
             <Notice key={request.id}>
-              <strong>Order {request.orderId}</strong>
+              <strong>
+                {tr("Order")} {request.orderId}
+              </strong>
               <p>
                 {request.status === "open"
-                  ? "Your payment request is awaiting studio review. This does not itself cancel or refund the order."
+                  ? tr(
+                      "Your payment request is awaiting studio review. This does not itself cancel or refund the order.",
+                    )
                   : request.response}
               </p>
               <small>{request.reason}</small>
@@ -365,13 +390,13 @@ export function BillingPanel() {
       )}
       {helpOrder && (
         <Modal
-          title="Payment or refund help"
+          title={tr("Payment or refund help")}
           onClose={() => setHelpOrder(null)}
         >
           <p>
-            Tell the studio what happened. Your order number is included
-            automatically. Do not send card details or passwords. A request does
-            not automatically issue a refund.
+            {tr(
+              "Tell the studio what happened. Your order number is included automatically. Do not send card details or passwords. A request does not automatically issue a refund.",
+            )}
           </p>
           <form
             onSubmit={async (event) => {
@@ -392,7 +417,7 @@ export function BillingPanel() {
             }}
           >
             <label className="field-label">
-              What needs attention?
+              {tr("What needs attention?")}
               <textarea
                 required
                 minLength={10}
@@ -401,9 +426,9 @@ export function BillingPanel() {
                 onChange={(event) => setHelpReason(event.target.value)}
               />
             </label>
-            {error && <Notice danger>{error}</Notice>}
+            {error && <Notice danger>{tr(error)}</Notice>}
             <Button type="submit" busy={busy === "help"}>
-              Send request to the studio
+              {tr("Send request to the studio")}
             </Button>
           </form>
         </Modal>

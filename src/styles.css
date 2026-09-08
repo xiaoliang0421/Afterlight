@@ -4038,3 +4038,52 @@ video {
     flex-direction: column;
   }
 }
+
+/* Language preferences stay in the footer; changing language never remounts a story. */
+.preferences-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.language-preferences {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 20px;
+}
+.language-preferences legend {
+  margin-bottom: 12px;
+}
+.language-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.language-options .button {
+  min-height: 44px;
+  min-width: 120px;
+}
+.language-options [aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--panel);
+}
+html[lang="zh-CN"] body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+}
+html[lang="zh-CN"] .eyebrow,
+html[lang="zh-CN"] .section-label,
+html[lang="zh-CN"] .brand-caption,
+html[lang="zh-CN"] .edition {
+  letter-spacing: 0.06em;
+}
+html[lang="zh-CN"] h1,
+html[lang="zh-CN"] h2 {
+  line-height: 1.35;
+}

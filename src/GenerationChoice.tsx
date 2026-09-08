@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { Image, Type } from "lucide-react";
 import type { GenerationMode } from "../shared/billing";
 
@@ -20,7 +21,7 @@ export function GenerationChoice({
 }) {
   return (
     <fieldset className="generation-choice" disabled={disabled}>
-      <legend>How should we make your scene?</legend>
+      <legend>{tr("How should we make your scene?")}</legend>
       <label
         className={
           value === "text" ? "generation-option selected" : "generation-option"
@@ -35,12 +36,15 @@ export function GenerationChoice({
           onChange={() => onChange("text")}
         />
         <span className="generation-option-title">
-          <Type size={16} /> Text to video{" "}
-          <b>{textEnabled ? `${textPoints} POINTS` : "PRICING PENDING"}</b>
+          <Type size={16} /> {tr("Text to video")}{" "}
+          <b>
+            {textEnabled ? tr("{0} POINTS", textPoints) : tr("PRICING PENDING")}
+          </b>
         </span>
         <span>
-          Made from your idea and the story’s character descriptions. Faces and
-          details may vary between scenes.
+          {tr(
+            "Made from your idea and the story’s character descriptions. Faces and details may vary between scenes.",
+          )}
         </span>
       </label>
       <label
@@ -59,17 +63,21 @@ export function GenerationChoice({
           onChange={() => onChange("reference")}
         />
         <span className="generation-option-title">
-          <Image size={16} /> Reference guided{" "}
-          <b>{referenceEnabled ? `${points} POINTS` : "COMING LATER"}</b>
+          <Image size={16} /> {tr("Reference guided")}{" "}
+          <b>
+            {referenceEnabled ? tr("{0} POINTS", points) : tr("COMING LATER")}
+          </b>
         </span>
         <span>
-          Uses approved character images and available scene references for
-          stronger visual continuity. An exact match is not guaranteed.
+          {tr(
+            "Uses approved character images and available scene references for stronger visual continuity. An exact match is not guaranteed.",
+          )}
         </span>
       </label>
       <p>
-        Both use creation points and follow the same story, English-language
-        rules and queue.
+        {tr(
+          "Both use creation points and follow the same story, English-language rules and queue.",
+        )}
       </p>
     </fieldset>
   );

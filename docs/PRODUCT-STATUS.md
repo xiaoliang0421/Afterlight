@@ -1,6 +1,6 @@
 # Product status
 
-Updated 2026-09-08. The current release is **invitation-only, with no payments**, intended for a worldwide audience with an English interface. See [the launch runbook](NO-PAYMENT-LAUNCH.md) for the offered experience, review procedures and remaining production decisions.
+Updated 2026-09-08. The current release is **invitation-only, with no payments**, intended for a worldwide audience with English (default) and Simplified Chinese interfaces. See [the launch runbook](NO-PAYMENT-LAUNCH.md) for the offered experience, review procedures and remaining production decisions.
 
 ## Implemented
 

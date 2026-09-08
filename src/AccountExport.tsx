@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { api } from "./api";
@@ -9,7 +10,7 @@ export function AccountExport() {
   const { boot } = useApp();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [status, setStatus] = useState("");
+    [status, setStatus] = useState<string | number>("");
   const controller = useRef<AbortController | null>(null);
   const downloadUrl = useRef<string | null>(null);
   useEffect(
@@ -22,19 +23,22 @@ export function AccountExport() {
   );
   return (
     <section className="form-panel account-request-panel" id="account-data">
-      <h2>A copy of your account</h2>
+      <h2>{tr("A copy of your account")}</h2>
       <p className="muted">
-        Download your profile, story and scene text, ideas, credits, orders,
-        saved stories, viewing progress and agreement records in one JSON file.
-        Videos and reference files are not included.
+        {tr(
+          "Download your profile, story and scene text, ideas, credits, orders, saved stories, viewing progress and agreement records in one JSON file. Videos and reference files are not included.",
+        )}
       </p>
       <p className="field-help">
-        The file includes your private email and account activity. Share it
-        carefully.
+        {tr(
+          "The file includes your private email and account activity. Share it carefully.",
+        )}
       </p>
-      {error && <Notice danger>{error}</Notice>}
+      {error && <Notice danger>{tr(error)}</Notice>}
       <p role="status" aria-live="polite" className="field-help">
-        {status}
+        {typeof status === "number"
+          ? tr("Collected {0} records…", status.toLocaleString(getLocale()))
+          : tr(status)}
       </p>
       <Button
         kind="secondary"
@@ -50,8 +54,7 @@ export function AccountExport() {
             const blob = await collectAccountExport(
               (path, body, signal) => api(path, "POST", body, signal),
               current.signal,
-              (_section, count) =>
-                setStatus(`Collected ${count.toLocaleString("en")} records…`),
+              (_section, count) => setStatus(count),
             );
             current.signal.throwIfAborted();
             if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
@@ -81,11 +84,11 @@ export function AccountExport() {
           }
         }}
       >
-        <Download size={16} /> Download my data
+        <Download size={16} /> {tr("Download my data")}
       </Button>
       {busy && (
         <Button kind="ghost" onClick={() => controller.current?.abort()}>
-          Cancel download
+          {tr("Cancel download")}
         </Button>
       )}
     </section>
